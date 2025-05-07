@@ -1,0 +1,191 @@
+/* Full-page layout */
+.login-page {
+  background: url('../../assets/image.png') no-repeat center center fixed;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  position: relative;
+  padding: 20px;
+}
+
+/* Dark overlay */
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+/* Centered card container */
+.overlay {
+  background: rgba(32, 85, 64, 0.85);
+  padding: 30px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  z-index: 2;
+  margin: auto;
+}
+
+/* Card content */
+.login-card {
+  padding: 15px;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  width: 100%;
+}
+
+/* Logo */
+.logo {
+  width: 100px;
+  height: auto;
+  margin-bottom: 20px;
+}
+
+/* Titles */
+.title {
+  font-size: 24px;
+  color: white;
+  font-weight: bold;
+  line-height: 1.2;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 18px;
+  color: white;
+  margin: 15px 0;
+  text-align: left;
+  padding-left: 8px;
+}
+
+/* Form */
+.login-form {
+  margin-top: 10px;
+  width: 100%;
+}
+
+/* Inputs */
+.input-container {
+  margin-bottom: 20px;
+}
+
+.input {
+  background: white;
+  border-radius: 8px;
+}
+
+.input :deep(.q-field--focused .q-field__label) {
+  color: #00903e !important;
+}
+
+.input :deep(.q-field--focused .q-field__control) {
+  color: #00903e !important;
+}
+
+.input :deep(.q-field--focused .q-field__control:before) {
+  border-color: #00903e !important;
+}
+
+.input :deep(.q-field--highlighted .q-field__label) {
+  color: #00903e !important;
+}
+
+.input :deep(.q-field--highlighted .q-field__control) {
+  color: #00903e !important;
+}
+
+.input :deep(.q-field--highlighted .q-field__control:before) {
+  border-color: #00903e !important;
+}
+
+.input :deep(.q-field__control) {
+  height: 48px;
+}
+
+.input :deep(.q-field__marginal) {
+  height: 48px;
+}
+
+/* Validation message */
+.validation {
+  color: #ff5252;
+  font-size: 12px;
+  margin-top: 4px;
+  text-align: left;
+}
+
+/* Login button */
+.login-button {
+  background-color: #00903e;
+  color: white;
+  width: 100%;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 20px;
+}
+
+.login-button:hover {
+  background-color: #007a34;
+}
+
+/* Remember me checkbox */
+.custom-checkbox.q-checkbox {
+  color: white;
+}
+
+.custom-checkbox :deep(.q-checkbox__inner) {
+  color: white;
+}
+
+.custom-checkbox :deep(.q-checkbox__inner--truthy) {
+  color: #00903e !important;
+}
+
+.custom-checkbox :deep(.q-checkbox__inner:before) {
+  border-color: white;
+}
+
+.custom-checkbox :deep(.q-checkbox__bg) {
+  border-color: white;
+}
+
+.custom-checkbox :deep(.q-checkbox__svg) {
+  color: white !important;
+}
+
+/* Loading state for button */
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 599px) {
+  .overlay {
+    width: 95%;
+    padding: 20px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+  }
+}
+
