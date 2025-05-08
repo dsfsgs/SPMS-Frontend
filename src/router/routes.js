@@ -14,17 +14,13 @@ import ProfilePage from 'src/pages/HR/ProfilePage.vue'
 // Office Admin Pages
 import OfficeDashboard from 'src/pages/Office/OfficeDashboard.vue'
 import OfficeEmployee from 'src/pages/Office/EmployeePage.vue'
-import OfficeUnitWorkPlan from 'src/pages/Office/UnitWorkPlan.vue'
-import OfficeOPCR from 'src/pages/Office/OPCR.vue'
-import OfficeIPCR from 'src/pages/Office/IPCR.vue'
 import OfficeSPMS from 'src/pages/Office/SPMS.vue'
 import OfficeAccount from 'src/pages/Office/AccountPage.vue'
-import Library from 'src/pages/Office/LibraryPage.vue'
+import MFO from 'src/pages/Office/MFOPage.vue'
 
 // Planning Admin Pages
 import PlanningDashboard from 'src/pages/Planning/PlanningDashboard.vue'
-import PlanningUnitWorkPlan from 'src/pages/Planning/UnitWorkPlan.vue'
-import PlanningOPCR from 'src/pages/Planning/OPCR.vue'
+import SPMS from 'src/pages/Planning/SPMS.vue'
 import PlanningAccount from 'src/pages/Planning/AccountPage.vue'
 
 export const routes = [
@@ -111,23 +107,8 @@ export const routes = [
         meta: { role: 'office-admin' },
       },
       {
-        path: 'office/unit-work-plan',
-        component: OfficeUnitWorkPlan,
-        meta: { role: 'office-admin' },
-      },
-      {
-        path: 'office/opcr',
-        component: OfficeOPCR,
-        meta: { role: 'office-admin' },
-      },
-      {
-        path: 'office/ipcr',
-        component: OfficeIPCR,
-        meta: { role: 'office-admin' },
-      },
-      {
         path: 'office/library',
-        component: Library,
+        component: MFO,
         meta: { role: 'office-admin' },
       },
       {
@@ -148,13 +129,8 @@ export const routes = [
         meta: { role: 'planning-admin' },
       },
       {
-        path: 'planning/unit-work-plan',
-        component: PlanningUnitWorkPlan,
-        meta: { role: 'planning-admin' },
-      },
-      {
-        path: 'planning/opcr',
-        component: PlanningOPCR,
+        path: 'planning/spms',
+        component: SPMS,
         meta: { role: 'planning-admin' },
       },
       {

@@ -133,16 +133,13 @@ export default {
         2: [
           // Planning Admin
           { label: 'Dashboard', icon: 'dashboard', route: '/planning/dashboard' },
-          { label: 'Unit Work Plan', icon: 'event_note', route: '/planning/unit-work-plan' },
-          { label: 'OPCR', icon: 'assignment', route: '/planning/opcr' },
+          { label: 'SPMS', icon: 'event_note', route: '/planning/spms' },
           { label: 'Account', icon: 'person', route: '/planning/account' },
         ],
         3: [
           // HR Admin
           { label: 'Dashboard', icon: 'dashboard', route: '/hr/dashboard' },
           { label: 'SPMS', icon: 'event_note', route: '/hr/spms' },
-          { label: 'OPCR', icon: 'assignment', route: '/hr/opcr' },
-          { label: 'IPCR', icon: 'fact_check', route: '/hr/ipcr' },
           {
             label: 'Account',
             icon: 'person',
