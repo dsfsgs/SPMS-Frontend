@@ -1,7 +1,7 @@
 .employee-container {
   display: flex;
   min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 .organization-panel {
@@ -58,8 +58,8 @@ h2 {
 
 h3 {
   color: #34495e;
-  margin-bottom: 15px;
-  font-size: 16px;
+  margin-bottom: 10px;
+  font-size: 14px;
 }
 
 .table-title-container {
@@ -74,12 +74,13 @@ h3 {
   color: white;
   border: none;
   border-radius: 6px;
-  padding: 8px 16px;
+  width: 150px;
+  padding: 8px 8px;
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 12px;
   transition: background 0.2s;
 }
 

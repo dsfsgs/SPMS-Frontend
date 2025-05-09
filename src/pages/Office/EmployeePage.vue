@@ -310,7 +310,7 @@ export default {
     },
     processOrganizationData(officeData, counts) {
       const officeNode = {
-        id: useUserStore().user?.office_id,
+        id: `office-${useUserStore().user?.office_id}`, // Prefix with 'office-'
         label: this.officeName,
         name: this.officeName,
         type: 'office',
@@ -322,7 +322,7 @@ export default {
       const divisions = officeData.divisions.map((div, divIndex) => {
         const divisionCount = counts.divisions[div.division]?.count || 0
         return {
-          id: divIndex + 1,
+          id: `div-${divIndex + 1}`, // Prefix with 'div-'
           label: div.division,
           name: div.division,
           type: 'division',
@@ -330,7 +330,7 @@ export default {
           count: divisionCount,
           children:
             div.sections?.map((sec, secIndex) => ({
-              id: (divIndex + 1) * 100 + secIndex + 1,
+              id: `sec-${(divIndex + 1) * 100 + secIndex + 1}`, // Prefix with 'sec-'
               label: sec.section,
               name: sec.section,
               type: 'section',
@@ -343,14 +343,14 @@ export default {
 
       if (officeData.sections_without_division?.length) {
         divisions.push({
-          id: 9999,
+          id: 'div-9999', // Prefix with 'div-'
           label: 'SECTIONS WITHOUT DIVISION',
           name: 'Sections Without Division',
           type: 'division',
           icon: 'apartment',
           count: 0,
           children: officeData.sections_without_division.map((sec, secIndex) => ({
-            id: 9999 * 100 + secIndex + 1,
+            id: `sec-9999-${secIndex + 1}`, // Unique prefix
             label: sec.section,
             name: sec.section,
             type: 'section',

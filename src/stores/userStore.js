@@ -8,7 +8,6 @@ export const useUserStore = defineStore('user', {
     mfos: [],
     categories: [],
     officeId: null,
-    loaded: false, // ✅ this will track if data has already been fetched
   }),
 
   getters: {
@@ -37,8 +36,6 @@ export const useUserStore = defineStore('user', {
 
   actions: {
     async loadUserData() {
-      if (this.loaded) return // ✅ skip if already loaded
-
       const token = localStorage.getItem('token')
       if (!token) return
       try {
@@ -51,7 +48,6 @@ export const useUserStore = defineStore('user', {
           ...new Map(this.mfos.map((mfo) => [mfo.category?.id, mfo.category])).values(),
         ]
         this.officeId = response.data.user.office_id // Add this line
-        this.loaded = true // ✅ mark as loaded
       } catch (error) {
         console.error('Failed to load user data:', error)
       }
