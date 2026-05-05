@@ -65,7 +65,7 @@
                     </div>
                   </td>
 
-                  <!-- Alloted Budget (Changed to text/varchar) -->
+                  <!-- Alloted Budget -->
                   <td style="width: 15%">
                     <q-input
                       dense
@@ -100,17 +100,16 @@
                     </q-input>
                   </td>
 
-                  <!-- Actual Accomplishment -->
+                  <!-- Actual Accomplishment (OPTIONAL) -->
                   <td style="width: 30%">
                     <q-input
                       dense
                       outlined
                       v-model="standard.opcr.accomplishment"
-                      placeholder="Enter accomplishment"
+                      placeholder="Enter accomplishment (optional)"
                       type="textarea"
                       rows="2"
                       :error="errors[`accomplishment_${standard.id}`]"
-                      error-message="Required"
                       @blur="
                         validateField(`accomplishment_${standard.id}`, standard.opcr.accomplishment)
                       "
@@ -237,14 +236,9 @@ export default {
     const successDialogOpen = ref(false)
     const errors = ref({})
 
-    // ✅ FIXED: Check if opcr.id exists to determine if it's an update
     const hasExistingData = computed(() => {
       if (!performanceStandards.value || performanceStandards.value.length === 0) return false
-
-      // Check if ANY standard has opcr with an id (meaning it exists in database)
-      return performanceStandards.value.some((standard) => {
-        return standard.opcr && standard.opcr.id
-      })
+      return performanceStandards.value.some((standard) => standard.opcr && standard.opcr.id)
     })
 
     const categories = computed(() => {
@@ -253,9 +247,8 @@ export default {
     })
 
     // Methods
-    const getCategoryStandards = (category) => {
-      return performanceStandards.value.filter((s) => s.category === category)
-    }
+    const getCategoryStandards = (category) =>
+      performanceStandards.value.filter((s) => s.category === category)
 
     const getControlNo = () => {
       return (
@@ -323,19 +316,24 @@ export default {
       }
     }
 
+    // accomplishment is optional
     const validateField = (fieldName, value) => {
+      if (typeof fieldName === 'string' && fieldName.startsWith('accomplishment_')) {
+        errors.value[fieldName] = false
+        return true
+      }
       const isValid = !!value && value.toString().trim() !== ''
       errors.value[fieldName] = !isValid
       return isValid
     }
 
+    // accomplishment removed from required fields
     const validateForm = () => {
       let isValid = true
       const newErrors = {}
 
       performanceStandards.value.forEach((standard) => {
-        const fields = ['budget', 'accountable', 'accomplishment']
-
+        const fields = ['budget', 'accountable']
         fields.forEach((field) => {
           const fieldKey = `${field}_${standard.id}`
           if (!standard.opcr[field] || standard.opcr[field].toString().trim() === '') {
@@ -359,25 +357,21 @@ export default {
         })
         return
       }
-
       confirmDialogOpen.value = true
     }
 
     const validateAndSave = async () => {
-      // Prevent double-click
-      if (saving.value) {
-        return
-      }
+      if (saving.value) return
 
       confirmDialogOpen.value = false
       saving.value = true
 
-      // Create array payload
-      const payload = performanceStandards.value.map((standard) => ({
+      // This is the array expected inside "data"
+      const items = performanceStandards.value.map((standard) => ({
         performance_standard_id: standard.id,
-        budget: standard.opcr.budget, // Keep as string/varchar
+        budget: standard.opcr.budget, // can be string, backend can cast if needed
         accountable: standard.opcr.accountable,
-        accomplishment: standard.opcr.accomplishment,
+        accomplishment: standard.opcr.accomplishment || '', // optional
         rating_q: standard.opcr.rating_q || null,
         rating_e: standard.opcr.rating_e || null,
         rating_t: standard.opcr.rating_t || null,
@@ -386,14 +380,20 @@ export default {
         remarks: standard.opcr.remarks || '',
       }))
 
+      // ✅ FIX: wrap in { semester, year, data }
+      const requestBody = {
+        semester: props.targetPeriod.semester,
+        year: props.targetPeriod.year,
+        data: items,
+      }
+
       try {
-        // Use update or save based on hasExistingData
         if (hasExistingData.value) {
           console.log('Calling UPDATE endpoint')
-          await opcrStore.updateOpcr(payload)
+          await opcrStore.updateOpcr(requestBody)
         } else {
           console.log('Calling SAVE endpoint')
-          await opcrStore.saveOpcr(payload)
+          await opcrStore.saveOpcr(requestBody)
         }
 
         successDialogOpen.value = true
@@ -406,7 +406,7 @@ export default {
           actions: [{ icon: 'close', color: 'white' }],
         })
 
-        emit('save', payload)
+        emit('save', requestBody)
       } catch (err) {
         console.error('Failed to save OPCR:', err)
         $q.notify({
@@ -428,7 +428,6 @@ export default {
       emit('close')
     }
 
-    // Lifecycle
     onMounted(() => {
       loadOpcrData()
     })

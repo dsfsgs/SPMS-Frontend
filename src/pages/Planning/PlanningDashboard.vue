@@ -29,21 +29,6 @@
           </q-card>
         </div>
 
-        <!-- Pending Approval Card -->
-        <div class="col-xs-12 col-sm-6 col-md-3">
-          <q-card class="bg-white shadow-3 full-height clickable-card">
-            <q-card-section class="q-pa-md">
-              <div class="row items-center">
-                <q-icon name="hourglass_empty" color="warning" size="md" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle2 text-grey-7">Pending Approval</div>
-                  <div class="text-h6 text-weight-bold text-warning">{{ pendingOpcr }}</div>
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
         <!-- Approved Card -->
         <div class="col-xs-12 col-sm-6 col-md-3">
           <q-card class="bg-white shadow-3 full-height clickable-card">
@@ -51,7 +36,7 @@
               <div class="row items-center">
                 <q-icon name="check_circle" color="positive" size="md" class="q-mr-sm" />
                 <div>
-                  <div class="text-subtitle2 text-grey-7">Approved</div>
+                  <div class="text-subtitle2 text-grey-7">Reviewed</div>
                   <div class="text-h6 text-weight-bold text-positive">{{ approvedOpcr }}</div>
                 </div>
               </div>
@@ -68,6 +53,21 @@
                 <div>
                   <div class="text-subtitle2 text-grey-7">Returned</div>
                   <div class="text-h6 text-weight-bold text-negative">{{ returnedOpcr }}</div>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+
+        <!-- Pending Approval Card -->
+        <div class="col-xs-12 col-sm-6 col-md-3">
+          <q-card class="bg-white shadow-3 full-height clickable-card">
+            <q-card-section class="q-pa-md">
+              <div class="row items-center">
+                <q-icon name="hourglass_empty" color="warning" size="md" class="q-mr-sm" />
+                <div>
+                  <div class="text-subtitle2 text-grey-7">Draft</div>
+                  <div class="text-h6 text-weight-bold text-warning">{{ pendingOpcr }}</div>
                 </div>
               </div>
             </q-card-section>
@@ -164,43 +164,6 @@
               <div class="text-h6 text-grey-7 q-mt-md">All Caught Up!</div>
               <div class="text-grey-6">No pending OPCR for approval</div>
             </div>
-          </template>
-        </q-table>
-      </q-card-section>
-    </q-card>
-
-    <!-- Recently Processed OPCR -->
-    <q-card class="bg-white shadow-3">
-      <q-card-section class="q-pa-md">
-        <div class="text-subtitle1 text-pink-4 text-weight-medium q-mb-md">Recently Processed</div>
-        <q-table
-          :rows="recentlyProcessed"
-          :columns="recentColumns"
-          row-key="id"
-          flat
-          bordered
-          :pagination="{ rowsPerPage: 5 }"
-          class="dashboard-table"
-        >
-          <template v-slot:body="props">
-            <q-tr :props="props">
-              <q-td key="office_name" :props="props">
-                <div>{{ props.row.office_name }}</div>
-              </q-td>
-              <q-td key="processed_by" :props="props">
-                {{ props.row.processed_by }}
-              </q-td>
-              <q-td key="processed_date" :props="props">
-                {{ formatDate(props.row.processed_date) }}
-              </q-td>
-              <q-td key="status" :props="props">
-                <q-badge
-                  :color="getStatusColor(props.row.status)"
-                  :label="props.row.status"
-                  class="status-badge"
-                />
-              </q-td>
-            </q-tr>
           </template>
         </q-table>
       </q-card-section>
@@ -470,37 +433,6 @@ const opcrColumns = [
     label: 'Actions',
     field: 'actions',
     align: 'center',
-  },
-]
-
-const recentColumns = [
-  {
-    name: 'office_name',
-    label: 'Office Name',
-    field: 'office_name',
-    align: 'left',
-    sortable: true,
-  },
-  {
-    name: 'processed_by',
-    label: 'Processed By',
-    field: 'processed_by',
-    align: 'left',
-    sortable: true,
-  },
-  {
-    name: 'processed_date',
-    label: 'Processed Date',
-    field: 'processed_date',
-    align: 'left',
-    sortable: true,
-  },
-  {
-    name: 'status',
-    label: 'Status',
-    field: 'status',
-    align: 'center',
-    sortable: true,
   },
 ]
 

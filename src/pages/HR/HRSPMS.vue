@@ -46,6 +46,14 @@
                   </q-select>
                 </div>
 
+                <!-- <div class="row q-gutter-sm items-center q-mb-sm">
+                  <div class="q-pa-sm text-grey-9 text-bold col">
+                    Status: <q-badge color="blue">Draft</q-badge>
+                  </div>
+                  <q-btn color="orange-9" icon="edit" label="Update" />
+                  <q-btn color="red-9" icon="print" label="Remove" />
+                </div> -->
+
                 <!-- Office Dropdown -->
                 <div class="row q-mb-md">
                   <q-select
@@ -442,6 +450,19 @@ const filteredOfficeOptions = ref([])
 
 const EXCLUDED_STATUSES = ['CONTRACTUAL', 'HONORARIUM']
 
+/**
+ * Employment status ordering for display (top-to-bottom).
+ * Unknown / missing statuses are placed at the bottom.
+ */
+const EMPLOYMENT_STATUS_ORDER = [
+  'REGULAR',
+  'ELECTIVE',
+  'CASUAL',
+  'COTERMINOUS',
+  'CONTRACTUAL',
+  'HONORARIUM',
+]
+
 const HEAD_RANKS = [
   'office-head',
   'division-head',
@@ -495,7 +516,6 @@ const organizationTree = computed(() => orgStore.structure)
 
 const resolvedOfficeId = computed(() => {
   if (!selectedOffice.value) return null
-  // API returns { officeId: "1", office: "..." } — check both field names
   return selectedOffice.value.officeId || selectedOffice.value.id || null
 })
 
@@ -587,15 +607,47 @@ const employees = computed(() => {
   return selectedNode.value.children?.filter((c) => c.type === 'employee') || []
 })
 
+/**
+ * Normalize employment status for sorting.
+ * Primary source: employee.employeeData.status
+ * Safe fallbacks: employee.status / employee.employeeStatus
+ */
+const getEmploymentStatus = (employee) => {
+  return (employee?.employeeData?.status || employee?.status || employee?.employeeStatus || '')
+    .toString()
+    .toUpperCase()
+    .trim()
+}
+
+/** Get sort index (unknown statuses go to bottom). */
+const getEmploymentStatusOrderIndex = (employee) => {
+  const s = getEmploymentStatus(employee)
+  const idx = EMPLOYMENT_STATUS_ORDER.indexOf(s)
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
+}
+
 const filteredEmployees = computed(() => {
-  if (!employeeFilter.value) return employees.value
-  const term = employeeFilter.value.toLowerCase()
-  return employees.value.filter(
-    (emp) =>
-      emp.label?.toLowerCase().includes(term) ||
-      emp.position?.toLowerCase().includes(term) ||
-      emp.rank?.toLowerCase().includes(term),
-  )
+  // 1) Search filtering
+  const term = employeeFilter.value?.toLowerCase().trim() || ''
+  const base = !term
+    ? employees.value
+    : employees.value.filter(
+        (emp) =>
+          emp.label?.toLowerCase().includes(term) ||
+          emp.position?.toLowerCase().includes(term) ||
+          emp.rank?.toLowerCase().includes(term),
+      )
+
+  // 2) Sort by employment status priority, then by name
+  return [...base].sort((a, b) => {
+    const da = getEmploymentStatusOrderIndex(a)
+    const db = getEmploymentStatusOrderIndex(b)
+    if (da !== db) return da - db
+
+    const an = (a.label || '').toString().toLowerCase()
+    const bn = (b.label || '').toString().toLowerCase()
+    return an.localeCompare(bn)
+  })
 })
 
 // Add this method to SPMSDashboard.vue
@@ -961,7 +1013,6 @@ const onOfficeChange = async (office) => {
     employeeFilter.value = ''
     treeFilter.value = ''
 
-    // ✅ FIX: resolve the correct id field from the office object
     const officeId = office.officeId || office.id || null
     console.log('Selected office object:', JSON.stringify(office))
     console.log('Resolved officeId:', officeId)
@@ -969,7 +1020,6 @@ const onOfficeChange = async (office) => {
     userStore.officeId = officeId
     await refreshData()
 
-    // Auto-select the top-level office node
     const findOfficeNode = (nodes) => {
       if (!nodes) return null
       for (const node of nodes) {

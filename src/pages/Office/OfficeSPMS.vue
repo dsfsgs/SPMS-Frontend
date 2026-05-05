@@ -131,6 +131,7 @@
                     <template v-if="isOrgNode(selectedNode)">
                       <!-- Create UWP Button -->
                       <q-btn
+                        v-if="canCreateUWP"
                         class="neu-button-rect"
                         flat
                         size="sm"
@@ -138,11 +139,8 @@
                         icon="person_add"
                         label="Create UWP"
                         @click="createUnitWorkPlan"
-                        :disable="!canCreateUWP"
                       >
-                        <q-tooltip>
-                          {{ canCreateUWP ? 'Create Unit Work Plan' : uwpBlockedReason }}
-                        </q-tooltip>
+                        <q-tooltip>Create Unit Work Plan</q-tooltip>
                       </q-btn>
 
                       <!-- Preview UWP Button -->
@@ -447,11 +445,21 @@ const HEAD_RANKS = [
 ]
 
 /**
+ * Employee status ordering for display (top to bottom in table).
+ * Unknown/missing statuses go to the bottom.
+ */
+const EMPLOYMENT_STATUS_ORDER = [
+  'REGULAR',
+  'ELECTIVE',
+  'CASUAL',
+  'COTERMINOUS',
+  'CONTRACTUAL',
+  'HONORARIUM',
+]
+
+/**
  * Job title hierarchy levels — higher index = higher authority.
  * Used to determine supervisory relationships within the same org unit.
- *
- * Structure:  Office > Office2 > Group > Division > Section > Unit
- * Job titles: Office Head > Division Head > Section Head > Unit Head > Employee
  */
 const JOB_TITLE_HIERARCHY = [
   'employee',
@@ -462,17 +470,6 @@ const JOB_TITLE_HIERARCHY = [
   'office2 head',
   'office head',
 ]
-
-/**
- * The cascading UWP level order.
- * Office is always the top. Each subsequent level requires the level above
- * to have its head employee's hasTargetPeriod = true before it can create.
- *
- * Order: office → office2 → group → division → section → unit
- *
- * The head job_title for each level is defined here for lookup.
- */
-// const UWP_LEVEL_ORDER = ['office', 'office2', 'group', 'division', 'section', 'unit']
 
 const UWP_LEVEL_HEAD_JOB_TITLE = {
   office: 'office head',
@@ -531,10 +528,19 @@ const isExcludedStatus = (status) => {
   return EXCLUDED_STATUSES.includes(status.toUpperCase())
 }
 
-/**
- * Returns the normalized job_title string from an employee node.
- * Reads from employeeData.job_title first, then falls back to node.jobTitle.
- */
+const getEmploymentStatus = (employee) => {
+  return (employee?.employeeData?.status || employee?.employeeStatus || employee?.status || '')
+    .toString()
+    .toUpperCase()
+    .trim()
+}
+
+const getEmploymentStatusOrderIndex = (employee) => {
+  const s = getEmploymentStatus(employee)
+  const idx = EMPLOYMENT_STATUS_ORDER.indexOf(s)
+  return idx === -1 ? Number.MAX_SAFE_INTEGER : idx
+}
+
 const getJobTitle = (employee) => {
   return (
     employee?.employeeData?.job_title?.toLowerCase().trim() ||
@@ -543,15 +549,8 @@ const getJobTitle = (employee) => {
   )
 }
 
-/**
- * Returns true if the employee is the Office Head based on job_title.
- */
 const isOfficeHead = (employee) => getJobTitle(employee) === 'office head'
 
-/**
- * Returns the numeric hierarchy level of a job title.
- * Higher number = higher authority.
- */
 const getJobTitleLevel = (jobTitle) => {
   if (!jobTitle) return 0
   const normalized = jobTitle.toLowerCase().trim()
@@ -563,17 +562,12 @@ const getJobTitleLevel = (jobTitle) => {
 // HELPER: NODE UTILITIES
 // ============================================================================
 
-/** Returns true if the node is an organizational unit (not an employee) */
 const isOrgNode = (node) => node && ORG_NODE_TYPES.includes(node.type)
 
 // ============================================================================
 // UWP CASCADING LOCK LOGIC
 // ============================================================================
 
-/**
- * Checks whether a given org node has any countable employees (non-excluded).
- * Used to skip empty levels in the cascading check.
- */
 const nodeHasCountableEmployees = (nodeId) => {
   const node = orgStore._findNode(nodeId)
   if (!node) return false
@@ -585,13 +579,6 @@ const nodeHasCountableEmployees = (nodeId) => {
   return count(node) > 0
 }
 
-/**
- * Finds the head employee of a specific org node based on the expected job_title
- * for that node type (e.g. 'division head' for a division node).
- *
- * Searches only the DIRECT employee children of the node.
- * Returns the employee node or null.
- */
 const findNodeHeadEmployee = (node) => {
   if (!node) return null
   const expectedTitle = UWP_LEVEL_HEAD_JOB_TITLE[node.type]
@@ -609,13 +596,6 @@ const findNodeHeadEmployee = (node) => {
   )
 }
 
-/**
- * Walks up the full ancestor chain of a node and returns all ancestor nodes
- * in order from root (office) down to direct parent.
- *
- * Example for a unit:
- *   [officeNode, divisionNode, sectionNode]  ← unit's ancestors, root-first
- */
 const getAncestorChain = (nodeId, nodes = orgStore.structure, chain = []) => {
   for (const node of nodes) {
     if (node.id === nodeId) return chain
@@ -627,23 +607,6 @@ const getAncestorChain = (nodeId, nodes = orgStore.structure, chain = []) => {
   return null
 }
 
-/**
- * Core cascading UWP lock computation.
- *
- * Rules:
- * 1. Office level: ALWAYS allowed. The Office Head creates first at this level.
- *
- * 2. For all other levels (office2, group, division, section, unit):
- *    Walk UP the ancestor chain from root (office) to the selected node's direct parent.
- *    For each ancestor that is an org node type:
- *      a. If the ancestor has NO countable employees → SKIP (treat as ready).
- *      b. If the ancestor HAS countable employees → find its head employee.
- *         - If head exists and hasTargetPeriod = true → level is READY, continue.
- *         - If head does NOT exist → SKIP this level (no head to block).
- *         - If head exists but hasTargetPeriod = false → BLOCKED.
- *
- * 3. If all ancestors pass → ALLOWED.
- */
 const uwpLockStatus = computed(() => {
   if (!selectedNode.value || !isOrgNode(selectedNode.value)) {
     return { allowed: false, reason: 'Select a valid organizational unit.' }
@@ -651,34 +614,23 @@ const uwpLockStatus = computed(() => {
 
   const currentType = selectedNode.value.type
 
-  // Office level: always allowed — this is where it all starts
   if (currentType === 'office') {
     return { allowed: true, reason: '' }
   }
 
-  // For sub-levels: check all ancestors from root down to direct parent
   const ancestors = getAncestorChain(selectedNode.value.id)
 
   if (!ancestors || ancestors.length === 0) {
-    // No ancestors found — just allow it
     return { allowed: true, reason: '' }
   }
 
-  // Walk each ancestor from root → direct parent
   for (const ancestor of ancestors) {
-    // Only check org nodes (skip employee nodes in chain — shouldn't happen but safe)
     if (!ORG_NODE_TYPES.includes(ancestor.type)) continue
-
-    // If this ancestor level has no countable employees → skip, treat as ready
     if (!nodeHasCountableEmployees(ancestor.id)) continue
 
-    // Find the head of this ancestor node
     const headEmployee = findNodeHeadEmployee(ancestor)
-
-    // No head employee found in this level → skip (no one to be blocked by)
     if (!headEmployee) continue
 
-    // Head exists but hasn't completed their UWP targets → BLOCKED
     if (!headEmployee.hasTargetPeriod) {
       const levelLabel = ancestor.label || ancestor.type
       const headName = headEmployee.label || headEmployee.name || 'Head'
@@ -687,10 +639,8 @@ const uwpLockStatus = computed(() => {
         reason: `"${headName}" (${levelLabel}) has not yet completed their UWP targets. Complete the ${ancestor.type} level first before proceeding to ${currentType}.`,
       }
     }
-    // Head has hasTargetPeriod = true → this level is clear, continue to next
   }
 
-  // All ancestor levels passed
   return { allowed: true, reason: '' }
 })
 
@@ -712,7 +662,6 @@ const selectedNodeBreadcrumb = computed(() => {
   return path.length > 3 ? `... / ${path.slice(-2).join(' / ')}` : path.join(' / ')
 })
 
-/** Direct employee children of the selected node */
 const employees = computed(() => {
   if (!selectedNode.value) return []
   if (selectedNode.value.type === 'employee') return [selectedNode.value]
@@ -720,14 +669,25 @@ const employees = computed(() => {
 })
 
 const filteredEmployees = computed(() => {
-  if (!employeeFilter.value) return employees.value
-  const term = employeeFilter.value.toLowerCase()
-  return employees.value.filter(
-    (emp) =>
-      emp.label?.toLowerCase().includes(term) ||
-      emp.position?.toLowerCase().includes(term) ||
-      emp.rank?.toLowerCase().includes(term),
-  )
+  const term = employeeFilter.value?.toLowerCase().trim() || ''
+  const base = !term
+    ? employees.value
+    : employees.value.filter(
+        (emp) =>
+          emp.label?.toLowerCase().includes(term) ||
+          emp.position?.toLowerCase().includes(term) ||
+          emp.rank?.toLowerCase().includes(term),
+      )
+
+  return [...base].sort((a, b) => {
+    const da = getEmploymentStatusOrderIndex(a)
+    const db = getEmploymentStatusOrderIndex(b)
+    if (da !== db) return da - db
+
+    const an = (a.label || '').toString().toLowerCase()
+    const bn = (b.label || '').toString().toLowerCase()
+    return an.localeCompare(bn)
+  })
 })
 
 // ============================================================================
@@ -786,21 +746,14 @@ const shouldCountEmployee = (employee) => {
 
 const shouldIncludeInUWP = (employee) => shouldCountEmployee(employee)
 
-/** QPEF: CASUAL, CONTRACTUAL, HONORARIUM only */
 const canShowQPEF = (employee) => {
   if (!employee?.employeeData) return false
   const s = employee.employeeData.status?.toUpperCase()
   return ['CASUAL', 'CONTRACTUAL', 'HONORARIUM'].includes(s)
 }
 
-/**
- * OPCR: Office Head job_title only.
- */
 const canShowOPCR = (employee) => isOfficeHead(employee)
 
-/**
- * IPCR: Not excluded status, not Office Head.
- */
 const canShowIPCR = (employee) => {
   if (!employee?.employeeData) return false
   if (isExcludedStatus(employee.employeeData.status)) return false
@@ -808,7 +761,6 @@ const canShowIPCR = (employee) => {
   return true
 }
 
-/** Edit: Not excluded status and has target period */
 const canShowEdit = (employee) => {
   if (!employee?.employeeData) return false
   if (!employee.hasTargetPeriod) return false
@@ -847,7 +799,6 @@ const getStatusColor = (row) => {
 }
 
 const isLeafNode = (nodeId) => orgStore.getNodeCompletion(nodeId).isLeafNode === true
-
 const getNodeCompletionRatio = (nodeId) => orgStore.getNodeCompletion(nodeId).ratio
 
 const getCompletionColor = (nodeId) => {
@@ -1019,9 +970,6 @@ const getAllEmployeesUnderNode = (nodeId) => {
 // SIGNATORY FINDERS
 // ============================================================================
 
-/**
- * Returns the immediate parent org node ID for a given employee node.
- */
 const getImmediateParentNodeId = (employee) => {
   const levels = getEmployeeLevels(employee)
   const levelOrder = ['unit', 'section', 'division', 'group', 'office2', 'office']
@@ -1033,9 +981,6 @@ const getImmediateParentNodeId = (employee) => {
   return orgStore.structure?.[0]?.id || null
 }
 
-/**
- * Returns the parent node ID ONE level above the given org node.
- */
 const getParentNodeId = (nodeId, nodes = orgStore.structure, parentId = null) => {
   if (!nodes) return null
   for (const node of nodes) {
@@ -1048,9 +993,6 @@ const getParentNodeId = (nodeId, nodes = orgStore.structure, parentId = null) =>
   return null
 }
 
-/**
- * Finds the supervisory signatory for an employee.
- */
 const getSupervisorySignatory = (employee) => {
   if (!employee) return null
   if (isOfficeHead(employee)) return null
@@ -1068,64 +1010,47 @@ const getSupervisorySignatory = (employee) => {
     return candidates[0] || null
   }
 
-  // Start with the immediate parent node
   const immediateParentId = getImmediateParentNodeId(employee)
   if (!immediateParentId) return null
 
-  // Check if there's a supervisor in the immediate parent
   let supervisor = findSupervisorInNode(immediateParentId)
   if (supervisor) return supervisor
 
-  // If no supervisor found in immediate parent, walk up the hierarchy
   let currentNodeId = immediateParentId
   let currentNode = orgStore._findNode(currentNodeId)
 
   while (currentNode) {
-    // Get the parent of the current node
     const parentId = getParentNodeId(currentNodeId)
     if (!parentId) break
 
     const parentNode = orgStore._findNode(parentId)
     if (!parentNode) break
 
-    // Check for supervisor in the parent node
     supervisor = findSupervisorInNode(parentId)
     if (supervisor) return supervisor
 
-    // Move up to the next level
     currentNodeId = parentId
     currentNode = parentNode
   }
 
-  // If we've reached the top and still no supervisor, return the Office Head
-  // Find the Office Head by looking for the office node and its head
   const officeNode = orgStore.structure?.find((node) => node.type === 'office')
   if (officeNode) {
     const officeHead = findNodeHeadEmployee(officeNode)
     if (officeHead) return officeHead
   }
 
-  // Last resort: try to find any employee with Office Head job title
   const allEmployees = getAllEmployeesUnderNode(orgStore.structure?.[0]?.id)
   return allEmployees.find((emp) => isOfficeHead(emp)) || null
 }
 
-/**
- * Finds the managerial (Office Head) signatory for any employee.
- */
 const getManagerialSignatory = (allEmployees) => {
   if (!allEmployees) return null
   return allEmployees.find((emp) => isOfficeHead(emp)) || null
 }
 
-/**
- * Builds the full signatory object for a given employee.
- */
 const buildSignatories = (employee) => {
   const levels = getEmployeeLevels(employee)
-
   const supervisory = getSupervisorySignatory(employee)
-
   const allOfficeEmployees = getAllEmployeesUnderNode(orgStore.structure?.[0]?.id)
   const managerial = getManagerialSignatory(allOfficeEmployees)
 
@@ -1288,7 +1213,6 @@ const createUnitWorkPlan = () => {
   if (!selectedNode.value)
     return $q.notify({ message: 'Please select a node first', color: 'negative' })
 
-  // Check cascading lock at runtime
   if (!canCreateUWP.value) {
     return $q.notify({
       message: uwpBlockedReason.value,
@@ -1307,7 +1231,6 @@ const createUnitWorkPlan = () => {
   if (!hierarchyPath)
     return $q.notify({ message: 'Failed to build organizational hierarchy', color: 'negative' })
 
-  // ── Resolve managerial signatory once — it's the same Office Head for everyone ──
   const allOfficeEmployees = getAllEmployeesUnderNode(orgStore.structure?.[0]?.id)
   const managerialNode = getManagerialSignatory(allOfficeEmployees)
   const managerialSignatory = managerialNode
@@ -1329,7 +1252,6 @@ const createUnitWorkPlan = () => {
     const supervisorNode = getSupervisorySignatory(emp)
     return {
       ...emp,
-      // ── Supervisory signatory (per-employee, resolved from org hierarchy) ──
       supervisorySignatory: supervisorNode
         ? {
             name: supervisorNode.label || supervisorNode.name,
@@ -1343,7 +1265,6 @@ const createUnitWorkPlan = () => {
               null,
           }
         : null,
-      // ── Managerial signatory (same Office Head for all employees) ──
       managerialSignatory,
     }
   })
