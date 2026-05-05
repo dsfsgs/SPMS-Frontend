@@ -4,6 +4,9 @@ import { Notify } from 'quasar'
 import { viewUserDetails, updateUserAccount, resetPassword } from 'src/service/userService'
 import { extractErrorMessage } from 'src/utils/errorHelper'
 export const useUserManageStore = defineStore('userManage', {
+  // ─────────────────────────────────────────────
+  // STATE
+  // ─────────────────────────────────────────────
   state: () => ({
     users: [],
     offices: [],
@@ -33,19 +36,31 @@ export const useUserManageStore = defineStore('userManage', {
       {
         label: 'Hr Admin',
         value: 3,
-        description: 'Create Account and can manage the system',
+        description: 'Creates accounts and manages the system',
+      },
+      {
+        label: 'Performance Management Team',
+        value: 4,
+        description: 'Can manage performance evaluations and monitoring',
       },
     ],
+
     permissions: [
       { label: 'View Dashboard', value: 'view_dashboard' },
       { label: 'Edit Users', value: 'edit_users' },
       { label: 'Manage Roles', value: 'manage_roles' },
       { label: 'Access Reports', value: 'access_reports' },
     ],
+
     selectedPermissions: [],
   }),
 
+  // ─────────────────────────────────────────────
+  // ACTIONS
+  // ─────────────────────────────────────────────
   actions: {
+    // ── Fetch ──────────────────────────────────
+
     async fetchUserAccounts() {
       this.loading = true
       try {
@@ -60,6 +75,7 @@ export const useUserManageStore = defineStore('userManage', {
         Notify.create({
           message: 'Failed to fetch user accounts. Please try again.',
           color: 'negative',
+          position: 'top',
         })
       } finally {
         this.loading = false
@@ -77,6 +93,7 @@ export const useUserManageStore = defineStore('userManage', {
         Notify.create({
           message: 'Failed to fetch offices. Please try again.',
           color: 'negative',
+          position: 'top',
         })
       } finally {
         this.loading = false
@@ -120,7 +137,7 @@ export const useUserManageStore = defineStore('userManage', {
         }
         return false
       } catch (error) {
-        console.error('Error in user creation:', error)
+        console.error('Error creating user:', error)
         Notify.create({
           message: extractErrorMessage(error, 'Error creating user. Please try again.'),
           color: 'negative',
@@ -133,50 +150,63 @@ export const useUserManageStore = defineStore('userManage', {
       }
     },
 
-    async deleteUser(userId) {
-      try {
-        await api.delete(`/user_assign/${userId}`)
-        await this.fetchUserAccounts()
-        Notify.create({
-          message: 'User deleted successfully',
-          color: 'positive',
-          position: 'top',
-        })
-      } catch (error) {
-        console.error('Error deleting user:', error)
-        Notify.create({
-          message: 'Failed to delete user',
-          color: 'negative',
-          position: 'top',
-        })
-      }
-    },
+    // ── Update ─────────────────────────────────
 
     async updateUser(userId, userData) {
+      this.saving = true
       try {
         await api.put(`/user_assign/${userId}`, userData)
         await this.fetchUserAccounts()
         Notify.create({
-          message: 'User updated successfully',
+          message: 'User updated successfully.',
           color: 'positive',
           position: 'top',
+          timeout: 2500,
         })
         return true
       } catch (error) {
         console.error('Error updating user:', error)
         Notify.create({
-          message: 'Failed to update user',
+          message: error?.response?.data?.message || 'Failed to update user. Please try again.',
           color: 'negative',
           position: 'top',
+          timeout: 2500,
         })
         return false
+      } finally {
+        this.saving = false
       }
     },
+
+    // ── Delete ─────────────────────────────────
+
+    async deleteUser(userId) {
+      try {
+        await api.delete(`/user_assign/${userId}`)
+        await this.fetchUserAccounts()
+        Notify.create({
+          message: 'User deleted successfully.',
+          color: 'positive',
+          position: 'top',
+          timeout: 2500,
+        })
+      } catch (error) {
+        console.error('Error deleting user:', error)
+        Notify.create({
+          message: error?.response?.data?.message || 'Failed to delete user.',
+          color: 'negative',
+          position: 'top',
+          timeout: 2500,
+        })
+      }
+    },
+
+    // ── Filter Helpers ─────────────────────────
 
     filterOffices() {
       const searchTerm = this.officeSearch?.toLowerCase().trim() || ''
       this.filteredOffices = this.offices.filter((office) =>
-        office.name.toLowerCase().includes(searchTerm),
+        (office.name ?? '').toLowerCase().includes(searchTerm),
       )
     },
 
@@ -184,8 +214,8 @@ export const useUserManageStore = defineStore('userManage', {
       const searchTerm = this.search?.toLowerCase().trim() || ''
       this.filteredEmployees = this.employees.filter(
         (emp) =>
-          emp.name4.toLowerCase().includes(searchTerm) ||
-          emp.Designation.toLowerCase().includes(searchTerm),
+          (emp.name4 ?? '').toLowerCase().includes(searchTerm) ||
+          (emp.Designation ?? '').toLowerCase().includes(searchTerm),
       )
     },
 
@@ -284,8 +314,8 @@ export const useUserManageStore = defineStore('userManage', {
       this.selectedRole = null
       this.search = ''
       this.officeSearch = ''
-      this.filteredOffices = this.offices
-      this.filteredEmployees = this.employees
+      this.filteredOffices = [...this.offices]
+      this.filteredEmployees = []
       this.selectedPermissions = []
     },
   },

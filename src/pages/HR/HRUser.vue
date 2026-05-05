@@ -1,5 +1,6 @@
 <template>
   <q-page padding>
+    <!-- ── Page Header ──────────────────────────────────────────── -->
     <div class="row items-center justify-between q-mb-md">
       <div>
         <h6 class="text-h6 q-mb-xs">User Management</h6>
@@ -10,21 +11,38 @@
         rounded
         color="primary"
         label="Create User"
-        @click="showOfficeModal = true"
         icon="person_add"
+        @click="openCreateFlow"
       >
         <q-tooltip>Create a new system user</q-tooltip>
       </q-btn>
     </div>
 
-    <q-table :rows="store.users" :columns="columns" row-key="id" :loading="store.loading">
+    <!-- ── Users Table ──────────────────────────────────────────── -->
+    <q-table
+      :rows="store.users"
+      :columns="columns"
+      row-key="id"
+      :loading="store.loading"
+      flat
+      bordered
+    >
+      <template v-slot:body-cell-role_id="props">
+        <q-td :props="props" class="text-center">
+          <q-badge
+            :color="getRoleBadgeColor(props.row.role_id)"
+            :label="getRoleName(props.row.role_id)"
+          />
+        </q-td>
+      </template>
+
       <template v-slot:body-cell-action="props">
         <q-td :props="props" class="text-center">
           <q-btn-group spread flat>
             <q-btn flat round color="info" icon="visibility" @click="viewUserDetails(props.row)">
               <q-tooltip>View User</q-tooltip>
             </q-btn>
-            <q-btn flat round color="primary" icon="edit" @click="editUser(props.row)">
+            <q-btn flat round color="primary" icon="edit" size="sm" @click="editUser(props.row)">
               <q-tooltip>Edit User</q-tooltip>
             </q-btn>
             <q-btn
@@ -44,13 +62,20 @@
       </template>
     </q-table>
 
-    <!-- Office Selection Modal -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- STEP 1 — Office Selection Modal                           -->
+    <!-- ══════════════════════════════════════════════════════════ -->
     <q-dialog v-model="showOfficeModal" persistent transition-show="scale" transition-hide="scale">
-      <q-card style="width: 100%; max-width: 50vw">
-        <q-card-section>
-          <div class="text-h6">Select Office</div>
-          <div class="text-caption text-grey-7">Step 1 of 3</div>
+      <q-card style="width: 100%; max-width: 540px">
+        <q-card-section class="row items-center q-pb-none">
+          <div>
+            <div class="text-h6">Select Office</div>
+            <div class="text-caption text-grey-7">Step 1 of 3</div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense @click="cancelFlow" />
         </q-card-section>
+
         <q-card-section>
           <p class="text-grey-8 q-mb-md">Select the office where the user will be assigned.</p>
 
@@ -60,8 +85,8 @@
             outlined
             dense
             clearable
+            class="q-mb-sm"
             @update:model-value="filterOffices"
-            :loading="store.loading"
           >
             <template v-slot:prepend>
               <q-icon name="search" />
@@ -73,24 +98,28 @@
             :columns="officeColumns"
             row-key="id"
             :loading="store.loading"
+            flat
+            bordered
+            dense
             virtual-scroll
+            style="max-height: 300px"
+            hide-bottom
           >
             <template v-slot:body="props">
               <q-tr
                 :props="props"
-                @click="selectOffice(props.row)"
                 class="office-row"
                 :class="{ selected: isOfficeSelected(props.row) }"
+                @click="selectOffice(props.row)"
               >
-                <q-td key="name" :props="props">
-                  {{ props.row.name }}
-                </q-td>
+                <q-td key="name" :props="props">{{ props.row.name }}</q-td>
               </q-tr>
             </template>
           </q-table>
         </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancel" color="grey-7" @click="cancelFlow" />
           <q-btn
             flat
             label="Next"
@@ -98,6 +127,7 @@
             @click="openEmployeeModal"
             :disabled="!selectedOffice"
             :loading="loading"
+            @click="openEmployeeModal"
           >
             <q-tooltip v-if="!selectedOffice">Please select an office to continue</q-tooltip>
           </q-btn>
@@ -105,28 +135,40 @@
       </q-card>
     </q-dialog>
 
-    <!-- Employee Selection Modal -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- STEP 2 — Employee Selection Modal                         -->
+    <!-- ══════════════════════════════════════════════════════════ -->
     <q-dialog
       v-model="showEmployeeModal"
       persistent
       transition-show="scale"
       transition-hide="scale"
     >
-      <q-card style="width: 100%; max-width: 50vw">
-        <q-card-section>
-          <div class="text-h6">Select Employee</div>
-          <div class="text-caption text-grey-7">Step 2 of 3</div>
+      <q-card style="width: 100%; max-width: 540px">
+        <q-card-section class="row items-center q-pb-none">
+          <div>
+            <div class="text-h6">Select Employee</div>
+            <div class="text-caption text-grey-7">Step 2 of 3</div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense @click="cancelFlow" />
         </q-card-section>
+
         <q-card-section>
-          <p class="text-grey-8 q-mb-md">Search and select an employee to assign user access.</p>
+          <p class="text-grey-8 q-mb-md">
+            Search and select an employee from
+            <strong>{{ selectedOffice?.name }}</strong
+            >.
+          </p>
+
           <q-input
             v-model="search"
             label="Search Employee"
             outlined
             dense
             clearable
+            class="q-mb-sm"
             @update:model-value="filterEmployees"
-            :loading="loading"
           >
             <template v-slot:prepend>
               <q-icon name="search" />
@@ -138,26 +180,28 @@
             :columns="employeeColumns"
             row-key="ControlNo"
             :loading="loading"
+            flat
+            bordered
+            dense
             virtual-scroll
+            style="max-height: 300px"
+            hide-bottom
           >
             <template v-slot:body="props">
               <q-tr
                 :props="props"
-                @click="selectEmployee(props.row)"
                 class="employee-row"
                 :class="{ selected: isEmployeeSelected(props.row) }"
+                @click="selectEmployee(props.row)"
               >
-                <q-td key="name4" :props="props">
-                  {{ props.row.name4 }}
-                </q-td>
-                <q-td key="Designation" :props="props">
-                  {{ props.row.Designation }}
-                </q-td>
+                <q-td key="name4" :props="props">{{ props.row.name4 }}</q-td>
+                <q-td key="Designation" :props="props">{{ props.row.Designation }}</q-td>
               </q-tr>
             </template>
           </q-table>
         </q-card-section>
-        <q-card-actions align="right">
+
+        <q-card-actions align="right" class="q-pa-md">
           <q-btn flat label="Back" color="grey-7" @click="goBackToOfficeModal" />
           <q-btn
             flat
@@ -166,6 +210,7 @@
             @click="openRoleModal"
             :disabled="!selectedEmployee"
             :loading="loading"
+            @click="openRoleModal"
           >
             <q-tooltip v-if="!selectedEmployee">Please select an employee to continue</q-tooltip>
           </q-btn>
@@ -173,12 +218,20 @@
       </q-card>
     </q-dialog>
 
-    <!-- Role Selection Modal -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- STEP 3 — Role Selection Modal                             -->
+    <!-- ══════════════════════════════════════════════════════════ -->
     <q-dialog v-model="showRoleModal" persistent transition-show="scale" transition-hide="scale">
-      <q-card style="width: 100%; max-width: 50vw">
-        <q-card-section>
-          <div class="text-h6">Assign Role</div>
-          <div class="text-caption text-grey-7">Step 3 of 3</div>
+      <q-card style="width: 100%; max-width: 540px">
+        <q-card-section class="row items-center q-pb-none">
+          <div>
+            <div class="text-h6">{{ isEditMode ? 'Edit Role' : 'Assign Role' }}</div>
+            <div class="text-caption text-grey-7">
+              {{ isEditMode ? 'Update user role' : 'Step 3 of 3' }}
+            </div>
+          </div>
+          <q-space />
+          <q-btn icon="close" flat round dense @click="cancelFlow" />
         </q-card-section>
         <q-card-section>
           <!-- <p class="text-grey-8 q-mb-md">Select the appropriate role for this user.</p> -->
@@ -198,28 +251,54 @@
         <q-card-section>
           <p class="text-grey-8 q-mb-md">Select the appropriate role for this user.</p>
 
+
           <q-select
             v-model="selectedRole"
             :options="roles"
             label="Role *"
             option-label="label"
+            outlined
             :rules="[(val) => !!val || 'Role is required']"
-            :loading="loading"
           >
-            <template v-slot: prepend>
+            <template v-slot:prepend>
               <q-icon name="security" />
             </template>
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.description }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
           </q-select>
+
+          <!-- Role description preview -->
+          <q-banner v-if="selectedRole" class="bg-blue-1 q-mt-sm" rounded>
+            <template v-slot:avatar>
+              <q-icon name="info" color="primary" />
+            </template>
+            {{ selectedRole.description }}
+          </q-banner>
         </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Back" color="grey-7" @click="goBackToEmployeeModal" />
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn
+            v-if="!isEditMode"
+            flat
+            label="Back"
+            color="grey-7"
+            @click="goBackToEmployeeModal"
+          />
+          <q-btn flat label="Cancel" color="grey-7" @click="cancelFlow" />
           <q-btn
             flat
             label="Save"
             class="text-blue"
             @click="saveUser"
             :disabled="!selectedRole"
-            :loading="saving"
+            :loading="store.saving"
+            @click="proceedToConfirmation"
           >
             <q-tooltip v-if="!selectedRole || !username">
               {{
@@ -473,16 +552,31 @@
       </q-card>
     </q-dialog>
 
-    <!-- Delete Confirmation Dialog -->
-    <q-dialog v-model="showDeleteDialog">
-      <q-card>
-        <q-card-section>
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- Delete Confirmation Dialog                                -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <q-dialog v-model="showDeleteDialog" persistent transition-show="scale" transition-hide="scale">
+      <q-card style="width: 100%; max-width: 400px">
+        <q-card-section class="row items-center">
+          <q-icon name="warning" color="negative" size="md" class="q-mr-sm" />
           <div class="text-h6">Confirm Delete</div>
         </q-card-section>
-        <q-card-section> Are you sure you want to delete this user? </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="primary" v-close-popup />
-          <q-btn flat label="Delete" color="negative" @click="deleteUser" />
+
+        <q-card-section>
+          Are you sure you want to delete
+          <strong>{{ selectedUser?.name }}</strong
+          >? This action cannot be undone.
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+          <q-btn
+            unelevated
+            label="Delete"
+            color="negative"
+            :loading="store.loading"
+            @click="deleteUser"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -494,10 +588,12 @@ import { ref, onMounted, watch } from 'vue'
 import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
 
 export default {
-  name: 'UserPage',
+  name: 'UserManagementPage',
 
   setup() {
     const store = useUserManageStore()
+
+    // ── Modal visibility flags ────────────────
     const showOfficeModal = ref(false)
     const showEmployeeModal = ref(false)
     const showRoleModal = ref(false)
@@ -505,6 +601,10 @@ export default {
     const showViewModal = ref(false)
     const showEditModal = ref(false)
     const showDeleteDialog = ref(false)
+
+    // ── Local state ───────────────────────────
+    const loading = ref(false)
+    const isEditMode = ref(false)
     const selectedUser = ref(null)
     const showResetPassword = ref(false) // ✅ this is the dialog toggle
 
@@ -592,52 +692,47 @@ export default {
 
     // Selection helper functions for Office
     const selectOffice = (row) => {
-      console.log('Selected office:', row)
       selectedOffice.value = { ...row }
     }
 
     const isOfficeSelected = (row) => {
-      if (!selectedOffice.value || !row) return false
-      return selectedOffice.value.id === row.id
+      return !!selectedOffice.value && selectedOffice.value.id === row?.id
     }
 
-    // Selection helper functions for Employee - using ControlNo as unique identifier
     const selectEmployee = (row) => {
       selectedEmployee.value = { ...row }
     }
 
     const isEmployeeSelected = (row) => {
-      if (!selectedEmployee.value || !row) return false
-      return selectedEmployee.value.ControlNo === row.ControlNo
+      return !!selectedEmployee.value && selectedEmployee.value.ControlNo === row?.ControlNo
     }
 
-    // const filterOffices = () => {
-    //   const offices = store.offices || []
-    //   const searchTerm = (officeSearch.value ?? '').toLowerCase().trim()
-    //   filteredOffices.value = offices.filter((office) =>
-    //     (office.Office ?? '').toLowerCase().includes(searchTerm),
-    //   )
-    // }
+    // ── Filter functions ───────────────────────
 
     const filterOffices = () => {
-      const offices = store.offices || []
-      const searchTerm = (officeSearch.value ?? '').toLowerCase().trim()
-
-      filteredOffices.value = offices.filter((office) =>
-        (office.name ?? '').toLowerCase().includes(searchTerm),
+      const term = (officeSearch.value ?? '').toLowerCase().trim()
+      filteredOffices.value = (store.offices ?? []).filter((o) =>
+        (o.name ?? '').toLowerCase().includes(term),
       )
     }
 
     const filterEmployees = () => {
-      const employees = store.employees || []
-      if (!employees.length) return
-
-      const searchTerm = (search.value ?? '').toLowerCase().trim()
-      filteredEmployees.value = employees.filter(
+      const term = (search.value ?? '').toLowerCase().trim()
+      filteredEmployees.value = (store.employees ?? []).filter(
         (emp) =>
-          emp.name4.toLowerCase().includes(searchTerm) ||
-          emp.Designation.toLowerCase().includes(searchTerm),
+          (emp.name4 ?? '').toLowerCase().includes(term) ||
+          (emp.Designation ?? '').toLowerCase().includes(term),
       )
+    }
+
+    // ── Flow: Create ──────────────────────────
+
+    const openCreateFlow = () => {
+      isEditMode.value = false
+      selectedUser.value = null
+      resetSelections()
+      filteredOffices.value = store.offices ?? []
+      showOfficeModal.value = true
     }
 
     const openEmployeeModal = async () => {
@@ -708,13 +803,13 @@ export default {
           control_no: selectedEmployee.value.ControlNo,
         }
 
-        const success = await store.createUser(userData)
-        if (success) {
-          showConfirmation.value = false
-          resetForm()
-        }
-      } finally {
-        saving.value = false
+      const success = isEditMode.value
+        ? await store.updateUser(selectedUser.value.id, userData)
+        : await store.createUser(userData)
+
+      if (success) {
+        showConfirmation.value = false
+        resetFlow()
       }
     }
 
@@ -745,13 +840,24 @@ export default {
       username.value = ''
       search.value = ''
       officeSearch.value = ''
-      filteredOffices.value = store.offices || []
-      filteredEmployees.value = store.employees || []
+      filteredOffices.value = store.offices ?? []
+      showOfficeModal.value = true
+    }
+
+    const goBackToEmployeeModal = () => {
+      showRoleModal.value = false
+      showEmployeeModal.value = true
+    }
+
+    const cancelFlow = () => {
       showOfficeModal.value = false
       showEmployeeModal.value = false
       showRoleModal.value = false
       showConfirmation.value = false
+      resetSelections()
     }
+
+    // ── View / Delete ─────────────────────────
 
     // const viewUser = (user) => {
     //   selectedUser.value = user
@@ -828,18 +934,16 @@ export default {
       await store.fetchOffices()
     })
 
-    watch(showOfficeModal, (newValue) => {
-      if (newValue) {
+    watch(showOfficeModal, (val) => {
+      if (val) {
         officeSearch.value = ''
-        selectedOffice.value = null
         filterOffices()
       }
     })
 
-    watch(showEmployeeModal, (newValue) => {
-      if (newValue) {
+    watch(showEmployeeModal, (val) => {
+      if (val) {
         search.value = ''
-        selectedEmployee.value = null
         filterEmployees()
       }
     })
@@ -859,26 +963,29 @@ export default {
 
     return {
       store,
+      // flags
       showOfficeModal,
       showEmployeeModal,
       showRoleModal,
       showConfirmation,
       showViewModal,
       showDeleteDialog,
+      isEditMode,
+      // state
+      loading,
       selectedUser,
       selectedOffice,
       selectedEmployee,
       selectedRole,
       selectedPermissions,
-      loading,
-      saving,
       search,
       officeSearch,
       filteredOffices,
       filteredEmployees,
+      // static data
       columns,
-      employeeColumns,
       officeColumns,
+      employeeColumns,
       roles,
       permissions,
       viewUserDetails,
@@ -889,10 +996,15 @@ export default {
       filterOffices,
       filterEmployees,
       openEmployeeModal,
+      openRoleModal,
+      proceedToConfirmation,
       goBackToOfficeModal,
       goBackToEmployeeModal,
-      openRoleModal,
-      saveUser,
+      cancelFlow,
+      editUser,
+      viewUser,
+      confirmDelete,
+      deleteUser,
       confirmSave,
       selectOffice,
       isOfficeSelected,
@@ -911,39 +1023,37 @@ export default {
 </script>
 
 <style scoped>
-/* Office styles */
-.office-row {
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.office-row:hover:not(.selected) {
-  background-color: #e5e5e6;
-}
-
-.office-row.selected {
-  background-color: #ce2f2f !important;
-}
-
-.office-row.selected td {
-  color: white !important;
-}
-
-/* Employee styles */
+/* ── Shared row styles ─────────────────────── */
+.office-row,
 .employee-row {
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
+.office-row:hover:not(.selected),
 .employee-row:hover:not(.selected) {
-  background-color: #e5e5e6;
+  background-color: #f0f0f0;
 }
 
+.office-row.selected,
 .employee-row.selected {
   background-color: #ce2f2f !important;
 }
 
+.office-row.selected td,
 .employee-row.selected td {
   color: white !important;
+}
+
+/* ── Confirmation detail rows ──────────────── */
+.confirm-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.confirm-row:last-child {
+  border-bottom: none;
 }
 </style>

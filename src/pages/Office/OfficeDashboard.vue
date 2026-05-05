@@ -14,8 +14,56 @@
     <!-- Centered Cards Row -->
     <div class="flex justify-center">
       <div class="row q-col-gutter-md q-mb-lg" style="max-width: 1200px; width: 100%">
+        <!-- OPCR Rating Card -->
+        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
+          <q-card
+            class="bg-white shadow-3 full-height clickable-card"
+            @click="$router.push('/office/ipcr')"
+          >
+            <q-card-section class="q-pa-md">
+              <!-- Header -->
+              <div class="row items-center q-mb-md">
+                <q-icon name="assignment_ind" color="green-9" size="md" class="q-mr-sm" />
+                <div>
+                  <div class="text-subtitle2 text-grey-7">OPCR Rating</div>
+                  <div class="text-h6 text-weight-bold text-grey-9">Very Satisfactory</div>
+                </div>
+              </div>
+
+              <!-- Divider -->
+              <q-separator class="q-my-sm" />
+
+              <!-- Ratings -->
+              <div class="column q-gutter-sm">
+                <div class="row justify-between items-center">
+                  <span class="text-caption">Strategic Function</span>
+                  <strong class="text-positive">4.5</strong>
+                </div>
+
+                <div class="row justify-between items-center">
+                  <span class="text-caption">Core Function</span>
+                  <strong class="text-positive">4.3</strong>
+                </div>
+
+                <div class="row justify-between items-center">
+                  <span class="text-caption">Support Function</span>
+                  <strong class="text-positive">4.7</strong>
+                </div>
+
+                <!-- Divider before final -->
+                <q-separator />
+
+                <div class="row justify-between items-center">
+                  <span class="text-caption text-weight-bold">Final Rating</span>
+                  <strong class="text-positive text-weight-bold">4.5</strong>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+
         <!-- Employee Card -->
-        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/employee')"
@@ -41,7 +89,7 @@
         </div>
 
         <!-- IPCR Card -->
-        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/ipcr')"
@@ -77,7 +125,7 @@
         </div>
 
         <!-- Unit Work Plan Card -->
-        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-4">
+        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/unit-work-plan')"
@@ -91,6 +139,16 @@
                 </div>
               </div>
               <div>
+                <div class="row justify-between q-mb-xs">
+                  <span class="text-caption">Sub-Office: <strong>1/1</strong></span>
+                  <span class="text-caption text-positive">100%</span>
+                </div>
+                <q-linear-progress size="xs" :value="1 / 1" color="green-9" class="q-mb-sm" />
+                <div class="row justify-between q-mb-xs">
+                  <span class="text-caption">Group: <strong>3/5</strong></span>
+                  <span class="text-caption text-positive">60%</span>
+                </div>
+                <q-linear-progress size="xs" :value="3 / 5" color="green-9" class="q-mb-sm" />
                 <div class="row justify-between q-mb-xs">
                   <span class="text-caption">Divisions: <strong>8/12</strong></span>
                   <span class="text-caption text-positive">66%</span>
@@ -118,7 +176,7 @@
     <!-- No IPCR Employee List Section -->
     <q-card class="bg-white shadow-3 q-mb-lg">
       <q-card-section class="q-pa-md">
-        <div class="text-subtitle1">Employees with No IPCR</div>
+        <div class="text-subtitle1">Employees with No Target</div>
         <q-table
           :rows="noIpcrEmployees"
           :columns="noIpcrColumns"
@@ -177,50 +235,42 @@ const noIpcrEmployees = ref([
     id: 1,
     name: 'Juan Dela Cruz',
     position: 'Administrative Officer IV',
-    rating: 'N/A',
   },
   {
     id: 2,
     name: 'Maria Santos',
     position: 'Information Technology Officer I',
-    rating: 'N/A',
   },
   {
     id: 3,
     name: 'Robert Garcia',
     position: 'Project Development Officer II',
-    rating: 'N/A',
   },
   {
     id: 4,
     name: 'Sophia Reyes',
     position: 'Planning Officer III',
-    rating: 'N/A',
   },
   {
     id: 5,
     name: 'Michael Tan',
     position: 'Budget Officer II',
-    rating: 'N/A',
   },
   {
     id: 6,
     name: 'Ana Gonzales',
     position: 'Human Resource Management Officer I',
-    rating: 'N/A',
   },
   {
     id: 7,
     name: 'Paolo Mendoza',
     position: 'Administrative Assistant III',
-    rating: 'N/A',
   },
 ])
 
 const noIpcrColumns = [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
   { name: 'position', label: 'Position', field: 'position', align: 'left', sortable: true },
-  { name: 'rating', label: 'Adjectival Rating', field: 'rating', align: 'center', sortable: true },
 ]
 
 // Activity Logs Data

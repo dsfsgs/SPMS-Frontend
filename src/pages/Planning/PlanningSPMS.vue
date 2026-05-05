@@ -19,6 +19,7 @@
                     label="Semester"
                     outlined
                     dense
+                    color="red-3"
                     emit-value
                     map-options
                     class="col"
@@ -37,6 +38,7 @@
                     dense
                     emit-value
                     map-options
+                    color="red-3"
                     class="col"
                     @update:model-value="onYearChange"
                   >
@@ -60,7 +62,7 @@
                     hide-selected
                     fill-input
                     input-debounce="300"
-                    color="red-10"
+                    color="red-3"
                     class="full-width office-select"
                     :loading="userManageStore.loading"
                     @filter="filterOffices"
