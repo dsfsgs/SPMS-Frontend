@@ -54,18 +54,6 @@
 
       <template v-slot:body-cell-action="props">
         <q-td :props="props" class="text-center">
-          <q-btn flat round color="blue" icon="visibility" @click="viewAccount(props.row)">
-            <q-tooltip>View Account</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            round
-            color="orange"
-            icon="lock_reset"
-            @click="confirmResetPassword(props.row)"
-          >
-            <q-tooltip>Reset Password</q-tooltip>
-          </q-btn>
           <!-- Toggle active/inactive -->
           <q-btn
             flat
@@ -76,6 +64,16 @@
           >
             <q-tooltip>{{ props.row.active === '1' ? 'Deactivate' : 'Activate' }}</q-tooltip>
           </q-btn>
+          <q-btn
+            flat
+            round
+            color="orange"
+            icon="lock_reset"
+            @click="confirmResetPassword(props.row)"
+          >
+            <q-tooltip>Reset Password</q-tooltip>
+          </q-btn>
+
           <q-btn flat round color="red" icon="delete" @click="confirmDeleteUser(props.row)">
             <q-tooltip>Delete Account</q-tooltip>
           </q-btn>
@@ -84,9 +82,9 @@
     </q-table>
 
     <!-- ── Create User Dialog ──────────────────────────────────────────── -->
-    <q-dialog v-model="showCreateUserDialog" persistent full-width>
-      <q-card style="max-width: 1000px; width: 100%; margin: auto">
-        <q-card-section class="bg-green text-white">
+    <q-dialog v-model="showCreateUserDialog" persistent>
+      <q-card style="max-width: 1200px; width: 100%; margin: auto">
+        <q-card-section class="bg-green-9 text-white">
           <div class="row items-center justify-between">
             <div class="row items-center q-gutter-sm">
               <q-icon name="person_add" size="sm" />
@@ -181,76 +179,6 @@
       </q-card>
     </q-dialog>
 
-    <!-- ── View Account Dialog ──────────────────────────────────────────── -->
-    <q-dialog v-model="showViewDialog" persistent>
-      <q-card style="min-width: 520px">
-        <q-card-section class="bg-blue text-white">
-          <div class="row items-center q-gutter-sm">
-            <q-icon name="account_circle" size="sm" />
-            <div>
-              <div class="text-h6">Account Details</div>
-              <div class="text-caption">Supervisory user information</div>
-            </div>
-          </div>
-        </q-card-section>
-
-        <q-card-section v-if="store.loadingView" class="text-center q-py-lg">
-          <q-spinner color="blue" size="40px" />
-          <div class="text-caption text-grey-7 q-mt-sm">Loading account details...</div>
-        </q-card-section>
-
-        <q-card-section v-else-if="store.viewedAccount" class="q-pt-md">
-          <div class="row q-col-gutter-sm">
-            <div class="col-12">
-              <div class="text-caption text-grey-7">Full Name</div>
-              <div class="text-body1 text-weight-medium">{{ store.viewedAccount.name }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Username</div>
-              <div class="text-body2">{{ store.viewedAccount.username }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Control No.</div>
-              <div class="text-body2">{{ store.viewedAccount.control_no }}</div>
-            </div>
-            <div class="col-12">
-              <div class="text-caption text-grey-7">Designation</div>
-              <div class="text-body2">{{ store.viewedAccount.designation }}</div>
-            </div>
-            <div class="col-12">
-              <div class="text-caption text-grey-7">Office</div>
-              <div class="text-body2">{{ store.viewedAccount.office?.name || '—' }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Role</div>
-              <div class="text-body2">{{ store.viewedAccount.role?.name || '—' }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Status</div>
-              <q-badge
-                :color="store.viewedAccount.active === '1' ? 'green' : 'grey'"
-                :label="store.viewedAccount.active === '1' ? 'Active' : 'Inactive'"
-              />
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Email</div>
-              <div class="text-body2">{{ store.viewedAccount.email || '—' }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Created At</div>
-              <div class="text-body2">{{ formatDate(store.viewedAccount.created_at) }}</div>
-            </div>
-          </div>
-        </q-card-section>
-
-        <q-separator />
-
-        <q-card-actions align="right" class="q-pa-md">
-          <q-btn unelevated label="Close" color="blue" v-close-popup />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-
     <!-- ── Reset Password Dialog ──────────────────────────────────────────── -->
     <q-dialog v-model="showResetPassword" persistent>
       <q-card style="min-width: 460px">
@@ -266,7 +194,6 @@
 
         <q-card-section class="q-pt-md">
           <div class="row items-center">
-            <q-icon name="warning" color="orange" size="md" class="q-mr-sm" />
             <span class="text-body1">
               Are you sure you want to reset the password for
               <strong>{{ selectedEmployee?.name }}</strong
@@ -369,7 +296,6 @@
 
         <q-card-section class="q-pt-md">
           <div class="row items-center">
-            <q-icon name="warning" color="red" size="md" class="q-mr-sm" />
             <span class="text-body1">
               Are you sure you want to permanently delete the account for
               <strong>{{ selectedEmployee?.name }}</strong

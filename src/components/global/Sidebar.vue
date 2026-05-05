@@ -142,7 +142,15 @@ export default {
               { label: 'MFO', icon: 'assignment', route: '/office/library' },
             ],
           },
-          { label: 'Account', icon: 'person', route: '/office/profile' },
+
+          {
+            label: 'Account',
+            icon: 'person',
+            children: [
+              { label: 'User', icon: 'group', route: '/office/account/user' },
+              { label: 'Profile', icon: 'person_outline', route: '/office/profile' },
+            ],
+          },
         ],
         // Planning Admin
         2: [
