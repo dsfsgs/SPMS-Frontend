@@ -12,8 +12,8 @@
           <span v-if="employeeTabs.length > 0" class="q-ml-md">
             Selected: <strong>{{ getSelectedEmployeeIds().length }}</strong>
           </span>
-          <span v-if="cascadeDomino.headEmployee" class="q-ml-md text-positive">
-            Head: <strong>{{ cascadeDomino.headEmployee.name }}</strong>
+          <span v-if="cascadeDomino?.headEmployee" class="q-ml-md text-positive">
+            Head: <strong>{{ cascadeDomino?.headEmployee?.name || 'Loading...' }}</strong>
           </span>
         </p>
       </div>
@@ -127,7 +127,7 @@
               :label="`Employee ${index + 1}${employee.name ? ':  ' + employee.name : ''}`"
               @click="switchToEmployee(employee.id)"
             >
-              <q-badge v-if="cascadeDomino.isHead(employee.id)" color="green" floating>
+              <q-badge v-if="cascadeDomino?.isHead?.(employee.id)" color="green" floating>
                 HEAD
               </q-badge>
             </q-tab>
@@ -198,10 +198,10 @@
               icon="delete"
               color="negative"
               @click="removeEmployeeTab(activeEmployeeTab)"
-              :disable="employeeTabs.length <= 1 || cascadeDomino.isHead(activeEmployeeTab)"
+              :disable="employeeTabs.length <= 1 || cascadeDomino?.isHead?.(activeEmployeeTab)"
               aria-label="Remove Employee"
             >
-              <q-tooltip v-if="cascadeDomino.isHead(activeEmployeeTab)">
+              <q-tooltip v-if="cascadeDomino?.isHead?.(activeEmployeeTab)">
                 Cannot remove head employee
               </q-tooltip>
               <q-tooltip v-else>Remove this employee</q-tooltip>
@@ -225,7 +225,10 @@
                 map-options
                 clearable
                 @update:model-value="onEmployeeSelected"
-                :disable="cascadeDomino.isHead(currentEmployee.id) && employeeTabs.length > 1"
+                :disable="
+                  (cascadeDomino?.isHead?.(currentEmployee.id) && employeeTabs.length > 1) ||
+                  !cascadeDomino
+                "
               >
                 <template v-slot:prepend><q-icon name="person" size="xs" /></template>
                 <template v-slot:option="scope">
@@ -1342,8 +1345,8 @@
         color="green-7"
         icon="save"
         @click="onSubmit"
-        :disable="!isFormValid || uwpStore.loading || uwpStore.saving"
-        :loading="uwpStore.saving"
+        :disable="!isFormValid || uwpStore?.loading || uwpStore?.saving"
+        :loading="uwpStore?.saving || false"
       />
     </div>
   </q-page>
@@ -1368,23 +1371,30 @@ export default {
 
   setup() {
     // ===========================================================================
-    // 1. PLUGIN & STORE INSTANCES
+    // 1. PLUGIN INSTANCES (always safe)
     // ===========================================================================
     const $q = useQuasar()
     const router = useRouter()
-    const officeLibraryStore = useMfoStore()
-    const officeLibraryIndicatorStore = useLibraryStore()
-    const uwpStore = useUnitWorkPlanStore()
-    const competencyStore = useCompetencyStore()
-    const cascadeStore = useCascadeStore()
-    const quantityRestriction = useQuantityRestriction()
-    const mfoHeadStore = useMFOHeadStore()
 
     // ===========================================================================
-    // 2. CONSTANTS
+    // 2. STORE REFS (initialized in onMounted)
     // ===========================================================================
+    const officeLibraryStore = ref(null)
+    const officeLibraryIndicatorStore = ref(null)
+    const uwpStore = ref(null)
+    const competencyStore = ref(null)
+    const cascadeStore = ref(null)
+    const mfoHeadStore = ref(null)
+    const quantityRestriction = ref(null)
 
-    /** Job titles that identify supervisory/head positions */
+    // ===========================================================================
+    // 3. COMPOSABLE (initialized in onMounted)
+    // ===========================================================================
+    const cascadeDomino = ref(null)
+
+    // ===========================================================================
+    // 4. CONSTANTS
+    // ===========================================================================
     const HEAD_POSITION_TITLES = [
       'section head',
       'division head',
@@ -1400,13 +1410,9 @@ export default {
       'sub-office-head',
     ]
 
-    /** Maximum employee tabs visible before overflow menu */
     const MAX_VISIBLE_TABS = 3
-
-    /** Maximum retry attempts for auto head-employee selection */
     const MAX_AUTO_SELECTION_ATTEMPTS = 5
 
-    /** Static competency definitions per type */
     const COMPETENCY_DEFINITIONS = {
       core: [
         { code: 'DSE', description: 'Delivering Service Excellence' },
@@ -1432,7 +1438,6 @@ export default {
       ],
     }
 
-    /** Level label → numeric value map */
     const LEVEL_MAP = {
       Basic: { label: 'Basic', value: '1' },
       Intermediate: { label: 'Intermediate', value: '2' },
@@ -1440,7 +1445,6 @@ export default {
       Superior: { label: 'Superior', value: '4' },
     }
 
-    /** Table column definitions for Standard Outcome */
     const STANDARD_OUTCOME_COLUMNS = [
       { name: 'rating', label: 'Rating', field: 'rating', align: 'center', width: '80px' },
       { name: 'quantity', label: 'Quantity', field: 'quantity', align: 'center', width: '200px' },
@@ -1460,7 +1464,6 @@ export default {
       },
     ]
 
-    /** Quantity indicator type options */
     const QUANTITY_INDICATOR_OPTIONS = [
       { label: 'Quantity (A. Custom Target)', value: 'numeric' },
       { label: 'Quantity (B. Can exceed 100%)', value: 'B' },
@@ -1468,9 +1471,8 @@ export default {
     ]
 
     // ===========================================================================
-    // 3. REACTIVE STATE
+    // 5. REACTIVE STATE
     // ===========================================================================
-
     const uwpData = ref({
       type: null,
       selectedNodeId: null,
@@ -1503,43 +1505,26 @@ export default {
       year: new Date().getFullYear(),
     })
 
-    // Employee tab management
     const employeeTabs = ref([])
     const activeEmployeeTab = ref(null)
     const maxVisibleTabs = ref(MAX_VISIBLE_TABS)
     const isLoadingFilteredEmployees = ref(false)
-
-    // Validation flags
     const formInteracted = ref(false)
     const shouldValidate = ref(false)
-
-    // Auto-selection state
     const autoSelectionPerformed = ref(false)
     const autoSelectionAttempts = ref(0)
-
-    // Filtered option caches
     const filteredMfoOptions = ref({})
     const filteredOutputOptions = ref({})
     const filteredVerbs = ref([])
     const filteredEmployees = ref([])
-
-    // Head MFO filter — names of MFOs the Office Head has set in their plan.
-    // Non-Office-Head employees may only pick from this list (per category).
-    // Populated by fetchHeadMfos() after the head employee tab is resolved.
     const headMfoNames = ref(new Set())
     const isFetchingHeadMfos = ref(false)
-
-    // Quantity modal state
     const showQuantityModal = ref(false)
     const quantityValue = ref(null)
     const currentStandardIndex = ref(0)
     const currentQuantityRestriction = ref(null)
-
-    // Cascade modal state (hidden but logic retained)
     const showCascadeModal = ref(false)
     const cascadeData = ref(null)
-
-    // Competency modal state
     const showCompetencyModal = ref(false)
     const competencyType = ref('core')
     const currentStandardIndexForCompetency = ref(0)
@@ -1550,79 +1535,19 @@ export default {
     const competencySelections = ref([{ selectedCompetency: null, selectedLevel: null }])
     const filteredCompetencyOptionsByRow = ref([])
 
-    // ===========================================================================
-    // 4. COMPOSABLE INITIALIZATION
-    // ===========================================================================
-
-    const cascadeDomino = useCascadeDomino({
-      uwpStore,
-      officeLibraryIndicatorStore,
-      quantityRestriction,
-      uwpData,
-      employeeTabs,
-      activeEmployeeTab,
-      cascadeData,
-      autoApply: true,
-      debug: process.env.NODE_ENV === 'development',
-    })
+    // Loading state while stores initialize
+    const storesInitialized = ref(false)
 
     // ===========================================================================
-    // 5. FACTORY FUNCTIONS
+    // 6. HELPER FUNCTIONS (these don't need stores directly)
     // ===========================================================================
-
-    const createEmptyStandardRow = () => ({
-      rating: '',
-      quantity: '',
-      effectiveness: '',
-      timeliness: '',
-      timelinessRange: '',
-      timelinessText: '',
-      timelinessDeadline: '',
-      timelinessDate: '',
-    })
-
-    const createDefaultStandardRows = () =>
-      ['5', '4', '3', '2', '1'].map((rating) => ({ ...createEmptyStandardRow(), rating }))
-
-    const createDefaultPerformanceStandard = () => ({
-      id: uuidv4(),
-      expanded: true,
-      outputName: '',
-      indicatorName: [],
-      successIndicator: '',
-      requiredOutput: '',
-      modeOfVerification: '',
-      rows: { category: null, mfo: null, output: null, supervisory_control_no: null },
-      quantityIndicatorType: 'numeric',
-      timelinessIndicatorType: 'beforeDeadline',
-      timelinessInputs: { range: false, date: false, description: true },
-      activeTimelinessInputs: { range: false, date: false, description: true },
-      competencies: { core: [], technical: [], leadership: [] },
-      standardOutcomeRows: createDefaultStandardRows(),
-      quantityRestriction: null,
-      targetOutputValue: null,
-      // Pool metadata — set by checkAndShowCascadeModal for claim tracking
-      _signatoryControlNo: null,
-      _mfoValue: null,
-      _outputName: null,
-    })
-
-    const createDefaultEmployeeData = () => ({
-      id: uuidv4(),
-      name: '',
-      employeeId: null,
-      employeeData: null,
-      sg: null,
-      level: null,
-      rank: '',
-      position: '',
-      supervisorySignatory: null,
-      performanceStandards: [createDefaultPerformanceStandard()],
-    })
-
-    // ===========================================================================
-    // 6. HELPER / UTILITY FUNCTIONS
-    // ===========================================================================
+    const dominoIsHead = (id) => cascadeDomino.value?.isHead(id) ?? false
+    const dominoHeadEmployee = computed(() => cascadeDomino.value?.headEmployee?.value ?? null)
+    const dominoApplyToEmployee = (id, force) => cascadeDomino.value?.applyToEmployee(id, force)
+    const dominoApplyToAllStaff = () => cascadeDomino.value?.applyToAllStaff()
+    const dominoClearRestrictions = (id) => cascadeDomino.value?.clearRestrictions(id)
+    const dominoGetHeadTarget = (mfoId, outputId) =>
+      cascadeDomino.value?.getHeadTarget(mfoId, outputId) ?? null
 
     const isHeadPosition = (employee) => {
       if (!employee) return false
@@ -1656,7 +1581,7 @@ export default {
           nameFromObject.trim().toUpperCase().startsWith('C')
         )
       }
-      const cat = officeLibraryStore.categories.find((c) => c.id === category)
+      const cat = officeLibraryStore.value?.categories?.find((c) => c.id === category)
       if (!cat) return false
       return (
         cat.name?.toLowerCase().includes('support') ||
@@ -1667,164 +1592,62 @@ export default {
     }
 
     // ===========================================================================
-    // 7. OFFICE HEAD DETECTION — per active employee tab
+    // 7. FACTORY FUNCTIONS
     // ===========================================================================
-
-    /**
-     * True ONLY when the currently active employee tab has job_title === 'office head'
-     * (exact, case-insensitive match).
-     *
-     * Section heads, division heads, unit heads, etc. are intentionally excluded —
-     * only the Office Head sits at the cascade root and targets at the MFO level
-     * without needing an output selection.
-     */
-    const isCurrentEmployeeOfficeHead = computed(() => {
-      const tab = employeeTabs.value.find((e) => e.id === activeEmployeeTab.value)
-      if (!tab) return false
-
-      const jobTitle = (
-        tab.employeeData?.job_title ||
-        tab.employeeData?.jobTitle ||
-        tab.job_title ||
-        tab.jobTitle ||
-        ''
-      )
-        .toLowerCase()
-        .trim()
-
-      return jobTitle === 'office head'
+    const createEmptyStandardRow = () => ({
+      rating: '',
+      quantity: '',
+      effectiveness: '',
+      timeliness: '',
+      timelinessRange: '',
+      timelinessText: '',
+      timelinessDeadline: '',
+      timelinessDate: '',
     })
 
-    /**
-     * Whether the Output select should be rendered for a given standard.
-     *
-     * Rules (mirrors Edit modal's shouldShowOutput):
-     *   - Office Head + non-support category (A or B) → HIDDEN
-     *     Office Heads target at the MFO level; output is not required.
-     *   - Office Head + support category (C)          → SHOWN
-     *     Support outputs are still relevant even for heads.
-     *   - All other employees                         → ALWAYS SHOWN
-     */
-    const shouldShowOutput = (standard) => {
-      if (!isCurrentEmployeeOfficeHead.value) return true
-      return isSupportCategory(standard.rows.category)
-    }
+    const createDefaultStandardRows = () =>
+      ['5', '4', '3', '2', '1'].map((rating) => ({ ...createEmptyStandardRow(), rating }))
 
-    // ===========================================================================
-    // 8. HEAD EMPLOYEE COMPUTED
-    // ===========================================================================
+    const createDefaultPerformanceStandard = () => ({
+      id: uuidv4(),
+      expanded: true,
+      outputName: '',
+      indicatorName: [],
+      successIndicator: '',
+      requiredOutput: '',
+      modeOfVerification: '',
+      rows: { category: null, mfo: null, output: null, supervisory_control_no: null },
+      quantityIndicatorType: 'numeric',
+      timelinessIndicatorType: 'beforeDeadline',
+      timelinessInputs: { range: false, date: false, description: true },
+      activeTimelinessInputs: { range: false, date: false, description: true },
+      competencies: { core: [], technical: [], leadership: [] },
+      standardOutcomeRows: createDefaultStandardRows(),
+      quantityRestriction: null,
+      targetOutputValue: null,
+      _signatoryControlNo: null,
+      _mfoValue: null,
+      _outputName: null,
+    })
 
-    /**
-     * True when the current employee tab is the root/head employee
-     * (i.e. cascadeDomino marks them as head).
-     */
-    const isCurrentEmployeeHead = computed(() => {
-      return cascadeDomino.isHead(activeEmployeeTab.value)
+    const createDefaultEmployeeData = () => ({
+      id: uuidv4(),
+      name: '',
+      employeeId: null,
+      employeeData: null,
+      sg: null,
+      level: null,
+      rank: '',
+      position: '',
+      supervisorySignatory: null,
+      performanceStandards: [createDefaultPerformanceStandard()],
     })
 
     // ===========================================================================
-    // 9. SUPERVISOR RESOLUTION
+    // 8. COMPUTED PROPERTIES (safe with optional chaining)
     // ===========================================================================
-
-    /**
-     * Resolve the supervisory signatory for an employee from cascade data.
-     *
-     * LOGIC:
-     *   WITH mfoValue + outputName:
-     *     1. Find controlNo in supervisories[].
-     *        - Does that supervisory have matching MFO+output? YES → use them.
-     *        - NO or not found → fall back to Office Head (root).
-     *
-     *   WITH mfoValue only (no output):
-     *     → Use Office Head (root).
-     *
-     *   NO mfoValue:
-     *     → Use the employee's stored supervisorySignatory directly.
-     */
-    const calculateSupervisorySignatory = (
-      employee,
-      cascadeDataSource = null,
-      mfoValue = null,
-      outputName = null,
-    ) => {
-      const source = cascadeDataSource || cascadeStore.cascadeData
-      const normalise = (s) => (s || '').toLowerCase().trim()
-
-      if (!source) {
-        return employee?.supervisorySignatory
-          ? {
-              controlNo: employee.supervisorySignatory.controlNo,
-              name: employee.supervisorySignatory.name,
-              rank: employee.supervisorySignatory.rank,
-              job_title:
-                employee.supervisorySignatory.job_title || employee.supervisorySignatory.jobTitle,
-            }
-          : null
-      }
-
-      const knownControlNo =
-        employee?.supervisorySignatory?.controlNo ||
-        employee?.employeeData?.existing_target_period?.supervisory_control_no ||
-        null
-
-      console.log('[UWP] Resolving signatory for:', employee?.label || employee?.name, {
-        knownControlNo,
-        rootControlNo: source.controlNo,
-        mfoValue,
-        outputName,
-      })
-
-      const fromSup = (sup) => ({
-        controlNo: sup.controlNo,
-        name: sup.name,
-        rank: sup.rank,
-        job_title: sup.job_title,
-      })
-
-      const fromRoot = () => ({
-        controlNo: source.controlNo,
-        name: source.name,
-        rank: source.rank,
-        job_title: source.job_title,
-      })
-
-      if (!mfoValue) return fromRoot()
-
-      const knownSup = knownControlNo
-        ? (source.supervisories || []).find((s) => s.controlNo === knownControlNo)
-        : null
-
-      if (outputName) {
-        if (knownSup) {
-          const supHasMfoOutput = (knownSup.mfos || []).some(
-            (m) =>
-              normalise(m.mfo) === normalise(mfoValue) &&
-              normalise(m.output) === normalise(outputName),
-          )
-          if (supHasMfoOutput) {
-            console.log('[UWP] ✅ Known supervisor has matching MFO+output:', knownSup.name)
-            return fromSup(knownSup)
-          }
-          console.log(
-            '[UWP] Known supervisor does NOT have this MFO+output → falling back to Office Head',
-            { supervisor: knownSup.name, mfoValue, outputName },
-          )
-          return fromRoot()
-        }
-        console.log('[UWP] controlNo not in supervisories[] → using Office Head')
-        return fromRoot()
-      }
-
-      console.log('[UWP] No output selected → using Office Head')
-      return fromRoot()
-    }
-
-    // ===========================================================================
-    // 10. COMPUTED PROPERTIES
-    // ===========================================================================
-
-    const semesterOptions = computed(() => uwpStore.getSemesterOptions)
-    const yearOptions = computed(() => uwpStore.getYearOptions)
+    const semesterOptions = computed(() => uwpStore.value?.getSemesterOptions || [])
+    const yearOptions = computed(() => uwpStore.value?.getYearOptions || [])
 
     const breadcrumbDisplay = computed(() =>
       !uwpData.value.breadcrumb?.length
@@ -1892,29 +1715,31 @@ export default {
       return unique.filter((emp) => !selectedIds.includes(emp.id) || emp.id === currentTabEmpId)
     })
 
-    const categoryOptions = computed(() =>
-      officeLibraryStore.categories.map((cat) => ({
-        id: cat.id,
-        label: cat.name,
-        value: cat.id,
-        name: cat.name,
-      })),
+    const categoryOptions = computed(
+      () =>
+        officeLibraryStore.value?.categories?.map((cat) => ({
+          id: cat.id,
+          label: cat.name,
+          value: cat.id,
+          name: cat.name,
+        })) || [],
     )
 
-    const performanceIndicatorOptions = computed(() =>
-      officeLibraryIndicatorStore.verbs.map((verb) => ({
-        id: verb.id,
-        label: verb.indicator_name || verb.name,
-        value: verb.id,
-        name: verb.indicator_name || verb.name,
-        description: verb.description || '',
-      })),
+    const performanceIndicatorOptions = computed(
+      () =>
+        officeLibraryIndicatorStore.value?.verbs?.map((verb) => ({
+          id: verb.id,
+          label: verb.indicator_name || verb.name,
+          value: verb.id,
+          name: verb.indicator_name || verb.name,
+          description: verb.description || '',
+        })) || [],
     )
 
     const competencyOptions = computed(() => {
       const { sg } = currentEmployee.value || {}
-      if (!sg) return []
-      const competencyRow = competencyStore.getBySG(sg)
+      if (!sg || !competencyStore.value) return []
+      const competencyRow = competencyStore.value.getBySG(sg)
       if (!competencyRow) return []
       return (COMPETENCY_DEFINITIONS[competencyType.value] || [])
         .filter((comp) => {
@@ -1940,6 +1765,7 @@ export default {
     )
 
     const isFormValid = computed(() => {
+      if (!storesInitialized.value) return false
       if (!employeeTabs.value.length) return false
       if (!uwpData.value.targetPeriod?.semester || !uwpData.value.targetPeriod?.year) return false
       return employeeTabs.value.every((emp) => {
@@ -1964,95 +1790,117 @@ export default {
       () => form.value.division !== null || form.value.section !== null || form.value.unit !== null,
     )
 
-    // ===========================================================================
-    // 11. OUTPUT UNIQUENESS
-    // ===========================================================================
-
-    /**
-     * Returns the set of output IDs already used by OTHER performance standards
-     * in the SAME MFO for the current employee tab.
-     */
-    const getUsedOutputIdsForMfo = (currentStandardIndex) => {
-      const standards = currentEmployee.value?.performanceStandards
-      if (!standards) return new Set()
-      const currentStd = standards[currentStandardIndex]
-      if (!currentStd?.rows?.mfo) return new Set()
-
-      const used = new Set()
-      standards.forEach((std, idx) => {
-        if (idx === currentStandardIndex) return
-        if (!std?.rows?.mfo || !std?.rows?.output) return
-        if (std.rows.mfo === currentStd.rows.mfo) {
-          used.add(std.rows.output)
-        }
-      })
-      return used
-    }
-
-    /**
-     * Returns output options filtered to exclude outputs already used in other
-     * performance standards with the same MFO.
-     */
-    const getAvailableOutputOptions = (index) => {
-      const allOptions = getFilteredOutputOptions(index)
-      const usedIds = getUsedOutputIdsForMfo(index)
-      if (!usedIds.size) return allOptions
-
-      const currentStd = currentEmployee.value.performanceStandards[index]
-      return allOptions.filter(
-        (opt) => !usedIds.has(opt.value) || opt.value === currentStd?.rows?.output,
+    const isCurrentEmployeeOfficeHead = computed(() => {
+      const tab = employeeTabs.value.find((e) => e.id === activeEmployeeTab.value)
+      if (!tab) return false
+      const jobTitle = (
+        tab.employeeData?.job_title ||
+        tab.employeeData?.jobTitle ||
+        tab.job_title ||
+        tab.jobTitle ||
+        ''
       )
+        .toLowerCase()
+        .trim()
+      return jobTitle === 'office head'
+    })
+
+    const isCurrentEmployeeHead = computed(() => dominoIsHead(activeEmployeeTab.value))
+
+    const shouldShowOutput = (standard) => {
+      if (!isCurrentEmployeeOfficeHead.value) return true
+      return isSupportCategory(standard.rows.category)
     }
 
-    /**
-     * Returns an appropriate "no option" message for the output dropdown.
-     */
-    const getOutputNoOptionMessage = (index) => {
-      const std = currentEmployee.value.performanceStandards[index]
-      if (!std?.rows?.category) return 'Select a category first'
+    // ===========================================================================
+    // 9. METHODS THAT USE STORES (these will be called after initialization)
+    // ===========================================================================
+    const autoPopulateCoreCompetencies = (standard, sg, level) => {
+      if (!sg || !level || !competencyStore.value) return
+      const row = competencyStore.value.getBySG(sg)
+      if (!row) return
+      standard.competencies.core = COMPETENCY_DEFINITIONS.core
+        .filter((comp) => {
+          const rl = row[comp.code]
+          return rl && rl !== '-'
+        })
+        .map((comp) => ({
+          code: comp.code,
+          description: comp.description,
+          value: LEVEL_MAP[row[comp.code]]?.value || '1',
+          level: row[comp.code],
+        }))
+    }
 
-      const allOptions = getFilteredOutputOptions(index)
-      const usedIds = getUsedOutputIdsForMfo(index)
+    const calculateSupervisorySignatory = (
+      employee,
+      cascadeDataSource = null,
+      mfoValue = null,
+      outputName = null,
+    ) => {
+      const source = cascadeDataSource || cascadeStore.value?.cascadeData
+      const normalise = (s) => (s || '').toLowerCase().trim()
 
-      if (allOptions.length === 0) return 'No outputs found matching your search'
-      if (allOptions.every((opt) => usedIds.has(opt.value))) {
-        return 'All outputs for this MFO are already used in other performance standards'
+      if (!source) {
+        return employee?.supervisorySignatory
+          ? {
+              controlNo: employee.supervisorySignatory.controlNo,
+              name: employee.supervisorySignatory.name,
+              rank: employee.supervisorySignatory.rank,
+              job_title:
+                employee.supervisorySignatory.job_title || employee.supervisorySignatory.jobTitle,
+            }
+          : null
       }
-      return 'No outputs found matching your search'
+
+      const knownControlNo =
+        employee?.supervisorySignatory?.controlNo ||
+        employee?.employeeData?.existing_target_period?.supervisory_control_no ||
+        null
+
+      const fromSup = (sup) => ({
+        controlNo: sup.controlNo,
+        name: sup.name,
+        rank: sup.rank,
+        job_title: sup.job_title,
+      })
+
+      const fromRoot = () => ({
+        controlNo: source.controlNo,
+        name: source.name,
+        rank: source.rank,
+        job_title: source.job_title,
+      })
+
+      if (!mfoValue) return fromRoot()
+
+      const knownSup = knownControlNo
+        ? (source.supervisories || []).find((s) => s.controlNo === knownControlNo)
+        : null
+
+      if (outputName) {
+        if (knownSup) {
+          const supHasMfoOutput = (knownSup.mfos || []).some(
+            (m) =>
+              normalise(m.mfo) === normalise(mfoValue) &&
+              normalise(m.output) === normalise(outputName),
+          )
+          if (supHasMfoOutput) return fromSup(knownSup)
+          return fromRoot()
+        }
+        return fromRoot()
+      }
+
+      return fromRoot()
     }
 
-    /**
-     * Returns an appropriate "no option" message for the MFO dropdown.
-     */
-    const getMfoNoOptionMessage = (index) => {
-      const std = currentEmployee.value.performanceStandards[index]
-      if (!std?.rows?.category) return 'Select a category first'
-      return 'No MFOs found matching your search'
-    }
-
-    // ===========================================================================
-    // 11b. HEAD MFO FETCH
-    // ===========================================================================
-
-    /**
-     * Fetches the Office Head's existing performance standards via useMFOHeadStore
-     * and builds headMfoNames — a Set of lowercased MFO name strings.
-     *
-     * Non-Office-Head employees' MFO dropdowns are restricted to this set so they
-     * can only select MFOs that the Office Head has already planned.
-     *
-     * IMPORTANT: The Office Head is often NOT in employeesWithoutTargetPeriod because
-     * they already have a target period. We therefore use a 3-strategy lookup:
-     *   1. A tab if one exists (Office Head is new this period)
-     *   2. uwpData.availableEmployees — full list before the "no target period" filter
-     *   3. uwpData.hierarchy.office — last resort; server scopes by office_id anyway
-     */
     const fetchHeadMfos = async () => {
+      if (!mfoHeadStore.value) return
+
       const semester = uwpData.value.targetPeriod?.semester
       const year = uwpData.value.targetPeriod?.year
       if (!semester || !year) return
 
-      // ── Strategy 1: Office Head already in a tab (new this period) ───────────
       let empData = null
       const headTab = employeeTabs.value.find((tab) => {
         const jt = (
@@ -2066,14 +1914,8 @@ export default {
           .trim()
         return jt === 'office head'
       })
-      if (headTab?.employeeData) {
-        empData = headTab.employeeData
-        console.log('[UWP] fetchHeadMfos: using Office Head from tab:', empData.name)
-      }
+      if (headTab?.employeeData) empData = headTab.employeeData
 
-      // ── Strategy 2: Find Office Head in the full available-employees list ────
-      // availableEmployees contains ALL employees including those who already have
-      // a target period and therefore don't appear in employeesWithoutTargetPeriod.
       if (!empData) {
         const allEmployees = [
           ...(uwpData.value.availableEmployees || []),
@@ -2082,15 +1924,9 @@ export default {
         const headEmp = allEmployees.find(
           (emp) => (emp.job_title || emp.jobTitle || '').toLowerCase().trim() === 'office head',
         )
-        if (headEmp) {
-          empData = headEmp
-          console.log('[UWP] fetchHeadMfos: using Office Head from employee list:', empData.name)
-        }
+        if (headEmp) empData = headEmp
       }
 
-      // ── Strategy 3: Derive from uwpData hierarchy (office-scoped fallback) ───
-      // Even without a concrete employee record the server can find the head by
-      // office_id + semester + year.
       if (!empData) {
         const officeNode = uwpData.value.hierarchy?.office
         if (officeNode) {
@@ -2101,7 +1937,6 @@ export default {
             job_title: 'Office Head',
             office_id: officeNode.id || null,
           }
-          console.log('[UWP] fetchHeadMfos: using office hierarchy fallback:', empData.office)
         }
       }
 
@@ -2120,30 +1955,560 @@ export default {
         },
       }
 
-      console.log('[UWP] fetchHeadMfos payload:', payload)
-
       isFetchingHeadMfos.value = true
       try {
-        const result = await mfoHeadStore.fetchMFOHead(semester, year, payload)
-        // API returns { target_period: { performance_standards: [{ mfo, ... }] } }
+        const result = await mfoHeadStore.value.fetchMFOHead(semester, year, payload)
         const standards =
           result?.target_period?.performance_standards || result?.performance_standards || []
         headMfoNames.value = new Set(
           standards.map((ps) => (ps.mfo || '').trim().toLowerCase()).filter(Boolean),
         )
-        console.log('[UWP] headMfoNames loaded:', [...headMfoNames.value])
       } catch (err) {
         console.error('[UWP] fetchHeadMfos error:', err)
-        // On failure leave headMfoNames empty — MFO list falls back to full library
         headMfoNames.value = new Set()
       } finally {
         isFetchingHeadMfos.value = false
       }
     }
 
-    // ===========================================================================
-    // 12. INITIALIZATION METHODS
-    // ===========================================================================
+    const checkAndShowCascadeModal = async (standardIndex) => {
+      if (isCurrentEmployeeOfficeHead.value || !cascadeStore.value) return
+
+      const standard = currentEmployee.value.performanceStandards[standardIndex]
+      if (!standard?.rows.mfo || !standard.indicatorName?.length) return
+
+      const mfoId = standard.rows.mfo
+      const outputId = standard.rows.output
+
+      const selectedMfo = officeLibraryStore.value?.mfos?.find((m) => m.id === mfoId)
+      const mfoValue = selectedMfo?.name || String(mfoId)
+
+      const selectedOutput = outputId
+        ? officeLibraryStore.value?.outputs?.find((o) => o.id === outputId) ||
+          officeLibraryStore.value?.category_outputs?.find((o) => o.id === outputId)
+        : null
+      const outputName = selectedOutput?.name || null
+
+      const semester = uwpData.value.targetPeriod?.semester
+      const year = uwpData.value.targetPeriod?.year
+      if (!semester || !year) return
+
+      const loadingNotif = $q.notify({
+        message: 'Loading cascade data…',
+        color: 'info',
+        position: 'top',
+        timeout: 0,
+        spinner: true,
+        group: false,
+      })
+
+      try {
+        const isHeadEmp = dominoIsHead(currentEmployee.value.id)
+        const hasHeadInTabs = !!dominoHeadEmployee.value
+
+        let fetchedData = null
+        let resolvedSignatory = null
+
+        const fetchFromCascadeStore = async () => {
+          await cascadeStore.value.fetchCascade(semester, year, mfoValue)
+          const raw = cascadeStore.value.cascadeData
+          if (!raw) throw new Error('No cascade data found')
+
+          const signatoryResult = calculateSupervisorySignatory(
+            currentEmployee.value.employeeData || currentEmployee.value,
+            raw,
+            mfoValue,
+            outputName,
+          )
+
+          const isRootSupervisor = signatoryResult?.controlNo === raw.controlNo
+
+          let sourceMfo = null
+
+          if (isRootSupervisor) {
+            sourceMfo = (raw.mfos || []).find(
+              (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
+            )
+          } else {
+            const matchedSup = (raw.supervisories || []).find(
+              (sup) => sup.controlNo === signatoryResult?.controlNo,
+            )
+            sourceMfo = (matchedSup?.mfos || []).find(
+              (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
+            )
+
+            if (!sourceMfo) {
+              sourceMfo = (raw.mfos || []).find(
+                (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
+              )
+              resolvedSignatory = {
+                controlNo: raw.controlNo,
+                name: raw.name,
+                rank: raw.rank,
+                job_title: raw.job_title,
+              }
+            }
+          }
+
+          resolvedSignatory = resolvedSignatory || signatoryResult
+
+          if (sourceMfo) {
+            const totalTarget = sourceMfo.total_target || 0
+            const signatoryControlNo = resolvedSignatory?.controlNo || 'root'
+
+            const getStandardClaim = (s) => {
+              const qty = s.standardOutcomeRows?.find((r) => r.rating === '5')?.quantity
+              return parseFloat(s.targetOutputValue) || parseFloat(qty) || 0
+            }
+
+            const matchesPool = (s) => {
+              if (!s._signatoryControlNo || s._signatoryControlNo !== signatoryControlNo)
+                return false
+              if (!s._mfoValue || s._mfoValue !== mfoValue) return false
+              if (!isRootSupervisor && s._outputName !== outputName) return false
+              return true
+            }
+
+            let claimedInSession = 0
+            employeeTabs.value.forEach((emp) => {
+              const isCurrentEmp = emp.id === currentEmployee.value.id
+              emp.performanceStandards.forEach((s, idx) => {
+                if (isCurrentEmp && idx === standardIndex) return
+                if (matchesPool(s)) claimedInSession += getStandardClaim(s)
+              })
+            })
+
+            standard._signatoryControlNo = signatoryControlNo
+            standard._mfoValue = mfoValue
+            standard._outputName = outputName || null
+            standard.rows.supervisory_control_no =
+              signatoryControlNo !== 'root'
+                ? signatoryControlNo
+                : resolvedSignatory?.controlNo || null
+
+            const apiAvailable =
+              sourceMfo.available ?? Math.max(0, totalTarget - (sourceMfo.claimed || 0))
+            const sessionAvailable = isRootSupervisor
+              ? Math.max(0, apiAvailable - claimedInSession)
+              : Math.max(0, totalTarget - claimedInSession)
+
+            return {
+              ...raw,
+              name: resolvedSignatory.name,
+              rank: resolvedSignatory.rank,
+              job_title: resolvedSignatory.job_title,
+              controlNo: resolvedSignatory.controlNo,
+              mfos: [
+                {
+                  ...sourceMfo,
+                  total_target: totalTarget,
+                  claimed: claimedInSession,
+                  available: sessionAvailable,
+                },
+              ],
+            }
+          }
+
+          return {
+            ...raw,
+            name: resolvedSignatory?.name,
+            rank: resolvedSignatory?.rank,
+            job_title: resolvedSignatory?.job_title,
+            controlNo: resolvedSignatory?.controlNo,
+          }
+        }
+
+        const headTarget =
+          hasHeadInTabs && !isHeadEmp ? dominoGetHeadTarget(mfoId, standard.rows.output) : null
+
+        if (!hasHeadInTabs || (hasHeadInTabs && !isHeadEmp && !headTarget)) {
+          fetchedData = await fetchFromCascadeStore()
+          resolvedSignatory = calculateSupervisorySignatory(
+            currentEmployee.value.employeeData || currentEmployee.value,
+            fetchedData,
+            mfoValue,
+            outputName,
+          )
+        } else if (hasHeadInTabs && !isHeadEmp && headTarget) {
+          const totalTarget = parseFloat(headTarget.targetOutputValue) || 0
+          let claimedByOthers = 0
+
+          employeeTabs.value.forEach((emp) => {
+            if (emp.id === currentEmployee.value.id || emp.id === dominoHeadEmployee.value?.id)
+              return
+            emp.performanceStandards.forEach((s) => {
+              if (s.rows.mfo === mfoId) {
+                claimedByOthers +=
+                  parseFloat(s.targetOutputValue) ||
+                  parseFloat(s.standardOutcomeRows?.find((r) => r.rating === '5')?.quantity) ||
+                  0
+              }
+            })
+          })
+          const available = Math.max(0, totalTarget - claimedByOthers)
+
+          resolvedSignatory = {
+            name: headTarget.headName,
+            id: headTarget.headId,
+            rank: headTarget.headRank,
+            job_title: headTarget.headPosition,
+          }
+
+          fetchedData = {
+            name: headTarget.headName,
+            rank: headTarget.headRank,
+            job_title: headTarget.headPosition,
+            office: uwpData.value.hierarchy.division?.label || '',
+            controlNo: null,
+            mfos: [
+              {
+                mfo: mfoValue,
+                total_target: totalTarget,
+                claimed: claimedByOthers,
+                available,
+                output_name: standard.outputName || '',
+                success_indicator: headTarget.successIndicator || '',
+                performance_indicator: headTarget.indicatorNames?.map((id) => {
+                  const verb = officeLibraryIndicatorStore.value?.verbs?.find(
+                    (v) => v.id === Number(id),
+                  )
+                  return { value: verb?.indicator_name || verb?.name || String(id) }
+                }),
+              },
+            ],
+          }
+        }
+
+        const tabIndex = employeeTabs.value.findIndex((e) => e.id === currentEmployee.value.id)
+        if (tabIndex !== -1 && resolvedSignatory) {
+          employeeTabs.value[tabIndex].supervisorySignatory = resolvedSignatory
+          if (standard.rows.supervisory_control_no == null && resolvedSignatory?.controlNo) {
+            standard.rows.supervisory_control_no = resolvedSignatory.controlNo
+          }
+        }
+
+        const restriction = quantityRestriction.value?.determineRestriction({
+          selectedEmployee: {
+            ...currentEmployee.value,
+            supervisorySignatory: resolvedSignatory,
+          },
+          selectedIndicators: standard.indicatorName,
+          quantityType: standard.quantityIndicatorType,
+          verbs: officeLibraryIndicatorStore.value?.verbs || [],
+          cascadeData: fetchedData,
+        })
+
+        standard.quantityRestriction = restriction
+
+        loadingNotif()
+        $q.notify({
+          message: 'Cascade data loaded',
+          color: 'positive',
+          position: 'top',
+          timeout: 2000,
+        })
+
+        if (headTarget) {
+          employeeTabs.value
+            .filter(
+              (e) => e.id !== currentEmployee.value.id && e.id !== dominoHeadEmployee.value?.id,
+            )
+            .forEach((emp) => {
+              const needsUpdate = emp.performanceStandards.some((s) => s.rows.mfo === mfoId)
+              if (needsUpdate) {
+                dominoClearRestrictions(emp.id)
+                if (activeEmployeeTab.value === emp.id) {
+                  setTimeout(() => dominoApplyToEmployee(emp.id, true), 100)
+                }
+              }
+            })
+        }
+
+        return restriction
+      } catch (error) {
+        loadingNotif()
+        console.error('[UWP] Cascade error:', error)
+        $q.notify({
+          message: error.message || 'Failed to load cascade data',
+          color: 'negative',
+          position: 'top',
+        })
+        return null
+      }
+    }
+
+    const generateSuccessIndicator = (index) => {
+      if (!currentEmployee.value?.performanceStandards) return
+
+      const indices = Number.isInteger(index)
+        ? [index]
+        : currentEmployee.value.performanceStandards.map((_, i) => i)
+
+      indices.forEach((i) => {
+        const std = currentEmployee.value.performanceStandards[i]
+        if (!std) return
+
+        const getQuantityComponent = () => {
+          if (std.quantityIndicatorType === 'numeric')
+            return std.standardOutcomeRows.find((r) => r.rating === '5')?.quantity || ''
+          if (std.quantityIndicatorType === 'B') return std.targetOutputValue?.toString() || ''
+          if (std.quantityIndicatorType === 'C') return '100%'
+          return ''
+        }
+
+        const getTimelinessComponent = () => {
+          const row =
+            std.timelinessIndicatorType === 'beforeDeadline'
+              ? std.standardOutcomeRows[2]
+              : std.standardOutcomeRows[0]
+
+          const parts = []
+          if (std.activeTimelinessInputs.range && row.timelinessRange)
+            parts.push(row.timelinessRange)
+          if (std.activeTimelinessInputs.date && row.timelinessDate)
+            parts.push(`by ${row.timelinessDate}`)
+          if (std.activeTimelinessInputs.description && row.timelinessText)
+            parts.push(row.timelinessText)
+
+          const joined = parts.join(' ')
+          return joined ? `, ${joined}` : ''
+        }
+
+        const getEffectivenessComponent = () => {
+          return std?.standardOutcomeRows.find((r) => r.rating === '5')?.effectiveness || ''
+        }
+
+        const qtyPart = getQuantityComponent()
+        const outputPart = std.outputName?.trim() || ''
+
+        let indicatorPart = ''
+        if (Array.isArray(std.indicatorName) && std.indicatorName.length > 0) {
+          const names = std.indicatorName
+            .map((idOrText) => {
+              if (typeof idOrText === 'number' || !isNaN(idOrText)) {
+                const verb = officeLibraryIndicatorStore.value?.verbs?.find(
+                  (v) => v.id === Number(idOrText),
+                )
+                return verb?.indicator_name || verb?.name || ''
+              }
+              return idOrText
+            })
+            .filter(Boolean)
+
+          if (names.length === 1) indicatorPart = names[0]
+          else if (names.length === 2) indicatorPart = names.join(' and ')
+          else indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+        }
+
+        const effectivenessPart = getEffectivenessComponent()
+        const timelinessPart = getTimelinessComponent()
+
+        std.successIndicator = [
+          qtyPart,
+          outputPart,
+          indicatorPart,
+          effectivenessPart,
+          timelinessPart,
+        ]
+          .filter((p) => p?.trim())
+          .join(' ')
+      })
+    }
+
+    const filterPerformanceIndicators = (val, update) => {
+      const mapVerb = (verb) => ({
+        id: verb.id,
+        label: verb.indicator_name || verb.name,
+        value: verb.id,
+        name: verb.indicator_name || verb.name,
+        description: verb.description || '',
+      })
+      if (typeof update === 'function') {
+        update(() => {
+          const needle = (val || '').toLowerCase()
+          filteredVerbs.value = (officeLibraryIndicatorStore.value?.verbs || [])
+            .map(mapVerb)
+            .filter(
+              (v) =>
+                v.label.toLowerCase().includes(needle) ||
+                v.description.toLowerCase().includes(needle),
+            )
+        })
+      } else {
+        filteredVerbs.value = (officeLibraryIndicatorStore.value?.verbs || []).map(mapVerb)
+      }
+    }
+
+    const getFilteredMfoOptions = (index) => {
+      const std = currentEmployee.value.performanceStandards[index]
+      if (!std?.rows.category) return []
+
+      const baseList =
+        filteredMfoOptions.value[index] ||
+        (officeLibraryStore.value?.mfos || [])
+          .filter((m) => m.f_category_id === std.rows.category)
+          .map((m) => ({
+            id: m.id,
+            label: m.name,
+            value: m.id,
+            name: m.name,
+            code: m.code || '',
+            description: m.description || '',
+          }))
+
+      if (isCurrentEmployeeOfficeHead.value || headMfoNames.value.size === 0) return baseList
+
+      return baseList.filter((m) => headMfoNames.value.has((m.name || '').trim().toLowerCase()))
+    }
+
+    const getFilteredOutputOptions = (index) => {
+      const std = currentEmployee.value.performanceStandards[index]
+      if (!std?.rows.category) return []
+      const categoryId = std.rows.category
+
+      if (isSupportCategory(categoryId)) {
+        return (officeLibraryStore.value?.category_outputs || [])
+          .filter((o) => o.f_category_id === categoryId)
+          .map((o) => ({
+            id: o.id,
+            label: o.name,
+            value: o.id,
+            name: o.name,
+            code: o.code || '',
+            description: o.description || '',
+          }))
+      }
+
+      if (!officeLibraryStore.value?.outputs?.length) return []
+      return officeLibraryStore.value.outputs
+        .filter(
+          (o) =>
+            o.f_category_id === categoryId &&
+            (std.rows.mfo ? o.mfo_id === std.rows.mfo : o.mfo_id === null),
+        )
+        .map((o) => ({
+          id: o.id,
+          label: o.name,
+          value: o.id,
+          name: o.name,
+          code: o.code || '',
+          description: o.description || '',
+        }))
+    }
+
+    const getUsedOutputIdsForMfo = (currentStandardIndex) => {
+      const standards = currentEmployee.value?.performanceStandards
+      if (!standards) return new Set()
+      const currentStd = standards[currentStandardIndex]
+      if (!currentStd?.rows?.mfo) return new Set()
+
+      const used = new Set()
+      standards.forEach((std, idx) => {
+        if (idx === currentStandardIndex) return
+        if (!std?.rows?.mfo || !std?.rows?.output) return
+        if (std.rows.mfo === currentStd.rows.mfo) used.add(std.rows.output)
+      })
+      return used
+    }
+
+    const getAvailableOutputOptions = (index) => {
+      const allOptions = getFilteredOutputOptions(index)
+      const usedIds = getUsedOutputIdsForMfo(index)
+      if (!usedIds.size) return allOptions
+      const currentStd = currentEmployee.value.performanceStandards[index]
+      return allOptions.filter(
+        (opt) => !usedIds.has(opt.value) || opt.value === currentStd?.rows?.output,
+      )
+    }
+
+    const getOutputNoOptionMessage = (index) => {
+      const std = currentEmployee.value.performanceStandards[index]
+      if (!std?.rows?.category) return 'Select a category first'
+      const allOptions = getFilteredOutputOptions(index)
+      const usedIds = getUsedOutputIdsForMfo(index)
+      if (allOptions.length === 0) return 'No outputs found matching your search'
+      if (allOptions.every((opt) => usedIds.has(opt.value))) {
+        return 'All outputs for this MFO are already used in other performance standards'
+      }
+      return 'No outputs found matching your search'
+    }
+
+    const getMfoNoOptionMessage = (index) => {
+      const std = currentEmployee.value.performanceStandards[index]
+      if (!std?.rows?.category) return 'Select a category first'
+      return 'No MFOs found matching your search'
+    }
+
+    const filterMfos = (val, update, index) => {
+      if (typeof update !== 'function') return
+      update(() => {
+        const needle = (val || '').toLowerCase()
+        const std = currentEmployee.value.performanceStandards[index]
+        if (!std?.rows.category) {
+          filteredMfoOptions.value[index] = []
+          return
+        }
+
+        let baseList = (officeLibraryStore.value?.mfos || [])
+          .filter((m) => m.f_category_id === std.rows.category)
+          .map((m) => ({
+            id: m.id,
+            label: m.name,
+            value: m.id,
+            name: m.name,
+            code: m.code || '',
+            description: m.description || '',
+          }))
+
+        if (!isCurrentEmployeeOfficeHead.value && headMfoNames.value.size > 0) {
+          baseList = baseList.filter((m) =>
+            headMfoNames.value.has((m.name || '').trim().toLowerCase()),
+          )
+        }
+
+        filteredMfoOptions.value[index] = needle
+          ? baseList.filter(
+              (m) =>
+                m.label.toLowerCase().includes(needle) ||
+                m.code.toLowerCase().includes(needle) ||
+                m.description.toLowerCase().includes(needle),
+            )
+          : baseList
+      })
+    }
+
+    const filterOutputs = (val, update, index) => {
+      if (typeof update !== 'function') return
+      update(() => {
+        const needle = (val || '').toLowerCase()
+        const std = currentEmployee.value.performanceStandards[index]
+        if (!std?.rows.category) {
+          filteredOutputOptions.value[index] = []
+          return
+        }
+        const baseOptions = getAvailableOutputOptions(index)
+        filteredOutputOptions.value[index] = baseOptions.filter(
+          (o) =>
+            o.label.toLowerCase().includes(needle) ||
+            o.code.toLowerCase().includes(needle) ||
+            o.description.toLowerCase().includes(needle),
+        )
+      })
+    }
+
+    const clearDependentFields = (standardIndex, fieldIndex) => {
+      const std = currentEmployee.value.performanceStandards[standardIndex]
+      if (!std) return
+      if (fieldIndex === 1) {
+        std.rows.mfo = null
+        std.rows.output = null
+        filteredMfoOptions.value[standardIndex] = null
+        filteredOutputOptions.value[standardIndex] = null
+      } else if (fieldIndex === 2) {
+        std.rows.output = null
+        filteredOutputOptions.value[standardIndex] = null
+      }
+    }
 
     const initializeUWPData = () => {
       try {
@@ -2162,10 +2527,6 @@ export default {
       employeeTabs.value = [defaultEmp]
       activeEmployeeTab.value = defaultEmp.id
     }
-
-    // ===========================================================================
-    // 13. AUTO-SELECTION — HEAD EMPLOYEE
-    // ===========================================================================
 
     const autoSelectHeadEmployees = () => {
       if (autoSelectionPerformed.value) return
@@ -2220,27 +2581,6 @@ export default {
         position: 'top',
         timeout: 3000,
       })
-    }
-
-    // ===========================================================================
-    // 14. COMPETENCY METHODS
-    // ===========================================================================
-
-    const autoPopulateCoreCompetencies = (standard, sg, level) => {
-      if (!sg || !level) return
-      const row = competencyStore.getBySG(sg)
-      if (!row) return
-      standard.competencies.core = COMPETENCY_DEFINITIONS.core
-        .filter((comp) => {
-          const rl = row[comp.code]
-          return rl && rl !== '-'
-        })
-        .map((comp) => ({
-          code: comp.code,
-          description: comp.description,
-          value: LEVEL_MAP[row[comp.code]]?.value || '1',
-          level: row[comp.code],
-        }))
     }
 
     const openCompetencyModal = (type, standardIndex) => {
@@ -2355,280 +2695,10 @@ export default {
         core.length + technical.length + leadership.length === 0
     }
 
-    // ===========================================================================
-    // 15. MFO / OUTPUT FILTER METHODS
-    // ===========================================================================
-
-    /**
-     * Build the MFO option list for a given standard index.
-     *
-     * Office Head     → full list for the selected category (no restriction).
-     * Everyone else   → restricted to MFOs that appear in the Office Head's plan
-     *                   (headMfoNames Set).  Falls back to the full list when
-     *                   headMfoNames is empty (e.g. fetch failed or not yet loaded).
-     */
-    const getFilteredMfoOptions = (index) => {
-      const std = currentEmployee.value.performanceStandards[index]
-      if (!std?.rows.category) return []
-
-      const baseList =
-        filteredMfoOptions.value[index] ||
-        officeLibraryStore.mfos
-          .filter((m) => m.f_category_id === std.rows.category)
-          .map((m) => ({
-            id: m.id,
-            label: m.name,
-            value: m.id,
-            name: m.name,
-            code: m.code || '',
-            description: m.description || '',
-          }))
-
-      // Office Head sees everything; apply head-MFO filter only for other employees
-      if (isCurrentEmployeeOfficeHead.value || headMfoNames.value.size === 0) {
-        return baseList
-      }
-
-      return baseList.filter((m) => headMfoNames.value.has((m.name || '').trim().toLowerCase()))
-    }
-
-    const getFilteredOutputOptions = (index) => {
-      const std = currentEmployee.value.performanceStandards[index]
-      if (!std?.rows.category) return []
-      const categoryId = std.rows.category
-
-      if (isSupportCategory(categoryId)) {
-        return officeLibraryStore.category_outputs
-          .filter((o) => o.f_category_id === categoryId)
-          .map((o) => ({
-            id: o.id,
-            label: o.name,
-            value: o.id,
-            name: o.name,
-            code: o.code || '',
-            description: o.description || '',
-          }))
-      }
-
-      if (!officeLibraryStore.outputs?.length) return []
-      return officeLibraryStore.outputs
-        .filter(
-          (o) =>
-            o.f_category_id === categoryId &&
-            (std.rows.mfo ? o.mfo_id === std.rows.mfo : o.mfo_id === null),
-        )
-        .map((o) => ({
-          id: o.id,
-          label: o.name,
-          value: o.id,
-          name: o.name,
-          code: o.code || '',
-          description: o.description || '',
-        }))
-    }
-
-    const filterMfos = (val, update, index) => {
-      if (typeof update !== 'function') return
-      update(() => {
-        const needle = (val || '').toLowerCase()
-        const std = currentEmployee.value.performanceStandards[index]
-        if (!std?.rows.category) {
-          filteredMfoOptions.value[index] = []
-          return
-        }
-
-        let baseList = officeLibraryStore.mfos
-          .filter((m) => m.f_category_id === std.rows.category)
-          .map((m) => ({
-            id: m.id,
-            label: m.name,
-            value: m.id,
-            name: m.name,
-            code: m.code || '',
-            description: m.description || '',
-          }))
-
-        // Non-Office-Head employees: restrict to head's MFOs when available
-        if (!isCurrentEmployeeOfficeHead.value && headMfoNames.value.size > 0) {
-          baseList = baseList.filter((m) =>
-            headMfoNames.value.has((m.name || '').trim().toLowerCase()),
-          )
-        }
-
-        filteredMfoOptions.value[index] = needle
-          ? baseList.filter(
-              (m) =>
-                m.label.toLowerCase().includes(needle) ||
-                m.code.toLowerCase().includes(needle) ||
-                m.description.toLowerCase().includes(needle),
-            )
-          : baseList
-      })
-    }
-
-    const filterOutputs = (val, update, index) => {
-      if (typeof update !== 'function') return
-      update(() => {
-        const needle = (val || '').toLowerCase()
-        const std = currentEmployee.value.performanceStandards[index]
-        if (!std?.rows.category) {
-          filteredOutputOptions.value[index] = []
-          return
-        }
-
-        const baseOptions = getAvailableOutputOptions(index)
-        filteredOutputOptions.value[index] = baseOptions.filter(
-          (o) =>
-            o.label.toLowerCase().includes(needle) ||
-            o.code.toLowerCase().includes(needle) ||
-            o.description.toLowerCase().includes(needle),
-        )
-      })
-    }
-
-    const clearDependentFields = (standardIndex, fieldIndex) => {
-      const std = currentEmployee.value.performanceStandards[standardIndex]
-      if (!std) return
-      if (fieldIndex === 1) {
-        std.rows.mfo = null
-        std.rows.output = null
-        filteredMfoOptions.value[standardIndex] = null
-        filteredOutputOptions.value[standardIndex] = null
-      } else if (fieldIndex === 2) {
-        std.rows.output = null
-        filteredOutputOptions.value[standardIndex] = null
-      }
-    }
-
-    // ===========================================================================
-    // 16. PERFORMANCE INDICATOR FILTER
-    // ===========================================================================
-
-    const filterPerformanceIndicators = (val, update) => {
-      const mapVerb = (verb) => ({
-        id: verb.id,
-        label: verb.indicator_name || verb.name,
-        value: verb.id,
-        name: verb.indicator_name || verb.name,
-        description: verb.description || '',
-      })
-      if (typeof update === 'function') {
-        update(() => {
-          const needle = (val || '').toLowerCase()
-          filteredVerbs.value = officeLibraryIndicatorStore.verbs
-            .map(mapVerb)
-            .filter(
-              (v) =>
-                v.label.toLowerCase().includes(needle) ||
-                v.description.toLowerCase().includes(needle),
-            )
-        })
-      } else {
-        filteredVerbs.value = officeLibraryIndicatorStore.verbs.map(mapVerb)
-      }
-    }
-
-    // ===========================================================================
-    // 17. SUCCESS INDICATOR GENERATION
-    // ===========================================================================
-
-    const getQuantityComponent = (index) => {
-      const std = currentEmployee.value?.performanceStandards?.[index]
-      if (!std) return ''
-      if (std.quantityIndicatorType === 'numeric')
-        return std.standardOutcomeRows.find((r) => r.rating === '5')?.quantity || ''
-      if (std.quantityIndicatorType === 'B') return std.targetOutputValue?.toString() || ''
-      if (std.quantityIndicatorType === 'C') return '100%'
-      return ''
-    }
-
-    const getTimelinessComponent = (index) => {
-      const std = currentEmployee.value?.performanceStandards?.[index]
-      if (!std) return ''
-      const row =
-        std.timelinessIndicatorType === 'beforeDeadline'
-          ? std.standardOutcomeRows[2]
-          : std.standardOutcomeRows[0]
-
-      const parts = []
-      if (std.activeTimelinessInputs.range && row.timelinessRange) parts.push(row.timelinessRange)
-      if (std.activeTimelinessInputs.date && row.timelinessDate)
-        parts.push(`by ${row.timelinessDate}`)
-      if (std.activeTimelinessInputs.description && row.timelinessText)
-        parts.push(row.timelinessText)
-
-      const joined = parts.join(' ')
-      return joined ? `, ${joined}` : ''
-    }
-
-    const getEffectivenessComponent = (index) => {
-      const std = currentEmployee.value.performanceStandards[index]
-      return std?.standardOutcomeRows.find((r) => r.rating === '5')?.effectiveness || ''
-    }
-
-    const generateSuccessIndicator = (index) => {
-      if (!currentEmployee.value?.performanceStandards) return
-
-      const indices = Number.isInteger(index)
-        ? [index]
-        : currentEmployee.value.performanceStandards.map((_, i) => i)
-
-      indices.forEach((i) => {
-        const std = currentEmployee.value.performanceStandards[i]
-        if (!std) return
-
-        const qtyPart = getQuantityComponent(i)
-        const outputPart = std.outputName?.trim() || ''
-
-        let indicatorPart = ''
-        if (Array.isArray(std.indicatorName) && std.indicatorName.length > 0) {
-          const names = std.indicatorName
-            .map((idOrText) => {
-              if (typeof idOrText === 'number' || !isNaN(idOrText)) {
-                const verb = officeLibraryIndicatorStore.verbs.find(
-                  (v) => v.id === Number(idOrText),
-                )
-                return verb?.indicator_name || verb?.name || ''
-              }
-              return idOrText
-            })
-            .filter(Boolean)
-
-          if (names.length === 1) indicatorPart = names[0]
-          else if (names.length === 2) indicatorPart = names.join(' and ')
-          else indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
-        }
-
-        const effectivenessPart = getEffectivenessComponent(i)
-        const timelinessPart = getTimelinessComponent(i)
-
-        std.successIndicator = [
-          qtyPart,
-          outputPart,
-          indicatorPart,
-          effectivenessPart,
-          timelinessPart,
-        ]
-          .filter((p) => p?.trim())
-          .join(' ')
-      })
-    }
-
-    // ===========================================================================
-    // 18. VALIDATION HELPERS
-    // ===========================================================================
-
     const hasMinimumEffectivenessValues = (index) => {
       const std = currentEmployee.value.performanceStandards[index]
       if (!std) return false
       return std.standardOutcomeRows.filter((r) => r.effectiveness?.trim().length > 0).length >= 2
-    }
-
-    const hasMinimumCompetencies = (employee, standardIndex) => {
-      const std = employee?.performanceStandards?.[standardIndex]
-      if (!std?.competencies) return false
-      const { core = [], technical = [], leadership = [] } = std.competencies
-      return core.length + technical.length + leadership.length >= 1
     }
 
     const validateStrictNumeric = (val) => {
@@ -2665,298 +2735,6 @@ export default {
       const r = standard.quantityRestriction
       return r != null && r.maxQuantity != null ? `Cannot exceed ${r.maxQuantity}` : ''
     }
-
-    // ===========================================================================
-    // 19. CASCADE DATA & RESTRICTION LOGIC
-    // ===========================================================================
-
-    /**
-     * Fetches cascade data for the given standard, resolves the supervisor,
-     * and applies quantity restriction to the standard.
-     *
-     * NOTE: Office Head employees are the CASCADE ROOT — they own the total targets
-     * and no restriction is applied to them. Skip entirely for Office Head tabs.
-     */
-    const checkAndShowCascadeModal = async (standardIndex) => {
-      // Office Head is the cascade root — no restriction applies to them.
-      if (isCurrentEmployeeOfficeHead.value) return
-
-      const standard = currentEmployee.value.performanceStandards[standardIndex]
-      if (!standard?.rows.mfo || !standard.indicatorName?.length) return
-
-      const mfoId = standard.rows.mfo
-      const outputId = standard.rows.output
-
-      const selectedMfo = officeLibraryStore.mfos.find((m) => m.id === mfoId)
-      const mfoValue = selectedMfo?.name || String(mfoId)
-
-      const selectedOutput = outputId
-        ? officeLibraryStore.outputs?.find((o) => o.id === outputId) ||
-          officeLibraryStore.category_outputs?.find((o) => o.id === outputId)
-        : null
-      const outputName = selectedOutput?.name || null
-
-      const semester = uwpData.value.targetPeriod?.semester
-      const year = uwpData.value.targetPeriod?.year
-      if (!semester || !year) return
-
-      const loadingNotif = $q.notify({
-        message: 'Loading cascade data…',
-        color: 'info',
-        position: 'top',
-        timeout: 0,
-        spinner: true,
-        group: false,
-      })
-
-      try {
-        const isHeadEmp = cascadeDomino.isHead(currentEmployee.value.id)
-        const hasHeadInTabs = !!cascadeDomino.headEmployee
-
-        let fetchedData = null
-        let resolvedSignatory = null
-
-        const fetchFromCascadeStore = async () => {
-          await cascadeStore.fetchCascade(semester, year, mfoValue)
-          const raw = cascadeStore.cascadeData
-          if (!raw) throw new Error('No cascade data found')
-
-          const signatoryResult = calculateSupervisorySignatory(
-            currentEmployee.value.employeeData || currentEmployee.value,
-            raw,
-            mfoValue,
-            outputName,
-          )
-
-          const isRootSupervisor = signatoryResult?.controlNo === raw.controlNo
-
-          let sourceMfo = null
-
-          if (isRootSupervisor) {
-            sourceMfo = (raw.mfos || []).find(
-              (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
-            )
-            console.log('[UWP] Signatory is root — using Office Head MFO data:', sourceMfo)
-          } else {
-            const matchedSup = (raw.supervisories || []).find(
-              (sup) => sup.controlNo === signatoryResult?.controlNo,
-            )
-            sourceMfo = (matchedSup?.mfos || []).find(
-              (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
-            )
-            console.log(
-              '[UWP] Signatory is supervisory — using their MFO data:',
-              signatoryResult?.name,
-              sourceMfo,
-            )
-
-            if (!sourceMfo) {
-              console.log('[UWP] Supervisory has no MFO entry — falling back to root MFO data')
-              sourceMfo = (raw.mfos || []).find(
-                (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
-              )
-              resolvedSignatory = {
-                controlNo: raw.controlNo,
-                name: raw.name,
-                rank: raw.rank,
-                job_title: raw.job_title,
-              }
-            }
-          }
-
-          resolvedSignatory = resolvedSignatory || signatoryResult
-
-          if (sourceMfo) {
-            const totalTarget = sourceMfo.total_target || 0
-            const signatoryControlNo = resolvedSignatory?.controlNo || 'root'
-
-            const getStandardClaim = (s) => {
-              const qty = s.standardOutcomeRows?.find((r) => r.rating === '5')?.quantity
-              return parseFloat(s.targetOutputValue) || parseFloat(qty) || 0
-            }
-
-            const matchesPool = (s) => {
-              if (!s._signatoryControlNo || s._signatoryControlNo !== signatoryControlNo)
-                return false
-              if (!s._mfoValue || s._mfoValue !== mfoValue) return false
-              if (!isRootSupervisor && s._outputName !== outputName) return false
-              return true
-            }
-
-            let claimedInSession = 0
-            employeeTabs.value.forEach((emp) => {
-              const isCurrentEmp = emp.id === currentEmployee.value.id
-              emp.performanceStandards.forEach((s, idx) => {
-                if (isCurrentEmp && idx === standardIndex) return
-                if (matchesPool(s)) claimedInSession += getStandardClaim(s)
-              })
-            })
-
-            standard._signatoryControlNo = signatoryControlNo
-            standard._mfoValue = mfoValue
-            standard._outputName = outputName || null
-            standard.rows.supervisory_control_no =
-              signatoryControlNo !== 'root'
-                ? signatoryControlNo
-                : resolvedSignatory?.controlNo || null
-
-            const apiAvailable =
-              sourceMfo.available ?? Math.max(0, totalTarget - (sourceMfo.claimed || 0))
-            const sessionAvailable = isRootSupervisor
-              ? Math.max(0, apiAvailable - claimedInSession)
-              : Math.max(0, totalTarget - claimedInSession)
-
-            return {
-              ...raw,
-              name: resolvedSignatory.name,
-              rank: resolvedSignatory.rank,
-              job_title: resolvedSignatory.job_title,
-              controlNo: resolvedSignatory.controlNo,
-              mfos: [
-                {
-                  ...sourceMfo,
-                  total_target: totalTarget,
-                  claimed: claimedInSession,
-                  available: sessionAvailable,
-                },
-              ],
-            }
-          }
-
-          return {
-            ...raw,
-            name: resolvedSignatory?.name,
-            rank: resolvedSignatory?.rank,
-            job_title: resolvedSignatory?.job_title,
-            controlNo: resolvedSignatory?.controlNo,
-          }
-        }
-
-        const headTarget =
-          hasHeadInTabs && !isHeadEmp
-            ? cascadeDomino.getHeadTarget(mfoId, standard.rows.output)
-            : null
-
-        if (!hasHeadInTabs || (hasHeadInTabs && !isHeadEmp && !headTarget)) {
-          fetchedData = await fetchFromCascadeStore()
-          resolvedSignatory = calculateSupervisorySignatory(
-            currentEmployee.value.employeeData || currentEmployee.value,
-            fetchedData,
-            mfoValue,
-            outputName,
-          )
-        } else if (hasHeadInTabs && !isHeadEmp && headTarget) {
-          const totalTarget = parseFloat(headTarget.targetOutputValue) || 0
-          let claimedByOthers = 0
-
-          employeeTabs.value.forEach((emp) => {
-            if (emp.id === currentEmployee.value.id || emp.id === cascadeDomino.headEmployee.id)
-              return
-            emp.performanceStandards.forEach((s) => {
-              if (s.rows.mfo === mfoId) {
-                claimedByOthers +=
-                  parseFloat(s.targetOutputValue) ||
-                  parseFloat(s.standardOutcomeRows?.find((r) => r.rating === '5')?.quantity) ||
-                  0
-              }
-            })
-          })
-          const available = Math.max(0, totalTarget - claimedByOthers)
-
-          resolvedSignatory = {
-            name: headTarget.headName,
-            id: headTarget.headId,
-            rank: headTarget.headRank,
-            job_title: headTarget.headPosition,
-          }
-
-          fetchedData = {
-            name: headTarget.headName,
-            rank: headTarget.headRank,
-            job_title: headTarget.headPosition,
-            office: uwpData.value.hierarchy.division?.label || '',
-            controlNo: null,
-            mfos: [
-              {
-                mfo: mfoValue,
-                total_target: totalTarget,
-                claimed: claimedByOthers,
-                available,
-                output_name: standard.outputName || '',
-                success_indicator: headTarget.successIndicator || '',
-                performance_indicator: headTarget.indicatorNames?.map((id) => {
-                  const verb = officeLibraryIndicatorStore.verbs.find((v) => v.id === Number(id))
-                  return { value: verb?.indicator_name || verb?.name || String(id) }
-                }),
-              },
-            ],
-          }
-        }
-
-        const tabIndex = employeeTabs.value.findIndex((e) => e.id === currentEmployee.value.id)
-        if (tabIndex !== -1 && resolvedSignatory) {
-          employeeTabs.value[tabIndex].supervisorySignatory = resolvedSignatory
-          // Also stamp each standard that doesn't yet have a supervisory_control_no
-          // (covers the headTarget path where fetchFromCascadeStore is not called)
-          if (standard.rows.supervisory_control_no == null && resolvedSignatory?.controlNo) {
-            standard.rows.supervisory_control_no = resolvedSignatory.controlNo
-          }
-          console.log('[UWP] Supervisory signatory resolved:', resolvedSignatory)
-        }
-
-        const restriction = quantityRestriction.determineRestriction({
-          selectedEmployee: {
-            ...currentEmployee.value,
-            supervisorySignatory: resolvedSignatory,
-          },
-          selectedIndicators: standard.indicatorName,
-          quantityType: standard.quantityIndicatorType,
-          verbs: officeLibraryIndicatorStore.verbs,
-          cascadeData: fetchedData,
-        })
-
-        standard.quantityRestriction = restriction
-
-        loadingNotif()
-        $q.notify({
-          message: 'Cascade data loaded',
-          color: 'positive',
-          position: 'top',
-          timeout: 2000,
-        })
-
-        if (headTarget) {
-          employeeTabs.value
-            .filter(
-              (e) => e.id !== currentEmployee.value.id && e.id !== cascadeDomino.headEmployee?.id,
-            )
-            .forEach((emp) => {
-              const needsUpdate = emp.performanceStandards.some((s) => s.rows.mfo === mfoId)
-              if (needsUpdate) {
-                cascadeDomino.clearRestrictions(emp.id)
-                if (activeEmployeeTab.value === emp.id) {
-                  setTimeout(() => cascadeDomino.applyToEmployee(emp.id, true), 100)
-                }
-              }
-            })
-        }
-
-        return restriction
-      } catch (error) {
-        loadingNotif()
-        console.error('[UWP] Cascade error:', error)
-        $q.notify({
-          message: error.message || 'Failed to load cascade data',
-          color: 'negative',
-          position: 'top',
-        })
-        return null
-      }
-    }
-
-    // ===========================================================================
-    // 20. QUANTITY COMPUTATION
-    // ===========================================================================
 
     const onQuantityOptionSelect = (value, index) => {
       const std = currentEmployee.value?.performanceStandards?.[index]
@@ -3029,7 +2807,7 @@ export default {
         quantityValue.value = null
         currentQuantityRestriction.value = null
 
-        if (cascadeDomino.isHead(currentEmployee.value.id)) cascadeDomino.applyToAllStaff()
+        if (dominoIsHead(currentEmployee.value.id)) dominoApplyToAllStaff()
       } else if (currentType === 'C') {
         std.targetOutputValue = '100%'
         std.standardOutcomeRows[0].quantity = '100% and above'
@@ -3040,7 +2818,7 @@ export default {
 
         generateSuccessIndicator(idx)
         $q.notify({ message: 'Quantities set (Type C)', color: 'positive', position: 'top' })
-        if (cascadeDomino.isHead(currentEmployee.value.id)) cascadeDomino.applyToAllStaff()
+        if (dominoIsHead(currentEmployee.value.id)) dominoApplyToAllStaff()
       } else {
         std.targetOutputValue = null
         generateSuccessIndicator(idx)
@@ -3053,10 +2831,6 @@ export default {
       showQuantityModal.value = false
       currentQuantityRestriction.value = null
     }
-
-    // ===========================================================================
-    // 21. TIMELINESS METHODS
-    // ===========================================================================
 
     const onTimelinessTypeSelect = (value, index) => {
       const std = currentEmployee.value.performanceStandards[index]
@@ -3121,10 +2895,6 @@ export default {
 
     const onTimelinessDateUpdate = (row, index) => onTimelinessUpdate(row, 'timelinessDate', index)
 
-    // ===========================================================================
-    // 22. EFFECTIVENESS METHODS
-    // ===========================================================================
-
     const onEffectivenessUpdate = (row, index) => {
       formInteracted.value = true
       generateSuccessIndicator(index)
@@ -3133,10 +2903,6 @@ export default {
     const onEffectivenessFieldFocus = () => {
       formInteracted.value = true
     }
-
-    // ===========================================================================
-    // 23. QUANTITY UPDATE METHOD
-    // ===========================================================================
 
     const onQuantityUpdate = async (row, field, index) => {
       sanitizeNumericInput(row, field)
@@ -3172,10 +2938,6 @@ export default {
       generateSuccessIndicator(index)
     }
 
-    // ===========================================================================
-    // 24. EMPLOYEE TAB MANAGEMENT
-    // ===========================================================================
-
     const addEmployeeTab = () => {
       if (allEmployeesSelected.value) {
         $q.notify({
@@ -3196,7 +2958,7 @@ export default {
       const newEmp = createDefaultEmployeeData()
       employeeTabs.value.push(newEmp)
       activeEmployeeTab.value = newEmp.id
-      nextTick(() => cascadeDomino.applyToEmployee(newEmp.id))
+      nextTick(() => dominoApplyToEmployee(newEmp.id))
       $q.notify({ message: 'Added new employee tab', color: 'positive', position: 'top' })
     }
 
@@ -3209,7 +2971,7 @@ export default {
         })
         return
       }
-      if (cascadeDomino.isHead(tabId)) {
+      if (dominoIsHead(tabId)) {
         $q.notify({ message: 'Cannot remove the head employee', color: 'warning', position: 'top' })
         return
       }
@@ -3257,7 +3019,10 @@ export default {
       )
       if (!selectedEmp) return
 
-      const initialSignatory = calculateSupervisorySignatory(selectedEmp, cascadeStore.cascadeData)
+      const initialSignatory = calculateSupervisorySignatory(
+        selectedEmp,
+        cascadeStore.value?.cascadeData,
+      )
 
       Object.assign(employeeTabs.value[tabIndex], {
         name: selectedEmp.label || selectedEmp.name || '',
@@ -3278,8 +3043,6 @@ export default {
         ),
       )
 
-      // Clear output on existing standards if newly selected employee is Office Head
-      // and their current standards have a non-support category selected
       if (isCurrentEmployeeOfficeHead.value) {
         employeeTabs.value[tabIndex].performanceStandards?.forEach((std) => {
           if (!isSupportCategory(std.rows?.category) && std.rows?.output != null) {
@@ -3288,8 +3051,8 @@ export default {
         })
       }
 
-      if (!cascadeDomino.isHead(employeeTabs.value[tabIndex].id) && cascadeDomino.headEmployee) {
-        cascadeDomino.applyToEmployee(employeeTabs.value[tabIndex].id)
+      if (!dominoIsHead(employeeTabs.value[tabIndex].id) && dominoHeadEmployee.value) {
+        dominoApplyToEmployee(employeeTabs.value[tabIndex].id)
       }
     }
 
@@ -3307,10 +3070,6 @@ export default {
         filteredEmployees.value = availableEmployeesForTab.value
       }
     }
-
-    // ===========================================================================
-    // 25. PERFORMANCE STANDARD MANAGEMENT
-    // ===========================================================================
 
     const addPerformanceStandard = () => {
       const newStd = createDefaultPerformanceStandard()
@@ -3347,11 +3106,16 @@ export default {
       })
     }
 
-    // ===========================================================================
-    // 26. FORM SUBMISSION
-    // ===========================================================================
-
     const onSubmit = async () => {
+      if (!uwpStore.value) {
+        $q.notify({
+          message: 'Store not initialized yet. Please try again.',
+          color: 'negative',
+          position: 'top',
+        })
+        return
+      }
+
       shouldValidate.value = true
       formInteracted.value = true
 
@@ -3367,11 +3131,9 @@ export default {
             const filled =
               std.standardOutcomeRows?.filter((r) => r.effectiveness?.trim().length > 0).length || 0
             if (filled < 2) errors.push('needs ≥2 effectiveness values')
-
             const { core = [], technical = [], leadership = [] } = std.competencies
             if (core.length + technical.length + leadership.length < 1)
               errors.push('needs ≥1 competency')
-
             if (std.quantityIndicatorType === 'B' && std.quantityRestriction?.maxQuantity != null) {
               const tv = parseFloat(std.targetOutputValue)
               if (!isNaN(tv) && tv > std.quantityRestriction.maxQuantity) {
@@ -3400,9 +3162,9 @@ export default {
       }
 
       try {
-        uwpStore.setUWPData(uwpData.value)
-        uwpStore.setFormData(form.value)
-        uwpStore.setEmployeeData(employeeTabs.value)
+        uwpStore.value.setUWPData(uwpData.value)
+        uwpStore.value.setFormData(form.value)
+        uwpStore.value.setEmployeeData(employeeTabs.value)
 
         const submissionData = {
           uwpData: uwpData.value,
@@ -3416,16 +3178,11 @@ export default {
               const fullData = uwpData.value.employeesWithoutTargetPeriod?.find(
                 (e) => e.id === emp.employeeId,
               )
-
               const supervisoryControlNo =
                 emp.supervisorySignatory?.controlNo ||
                 fullData?.supervisorySignatory?.controlNo ||
                 fullData?.employeeData?.supervisorySignatory?.controlNo ||
                 null
-
-              console.log(
-                `[UWP] Submitting ${emp.name} | supervisory_control_no: ${supervisoryControlNo}`,
-              )
 
               return {
                 ...emp,
@@ -3472,7 +3229,11 @@ export default {
           timestamp: new Date().toISOString(),
         }
 
-        await uwpStore.saveUWP(submissionData, officeLibraryIndicatorStore, officeLibraryStore)
+        await uwpStore.value.saveUWP(
+          submissionData,
+          officeLibraryIndicatorStore.value,
+          officeLibraryStore.value,
+        )
 
         $q.notify({
           message: 'Unit Work Plan saved successfully',
@@ -3514,10 +3275,8 @@ export default {
     }
 
     // ===========================================================================
-    // 27. WATCHERS
+    // 10. WATCHERS
     // ===========================================================================
-
-    // Re-populate core competencies when SG / Level / Employee changes
     watch(
       () => ({
         sg: currentEmployee.value?.sg,
@@ -3534,10 +3293,8 @@ export default {
       { deep: true },
     )
 
-    // Apply cascade restrictions when switching to a non-head tab.
-    // Office Head tabs are exempt — they are the cascade root.
     watch(activeEmployeeTab, (newTabId) => {
-      if (!newTabId || cascadeDomino.isHead(newTabId)) return
+      if (!newTabId || dominoIsHead(newTabId)) return
       if (isCurrentEmployeeOfficeHead.value) return
       nextTick(async () => {
         const emp = employeeTabs.value.find((e) => e.id === newTabId)
@@ -3551,7 +3308,6 @@ export default {
       })
     })
 
-    // Auto-set level in competency modal when competency is selected
     watch(
       () => competencySelections.value.map((s) => s.selectedCompetency),
       () => {
@@ -3564,7 +3320,6 @@ export default {
       { deep: true },
     )
 
-    // Regenerate success indicator when relevant standard fields change
     watch(
       () =>
         currentEmployee.value.performanceStandards.map((s) => ({
@@ -3580,20 +3335,16 @@ export default {
       { deep: true },
     )
 
-    // Re-filter employees when org selection changes
     watch([() => form.value.division, () => form.value.section, () => form.value.unit], () =>
       filterEmployees(),
     )
 
-    // Validate competencies when standards change
     watch(
       () => currentEmployee.value?.performanceStandards,
       (stds) => stds?.forEach((_, i) => validateCompetencies(i)),
       { deep: true },
     )
 
-    // Trigger auto-selection when employee list is populated,
-    // then fetch the Office Head's existing MFOs to restrict other employees' dropdowns.
     watch(
       () => uwpData.value.employeesWithoutTargetPeriod,
       (employees) => {
@@ -3608,7 +3359,6 @@ export default {
       { deep: true, immediate: true },
     )
 
-    // Also watch entire uwpData (covers initial load from sessionStorage)
     watch(
       () => uwpData.value,
       (newVal) => {
@@ -3623,8 +3373,6 @@ export default {
       { deep: true, immediate: true },
     )
 
-    // Recalculate restriction when indicator or output selection changes
-    // Office Head is exempt — they are the cascade root and have no restrictions.
     watch(
       () =>
         currentEmployee.value?.performanceStandards?.map((s) => ({
@@ -3640,13 +3388,10 @@ export default {
           if (!newStds[i] || !oldStds[i]) continue
           const indicatorChanged = newStds[i].indicatorName !== oldStds[i].indicatorName
           const outputChanged = newStds[i].output !== oldStds[i].output
-
           if (!indicatorChanged && !outputChanged) continue
-
           const std = currentEmployee.value.performanceStandards[i]
           if (!std) continue
           std.quantityRestriction = null
-
           if (std.rows?.mfo && std.indicatorName?.length) {
             await checkAndShowCascadeModal(i)
           }
@@ -3655,10 +3400,6 @@ export default {
       { deep: true },
     )
 
-    // ── NEW: Office Head output-clearing watcher ──────────────────────────────
-    // When the active employee is an Office Head and they change the category
-    // on a standard to a non-support type, automatically clear the output field.
-    // This keeps the data model consistent with what shouldShowOutput() hides in the UI.
     watch(
       () =>
         currentEmployee.value?.performanceStandards?.map((s) => ({
@@ -3677,35 +3418,50 @@ export default {
     )
 
     // ===========================================================================
-    // 28. LIFECYCLE HOOKS
+    // 11. LIFECYCLE HOOKS
     // ===========================================================================
-
     onMounted(async () => {
-      initializeUWPData()
-      initializeEmployeeTabs()
-
-      console.log('[UWP] uwpData:', JSON.stringify(uwpData.value, null, 2))
-
-      const officeId = uwpData.value.hierarchy.office?.id || 1
-
       try {
+        // Initialize stores in the correct order
+        officeLibraryStore.value = useMfoStore()
+        officeLibraryIndicatorStore.value = useLibraryStore()
+        uwpStore.value = useUnitWorkPlanStore()
+        competencyStore.value = useCompetencyStore()
+        cascadeStore.value = useCascadeStore()
+        mfoHeadStore.value = useMFOHeadStore()
+        quantityRestriction.value = useQuantityRestriction()
+
+        console.log('[UWP] All stores initialized')
+
+        const officeId = uwpData.value.hierarchy.office?.id || 1
+
         await Promise.all([
-          officeLibraryStore.fetchAllData(officeId),
-          officeLibraryIndicatorStore.fetchVerbs(),
+          officeLibraryStore.value.fetchAllData(officeId),
+          officeLibraryIndicatorStore.value.fetchVerbs(),
         ])
 
-        // KEY FIX: populate filteredVerbs immediately after verbs are fetched.
+        // Initialize cascadeDomino after stores are ready
+        cascadeDomino.value = useCascadeDomino({
+          $q,
+          officeLibraryIndicatorStore: officeLibraryIndicatorStore.value,
+          quantityRestriction: quantityRestriction.value,
+          employeeTabs,
+          cascadeData: cascadeStore.value.cascadeData,
+          autoApply: true,
+          debug: process.env.NODE_ENV === 'development',
+        })
+
         filterPerformanceIndicators('', null)
+        initializeUWPData()
+        initializeEmployeeTabs()
 
         if (uwpData.value.employeesWithoutTargetPeriod?.length) {
           autoSelectHeadEmployees()
         }
 
-        // Always fetch the Office Head's MFOs on mount, regardless of whether the
-        // Office Head appears in employeesWithoutTargetPeriod. When the head already
-        // has a target period they won't be in that list, but the API can still find
-        // their plan by office_id + semester + year.
-        fetchHeadMfos()
+        await fetchHeadMfos()
+
+        storesInitialized.value = true
       } catch (error) {
         console.error('[UWP] Mount error:', error)
         $q.notify({ message: 'Failed to load data', color: 'negative', position: 'top' })
@@ -3713,11 +3469,9 @@ export default {
     })
 
     // ===========================================================================
-    // 29. EXPOSE TO TEMPLATE
+    // 12. EXPOSE TO TEMPLATE
     // ===========================================================================
-
     return {
-      // Data
       uwpData,
       form,
       employeeTabs,
@@ -3731,8 +3485,6 @@ export default {
       filteredMfoOptions,
       filteredOutputOptions,
       filteredVerbs,
-
-      // Computed
       semesterOptions,
       yearOptions,
       breadcrumbDisplay,
@@ -3755,34 +3507,21 @@ export default {
       quantityExceedsMax,
       hasOrganizationalSelection,
       isCurrentEmployeeHead,
-
-      // Office Head field-visibility helpers (NEW)
       isCurrentEmployeeOfficeHead,
       shouldShowOutput,
-
-      // Table / Option constants
       standardOutcomeColumns: STANDARD_OUTCOME_COLUMNS,
       quantityIndicator: QUANTITY_INDICATOR_OPTIONS,
-
-      // Cascade
       showCascadeModal,
       cascadeData,
       cascadeDomino,
       uwpStore,
-
-      // Head MFO filter
       mfoHeadStore,
       headMfoNames,
       isFetchingHeadMfos,
-      fetchHeadMfos,
-
-      // Quantity modal
       showQuantityModal,
       quantityValue,
       currentStandardIndex,
       currentQuantityRestriction,
-
-      // Competency modal
       showCompetencyModal,
       competencyType,
       selectedCompetency,
@@ -3791,8 +3530,6 @@ export default {
       showCompetencyError,
       competencySelections,
       filteredCompetencyOptionsByRow,
-
-      // Helper methods
       isHeadPosition,
       getEmployeeBadgeColor,
       getEmployeeName,
@@ -3801,58 +3538,39 @@ export default {
       getEmployeeIndex,
       getSelectedEmployeeIds,
       isSupportCategory,
-
-      // Output + MFO methods
       getAvailableOutputOptions,
       getOutputNoOptionMessage,
       getMfoNoOptionMessage,
-
-      // Filter methods
       filterEmployees,
       filterMfos,
       filterOutputs,
       filterPerformanceIndicators,
       getFilteredMfoOptions,
       getFilteredOutputOptions,
-
-      // Validation methods
       hasMinimumEffectivenessValues,
-      hasMinimumCompetencies,
       validateStrictNumeric,
       blockInvalidChars,
       getQuantityHint,
       isQuantityExceeded,
       getQuantityErrorMessage,
-
-      // Standard management
       addPerformanceStandard,
       removePerformanceStandard,
       generateSuccessIndicator,
       clearDependentFields,
-
-      // Employee tab management
       addEmployeeTab,
       removeEmployeeTab,
       switchToEmployee,
       onEmployeeSelected,
-
-      // Quantity methods
       onQuantityOptionSelect,
       onQuantityUpdate,
       computeQuantities,
       cancelQuantityInput,
-
-      // Timeliness methods
       onTimelinessTypeSelect,
       applyTimelinessInputs,
       onTimelinessUpdate,
       onTimelinessDateUpdate,
-
-      // Effectiveness methods
       onEffectivenessUpdate,
       onEffectivenessFieldFocus,
-
-      // Competency methods
       openCompetencyModal,
       filterCompetencies,
       getAvailableCompetencies,
@@ -3862,15 +3580,12 @@ export default {
       removeCompetency,
       cancelCompetencySelection,
       validateCompetencies,
-
-      // Cascade
       checkAndShowCascadeModal,
-
-      // Form lifecycle
       onDivisionChange,
       onSectionChange,
       onSubmit,
       onBack,
+      storesInitialized,
     }
   },
 }

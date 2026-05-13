@@ -1,451 +1,927 @@
 <template>
   <q-page padding>
-    <!-- ── Page Header ──────────────────────────────────────────── -->
+    <!-- Header -->
     <div class="row items-center justify-between q-mb-md">
       <div>
-        <h6 class="text-h6 q-mb-xs">Supervisory User Management</h6>
-        <div class="text-caption text-grey-7">Create and manage supervisory users</div>
+        <h6 class="text-h6 q-mb-xs">User Management</h6>
+        <div class="text-caption text-grey-7">Create and manage system users</div>
       </div>
       <q-btn
         unelevated
-        color="green"
-        icon="person_add"
+        rounded
+        color="red-9"
         label="Create User"
-        @click="openCreateUserDialog"
-      />
+        @click="openCreateFlow"
+        icon="person_add"
+      >
+        <q-tooltip>Create a new system user</q-tooltip>
+      </q-btn>
     </div>
 
-    <!-- ── Search Input ──────────────────────────────────────────── -->
-    <div class="row q-mb-md">
-      <div class="col-12">
+    <!-- Search and Filter Bar -->
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col-12 col-md-6">
         <q-input
           v-model="searchQuery"
-          label="Search Employee"
           outlined
           dense
+          placeholder="Search by name, username, or office..."
           clearable
-          placeholder="Search by name, designation, or username..."
+          @update:model-value="filterUsers"
         >
           <template v-slot:prepend>
-            <q-icon name="search" color="green" />
+            <q-icon name="search" color="red-9" />
           </template>
         </q-input>
       </div>
+      <div class="col-12 col-md-3">
+        <q-select
+          v-model="roleFilter"
+          :options="roleFilterOptions"
+          outlined
+          dense
+          placeholder="Filter by role"
+          clearable
+          @update:model-value="filterUsers"
+          emit-value
+          map-options
+        >
+          <template v-slot:prepend>
+            <q-icon name="filter_alt" color="red-9" />
+          </template>
+        </q-select>
+      </div>
+      <div class="col-12 col-md-3">
+        <div class="row justify-end q-gutter-sm">
+          <q-btn
+            v-if="searchQuery || roleFilter"
+            flat
+            dense
+            label="Clear Filters"
+            color="grey-7"
+            @click="clearFilters"
+            icon="clear"
+          />
+          <div class="text-caption text-grey-6 self-center">
+            Total: {{ filteredUsers.length }} users
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- ── Employees Table ──────────────────────────────────────────── -->
+    <!-- Users Table -->
     <q-table
-      :rows="filteredEmployees"
+      :rows="filteredUsers"
       :columns="columns"
-      row-key="id"
+      row-key="user_id"
       :loading="store.loading"
       flat
       bordered
-      wrap-cells
+      :pagination="initialPagination"
     >
+      <template v-slot:body-cell-role_name="props">
+        <q-td :props="props" class="text-center">
+          <q-badge
+            :color="getRoleBadgeColor(props.row.role_id)"
+            :label="getRoleName(props.row.role_id)"
+            class="text-capitalize"
+          />
+        </q-td>
+      </template>
+
       <template v-slot:body-cell-status="props">
         <q-td :props="props" class="text-center">
           <q-badge
-            :color="props.row.active === '1' ? 'green' : 'grey'"
-            :label="props.row.active === '1' ? 'Active' : 'Inactive'"
+            :color="props.row.active == 1 ? 'positive' : 'negative'"
+            :label="props.row.active == 1 ? 'Active' : 'Inactive'"
+            class="text-capitalize"
           />
         </q-td>
       </template>
 
       <template v-slot:body-cell-action="props">
         <q-td :props="props" class="text-center">
-          <q-btn flat round color="blue" icon="visibility" @click="viewAccount(props.row)">
-            <q-tooltip>View Account</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            round
-            color="orange"
-            icon="lock_reset"
-            @click="confirmResetPassword(props.row)"
-          >
-            <q-tooltip>Reset Password</q-tooltip>
-          </q-btn>
-          <!-- Toggle active/inactive -->
-          <q-btn
-            flat
-            round
-            :color="props.row.active === '1' ? 'red' : 'green'"
-            :icon="props.row.active === '1' ? 'person_off' : 'how_to_reg'"
-            @click="confirmToggleActive(props.row)"
-          >
-            <q-tooltip>{{ props.row.active === '1' ? 'Deactivate' : 'Activate' }}</q-tooltip>
-          </q-btn>
-          <q-btn flat round color="red" icon="delete" @click="confirmDeleteUser(props.row)">
-            <q-tooltip>Delete Account</q-tooltip>
-          </q-btn>
+          <q-btn-group spread flat>
+            <q-btn flat round color="info" icon="visibility" @click="viewUserDetails(props.row)">
+              <q-tooltip>View User</q-tooltip>
+            </q-btn>
+            <q-btn flat round color="red-9" icon="edit" @click="editUser(props.row)">
+              <q-tooltip>Edit User</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="warning"
+              icon="lock_reset"
+              @click="confirmResetPassword(props.row)"
+            >
+              <q-tooltip>Reset Password</q-tooltip>
+            </q-btn>
+            <q-btn flat round color="negative" icon="delete" @click="confirmDelete(props.row)">
+              <q-tooltip>Delete User</q-tooltip>
+            </q-btn>
+          </q-btn-group>
         </q-td>
       </template>
     </q-table>
 
-    <!-- ── Create User Dialog ──────────────────────────────────────────── -->
-    <q-dialog v-model="showCreateUserDialog" persistent full-width>
-      <q-card style="max-width: 1000px; width: 100%; margin: auto">
-        <q-card-section class="bg-green text-white">
-          <div class="row items-center justify-between">
-            <div class="row items-center q-gutter-sm">
-              <q-icon name="person_add" size="sm" />
-              <div>
-                <div class="text-h6">Create User Accounts</div>
-                <div class="text-caption">
-                  Select employees — username, password and status are auto-generated.
-                </div>
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- STEP 1: ROLE SELECTION MODAL                          -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <q-dialog v-model="showRoleModal" persistent transition-show="scale" transition-hide="scale">
+      <q-card style="width: 100%; max-width: 520px">
+        <q-card-section class="bg-red-9 text-white">
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="security" size="sm" />
+            <div>
+              <div class="text-h6">Select Role</div>
+              <div class="text-caption opacity-80">
+                Step 1 of {{ selectedRole?.value === 5 ? '3' : '2' }}
               </div>
             </div>
-            <q-badge
-              v-if="selectedForCreate.length"
-              color="white"
-              text-color="green"
-              :label="`${selectedForCreate.length} selected`"
-            />
           </div>
         </q-card-section>
 
-        <!-- Search inside dialog -->
-        <q-card-section class="q-pb-none">
-          <q-input v-model="headSearchQuery" label="Search employee..." outlined dense clearable>
-            <template v-slot:prepend>
-              <q-icon name="search" color="green" />
-            </template>
-          </q-input>
+        <q-card-section class="q-pt-md">
+          <p class="text-grey-8 q-mb-md">Select the role to assign to the new user.</p>
+          <div class="row q-col-gutter-sm">
+            <div v-for="role in roles" :key="role.value" class="col-12">
+              <q-card
+                flat
+                bordered
+                class="role-card cursor-pointer"
+                :class="{ 'role-card--selected': selectedRole?.value === role.value }"
+                @click="selectRole(role)"
+              >
+                <q-card-section class="row items-center q-py-sm q-px-md">
+                  <q-icon
+                    :name="getRoleIcon(role.value)"
+                    :color="selectedRole?.value === role.value ? 'white' : 'red-9'"
+                    size="sm"
+                    class="q-mr-md"
+                  />
+                  <div class="col">
+                    <div class="text-body2 text-weight-medium">{{ role.label }}</div>
+                    <div
+                      class="text-caption"
+                      :class="selectedRole?.value === role.value ? 'text-white' : 'text-grey-6'"
+                    >
+                      {{ role.description }}
+                    </div>
+                  </div>
+                  <q-icon
+                    v-if="selectedRole?.value === role.value"
+                    name="check_circle"
+                    color="white"
+                    size="sm"
+                  />
+                </q-card-section>
+              </q-card>
+            </div>
+          </div>
         </q-card-section>
 
-        <!-- Head employees table with checkboxes -->
-        <q-card-section class="q-pt-sm">
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Cancel" color="grey-7" @click="closeCreateFlow" />
+          <q-btn
+            flat
+            label="Next"
+            class="text-blue"
+            @click="openDetailsModal"
+            :disabled="!selectedRole"
+          >
+            <q-tooltip v-if="!selectedRole">Please select a role to continue</q-tooltip>
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- STEP 2: OFFICE + EMPLOYEE + USERNAME + PMT TYPE (if PMT)     -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <q-dialog v-model="showDetailsModal" persistent transition-show="scale" transition-hide="scale">
+      <q-card style="width: 100%; max-width: 560px">
+        <q-card-section class="bg-red-9 text-white">
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="person_add" size="sm" />
+            <div>
+              <div class="text-h6">User Details</div>
+              <div class="text-caption opacity-80">
+                Step 2 of {{ selectedRole?.value === 5 ? '3' : '2' }}
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <!-- Selected Role chip (read-only indicator) -->
+          <div class="row items-center q-pa-sm q-mb-md rounded-borders bg-grey-1">
+            <q-icon
+              :name="getRoleIcon(selectedRole?.value)"
+              color="red-9"
+              size="xs"
+              class="q-mr-sm"
+            />
+            <span class="text-caption text-grey-7 q-mr-xs">Role:</span>
+            <q-badge :color="getRoleBadgeColor(selectedRole?.value)" :label="selectedRole?.label" />
+          </div>
+
+          <!-- Office -->
+          <q-select
+            v-model="selectedOffice"
+            :options="filteredOffices"
+            option-label="name"
+            option-value="id"
+            label="Office *"
+            outlined
+            dense
+            use-input
+            input-debounce="200"
+            clearable
+            class="q-mb-md"
+            :loading="store.loading"
+            @filter="filterOfficesSelect"
+            @update:model-value="onOfficeSelected"
+          >
+            <template v-slot:prepend>
+              <q-icon name="business" />
+            </template>
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">No offices found</q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section avatar>
+                  <q-icon name="business" color="red-9" size="xs" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.name }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+
+          <!-- Employee -->
+          <q-select
+            v-model="selectedEmployee"
+            :options="filteredEmployees"
+            option-label="name4"
+            option-value="ControlNo"
+            label="Employee *"
+            outlined
+            dense
+            use-input
+            input-debounce="200"
+            clearable
+            class="q-mb-md"
+            :loading="loading"
+            :disable="!selectedOffice"
+            @filter="filterEmployeesSelect"
+          >
+            <template v-slot:prepend>
+              <q-icon name="badge" />
+            </template>
+            <template v-slot:hint>
+              <span v-if="!selectedOffice" class="text-grey-5">Select an office first</span>
+            </template>
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">No employees found</q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section avatar>
+                  <q-icon name="person" color="red-9" size="xs" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.name4 }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.Designation }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+            <template v-slot:selected-item="scope">
+              <div>
+                <div class="text-body2">{{ scope.opt.name4 }}</div>
+                <div class="text-caption text-grey-6">{{ scope.opt.Designation }}</div>
+              </div>
+            </template>
+          </q-select>
+
+          <!-- Username -->
+          <q-input
+            v-model="username"
+            label="Username *"
+            outlined
+            dense
+            class="q-mb-md"
+            :rules="[(val) => !!val || 'Username is required']"
+            :loading="loading"
+          >
+            <template v-slot:prepend>
+              <q-icon name="account_circle" />
+            </template>
+          </q-input>
+
+          <!-- PMT Member Type — PMT Admin (value: 5) only -->
+          <template v-if="selectedRole?.value === 5">
+            <q-separator class="q-mb-md" />
+            <div class="text-caption text-grey-7 q-mb-sm">PMT Member Type *</div>
+            <div class="row q-col-gutter-sm">
+              <div v-for="type in pmtTypes" :key="type.value" class="col-12 col-sm-4">
+                <q-card
+                  flat
+                  bordered
+                  class="pmt-card cursor-pointer text-center q-pa-sm"
+                  :class="{ 'pmt-card--selected': selectedPmtType === type.value }"
+                  @click="selectedPmtType = type.value"
+                >
+                  <q-icon
+                    :name="type.icon"
+                    :color="selectedPmtType === type.value ? 'white' : 'red-9'"
+                    size="sm"
+                  />
+                  <div
+                    class="text-caption text-weight-medium q-mt-xs"
+                    :class="selectedPmtType === type.value ? 'text-white' : ''"
+                  >
+                    {{ type.label }}
+                  </div>
+                </q-card>
+              </div>
+            </div>
+          </template>
+        </q-card-section>
+
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Back" color="grey-7" @click="goBackToRoleModal" />
+          <!-- PMT Admin → Step 3 (office assignment) -->
+          <q-btn
+            v-if="selectedRole?.value === 5"
+            flat
+            label="Next"
+            class="text-blue"
+            @click="openOfficeAssignment"
+            :disabled="!canProceedFromStep2"
+            :loading="loading"
+          >
+            <q-tooltip v-if="!canProceedFromStep2">Please complete all required fields</q-tooltip>
+          </q-btn>
+          <!-- All other roles (incl. Receiving Staff) → straight to Review -->
+          <q-btn
+            v-else
+            flat
+            label="Review"
+            class="text-blue"
+            @click="openConfirmationDirect"
+            :disabled="!canProceedFromStep2"
+            :loading="loading"
+          >
+            <q-tooltip v-if="!canProceedFromStep2">Please complete all required fields</q-tooltip>
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- STEP 3: OFFICE ASSIGNMENT (PMT ADMIN ONLY)                    -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <q-dialog
+      v-model="showOfficeAssignmentModal"
+      persistent
+      transition-show="scale"
+      transition-hide="scale"
+    >
+      <q-card style="width: 100%; max-width: 700px">
+        <q-card-section class="bg-red-9 text-white">
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="business_center" size="sm" />
+            <div>
+              <div class="text-h6">Assign Offices</div>
+              <div class="text-caption opacity-80">
+                Step 3 of 3 - Select offices for PMT member to manage
+              </div>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <div class="text-caption text-grey-7 q-mb-md">
+            Select the offices that this PMT member will be assigned to manage.
+          </div>
+
+          <!-- Selected User Info Summary -->
+          <div class="row q-col-gutter-md q-mb-md">
+            <div class="col-12">
+              <div class="q-pa-sm rounded-borders bg-grey-1">
+                <div class="row">
+                  <div class="col-6">
+                    <div class="text-caption text-grey-6">Employee</div>
+                    <div class="text-body2 text-weight-medium">{{ selectedEmployee?.name4 }}</div>
+                  </div>
+                  <div class="col-6">
+                    <div class="text-caption text-grey-6">Role</div>
+                    <div class="text-body2 text-weight-medium">{{ selectedRole?.label }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <q-separator class="q-mb-md" />
+
+          <!-- Office Selection Table with Checkboxes -->
+          <div class="text-subtitle2 q-mb-sm">Available Offices</div>
           <q-table
-            :rows="filteredHeadEmployees"
-            :columns="headColumns"
-            row-key="ControlNo"
-            :loading="store.loadingHeads"
+            :rows="pmtAvailableOffices"
+            :columns="officeAssignmentColumns"
+            row-key="id"
             flat
             bordered
-            wrap-cells
-            selection="multiple"
-            v-model:selected="selectedForCreate"
-            :rows-per-page-options="[10, 20, 50]"
+            dense
+            class="office-assignment-table"
+            :loading="loadingOffices"
           >
-            <!-- Preview generated username / password / status -->
-            <template v-slot:body-cell-preview="props">
-              <q-td :props="props">
-                <div class="text-caption text-grey-8">
-                  <span class="text-weight-medium">{{ generateUsername(props.row.name) }}</span>
-                </div>
-                <div class="text-caption text-grey-5">pms2026</div>
+            <template v-slot:body-cell-select="props">
+              <q-td :props="props" class="text-center">
+                <q-checkbox
+                  v-model="selectedOfficeIds"
+                  :val="props.row.id"
+                  color="red-9"
+                  size="md"
+                />
               </q-td>
             </template>
 
-            <!-- Active toggle per row -->
-            <template v-slot:body-cell-active="props">
-              <q-td :props="props" class="text-center">
-                <q-toggle
-                  :model-value="getRowActive(props.row.ControlNo)"
-                  color="green"
-                  :true-value="true"
-                  :false-value="false"
-                  @update:model-value="(val) => setRowActive(props.row.ControlNo, val)"
-                >
-                  <q-tooltip>
-                    {{ getRowActive(props.row.ControlNo) ? 'Active' : 'Inactive' }}
-                  </q-tooltip>
-                </q-toggle>
-                <div
-                  class="text-caption"
-                  :class="getRowActive(props.row.ControlNo) ? 'text-green' : 'text-grey-6'"
-                >
-                  {{ getRowActive(props.row.ControlNo) ? 'Active' : 'Inactive' }}
-                </div>
+            <template v-slot:body-cell-name="props">
+              <q-td :props="props">
+                <div class="text-body2">{{ props.row.name }}</div>
               </q-td>
             </template>
           </q-table>
+
+          <div class="row justify-between q-mt-sm">
+            <div class="text-caption text-grey-6">
+              Selected: {{ selectedOfficeIds.length }} of {{ pmtAvailableOffices.length }} offices
+            </div>
+            <q-btn
+              flat
+              dense
+              label="Select All"
+              class="text-red-9"
+              @click="selectAllOffices"
+              v-if="selectedOfficeIds.length < pmtAvailableOffices.length"
+            />
+            <q-btn
+              flat
+              dense
+              label="Clear All"
+              class="text-grey-7"
+              @click="clearAllOffices"
+              v-else-if="selectedOfficeIds.length > 0"
+            />
+          </div>
         </q-card-section>
 
         <q-separator />
-
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat label="Cancel" color="grey-7" v-close-popup @click="resetCreateState" />
+          <q-btn flat label="Back" color="grey-7" @click="goBackToDetailsFromOffice" />
           <q-btn
-            unelevated
-            :label="`Create ${selectedForCreate.length ? selectedForCreate.length : ''} Account${selectedForCreate.length !== 1 ? 's' : ''}`"
-            color="green"
-            icon="person_add"
-            @click="createUsers"
-            :loading="store.saving"
-            :disable="!selectedForCreate.length"
-          />
+            flat
+            label="Review"
+            class="text-blue"
+            @click="openConfirmation"
+            :disabled="selectedOfficeIds.length === 0"
+            :loading="loading"
+          >
+            <q-tooltip v-if="selectedOfficeIds.length === 0">
+              Please select at least one office to assign
+            </q-tooltip>
+          </q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <!-- ── View Account Dialog ──────────────────────────────────────────── -->
-    <q-dialog v-model="showViewDialog" persistent>
-      <q-card style="min-width: 520px">
-        <q-card-section class="bg-blue text-white">
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- REVIEW / CONFIRMATION DIALOG                           -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <q-dialog v-model="showConfirmation" persistent transition-show="scale" transition-hide="scale">
+      <q-card style="width: 100%; max-width: 600px">
+        <q-card-section class="bg-red-9 text-white">
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="person_add" size="sm" />
+            <div>
+              <div class="text-h6">Confirm User Creation</div>
+              <div class="text-caption opacity-80">Please review the details before confirming</div>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-md q-gutter-sm">
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="security" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Role</div>
+              <div class="text-body2 text-weight-medium">{{ selectedRole?.label }}</div>
+              <div class="text-caption text-grey-6">{{ selectedRole?.description }}</div>
+            </div>
+          </div>
+
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="business" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Primary Office</div>
+              <div class="text-body2 text-weight-medium">{{ selectedOffice?.name }}</div>
+            </div>
+          </div>
+
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="badge" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Employee</div>
+              <div class="text-body2 text-weight-medium">{{ selectedEmployee?.name4 }}</div>
+              <div class="text-caption text-grey-6">{{ selectedEmployee?.Designation }}</div>
+            </div>
+          </div>
+
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="account_circle" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Username</div>
+              <div class="text-body2 text-weight-medium">{{ username }}</div>
+            </div>
+          </div>
+
+          <!-- PMT Member Type — PMT Admin only -->
+          <div
+            v-if="selectedRole?.value === 5 && selectedPmtType"
+            class="row items-center q-pa-sm rounded-borders bg-grey-1"
+          >
+            <q-icon name="groups" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">PMT Member Type</div>
+              <div class="text-body2 text-weight-medium">
+                {{ pmtTypes.find((t) => t.value === selectedPmtType)?.label }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Assigned Offices — PMT Admin only -->
+          <div
+            v-if="selectedRole?.value === 5 && selectedOfficeIds.length > 0"
+            class="q-pa-sm rounded-borders bg-grey-1"
+          >
+            <div class="row items-center q-mb-sm">
+              <q-icon name="business_center" color="red-9" size="sm" class="q-mr-md" />
+              <div>
+                <div class="text-caption text-grey-6">
+                  Assigned Offices ({{ selectedOfficeIds.length }})
+                </div>
+              </div>
+            </div>
+            <div class="q-pl-lg">
+              <q-chip
+                v-for="office in assignedOfficesDetails"
+                :key="office.id"
+                size="sm"
+                color="red-2"
+                text-color="red-9"
+                class="q-mr-xs q-mb-xs"
+              >
+                {{ office.name }}
+              </q-chip>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md">
+          <!-- PMT Admin backs to office assignment; everyone else backs to details -->
+          <q-btn
+            v-if="selectedRole?.value === 5"
+            flat
+            label="Back"
+            color="grey-7"
+            @click="goBackToOfficeAssignment"
+            icon="arrow_back"
+          />
+          <q-btn
+            v-else
+            flat
+            label="Back"
+            color="grey-7"
+            @click="goBackToDetailsFromConfirmation"
+            icon="arrow_back"
+          />
+          <q-btn flat label="Create" class="text-blue" @click="confirmSave" :loading="saving">
+            <q-tooltip>Create user with selected details</q-tooltip>
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- VIEW USER MODAL                                        -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <q-dialog v-model="showViewModal">
+      <q-card style="width: 100%; max-width: 600px">
+        <q-card-section class="bg-red-9 text-white">
           <div class="row items-center q-gutter-sm">
             <q-icon name="account_circle" size="sm" />
             <div>
-              <div class="text-h6">Account Details</div>
-              <div class="text-caption">Supervisory user information</div>
+              <div class="text-h6">User Details</div>
+              <div class="text-caption opacity-80">Account information</div>
             </div>
           </div>
         </q-card-section>
 
-        <q-card-section v-if="store.loadingView" class="text-center q-py-lg">
-          <q-spinner color="blue" size="40px" />
-          <div class="text-caption text-grey-7 q-mt-sm">Loading account details...</div>
+        <q-card-section class="q-pt-md q-gutter-sm">
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="person" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Name</div>
+              <div class="text-body2 text-weight-medium">{{ selectedUser?.name }}</div>
+            </div>
+          </div>
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="account_circle" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Username</div>
+              <div class="text-body2 text-weight-medium">{{ selectedUser?.username }}</div>
+            </div>
+          </div>
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="badge" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Designation</div>
+              <div class="text-body2 text-weight-medium">
+                {{ selectedUser?.designation ?? 'N/A' }}
+              </div>
+            </div>
+          </div>
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="business" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Primary Office</div>
+              <div class="text-body2 text-weight-medium">
+                {{ selectedUser?.office?.name ?? 'N/A' }}
+              </div>
+            </div>
+          </div>
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="security" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Role</div>
+              <div class="text-body2 text-weight-medium">
+                {{ getRoleName(selectedUser?.role_id) }}
+              </div>
+            </div>
+          </div>
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="toggle_on" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Status</div>
+              <div class="text-body2 text-weight-medium">
+                <q-badge
+                  :color="selectedUser?.active == 1 ? 'positive' : 'negative'"
+                  :label="selectedUser?.active == 1 ? 'Active' : 'Inactive'"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Assigned offices — PMT Admin only -->
+          <div
+            v-if="selectedUser?.role_id === 5 && selectedUser?.assigned_offices"
+            class="q-pa-sm rounded-borders bg-grey-1"
+          >
+            <div class="row items-center q-mb-sm">
+              <q-icon name="business_center" color="red-9" size="sm" class="q-mr-md" />
+              <div>
+                <div class="text-caption text-grey-6">Assigned Offices</div>
+              </div>
+            </div>
+            <div class="q-pl-lg">
+              <q-chip
+                v-for="office in selectedUser.assigned_offices"
+                :key="office.id"
+                size="sm"
+                color="red-2"
+                text-color="red-9"
+                class="q-mr-xs q-mb-xs"
+              >
+                {{ office.name }}
+              </q-chip>
+            </div>
+          </div>
         </q-card-section>
 
-        <q-card-section v-else-if="store.viewedAccount" class="q-pt-md">
-          <div class="row q-col-gutter-sm">
-            <div class="col-12">
-              <div class="text-caption text-grey-7">Full Name</div>
-              <div class="text-body1 text-weight-medium">{{ store.viewedAccount.name }}</div>
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Close" class="text-blue" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- EDIT USER MODAL WITH STATUS TOGGLE                    -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <q-dialog v-model="showEditModal">
+      <q-card style="width: 100%; max-width: 600px">
+        <q-card-section class="bg-red-9 text-white">
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="edit" size="sm" />
+            <div>
+              <div class="text-h6">Edit User</div>
+              <div class="text-caption opacity-80">Update user role, status, and assignments</div>
             </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Username</div>
-              <div class="text-body2">{{ store.viewedAccount.username }}</div>
+          </div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-md q-gutter-sm">
+          <!-- User Info Display -->
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="person" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Name</div>
+              <div class="text-body2 text-weight-medium">{{ selectedUser?.name }}</div>
             </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Control No.</div>
-              <div class="text-body2">{{ store.viewedAccount.control_no }}</div>
+          </div>
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="account_circle" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Username</div>
+              <div class="text-body2 text-weight-medium">{{ selectedUser?.username }}</div>
             </div>
-            <div class="col-12">
-              <div class="text-caption text-grey-7">Designation</div>
-              <div class="text-body2">{{ store.viewedAccount.designation }}</div>
+          </div>
+          <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="business" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Primary Office</div>
+              <div class="text-body2 text-weight-medium">
+                {{ selectedUser?.office?.name ?? 'N/A' }}
+              </div>
             </div>
-            <div class="col-12">
-              <div class="text-caption text-grey-7">Office</div>
-              <div class="text-body2">{{ store.viewedAccount.office?.name || '—' }}</div>
+          </div>
+
+          <!-- Status Toggle -->
+          <div class="row items-center justify-between q-pa-sm rounded-borders bg-grey-1 q-mt-md">
+            <div class="row items-center">
+              <q-icon name="toggle_on" color="red-9" size="sm" class="q-mr-md" />
+              <div>
+                <div class="text-caption text-grey-6">Account Status</div>
+                <div class="text-body2 text-weight-medium">
+                  {{ editUserActive ? 'Active' : 'Inactive' }}
+                </div>
+              </div>
             </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Role</div>
-              <div class="text-body2">{{ store.viewedAccount.role?.name || '—' }}</div>
+            <q-toggle
+              v-model="editUserActive"
+              color="red-9"
+              :label="editUserActive ? 'Active' : 'Inactive'"
+              @update:model-value="onStatusToggle"
+            />
+          </div>
+
+          <!-- Role Selection -->
+          <q-select
+            v-model="editRole"
+            :options="roles"
+            label="Role *"
+            option-label="label"
+            outlined
+            dense
+            :rules="[(val) => !!val || 'Role is required']"
+            :loading="loading"
+            class="q-mt-md"
+            @update:model-value="onEditRoleChange"
+          >
+            <template v-slot:prepend>
+              <q-icon name="security" />
+            </template>
+          </q-select>
+
+          <!-- Office Assignment — PMT Admin only in edit mode -->
+          <div v-if="editRole?.value === 5">
+            <q-separator class="q-mt-md q-mb-md" />
+            <div class="text-subtitle2 q-mb-sm">Assigned Offices</div>
+            <div class="text-caption text-grey-7 q-mb-md">
+              Select offices that this PMT member can manage
             </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Status</div>
-              <q-badge
-                :color="store.viewedAccount.active === '1' ? 'green' : 'grey'"
-                :label="store.viewedAccount.active === '1' ? 'Active' : 'Inactive'"
+
+            <q-table
+              :rows="pmtAvailableOffices"
+              :columns="officeAssignmentColumns"
+              row-key="id"
+              flat
+              bordered
+              dense
+              class="office-assignment-table"
+              :loading="loadingOffices"
+            >
+              <template v-slot:body-cell-select="props">
+                <q-td :props="props" class="text-center">
+                  <q-checkbox
+                    v-model="editSelectedOfficeIds"
+                    :val="props.row.id"
+                    color="red-9"
+                    size="md"
+                  />
+                </q-td>
+              </template>
+
+              <template v-slot:body-cell-name="props">
+                <q-td :props="props">
+                  <div class="text-body2">{{ props.row.name }}</div>
+                </q-td>
+              </template>
+            </q-table>
+
+            <div class="row justify-between q-mt-sm">
+              <div class="text-caption text-grey-6">
+                Selected: {{ editSelectedOfficeIds.length }} of
+                {{ pmtAvailableOffices.length }} offices
+              </div>
+              <q-btn
+                flat
+                dense
+                label="Select All"
+                class="text-red-9"
+                @click="selectAllOfficesEdit"
+                v-if="editSelectedOfficeIds.length < pmtAvailableOffices.length"
+              />
+              <q-btn
+                flat
+                dense
+                label="Clear All"
+                class="text-grey-7"
+                @click="clearAllOfficesEdit"
+                v-else-if="editSelectedOfficeIds.length > 0"
               />
             </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Email</div>
-              <div class="text-body2">{{ store.viewedAccount.email || '—' }}</div>
-            </div>
-            <div class="col-6">
-              <div class="text-caption text-grey-7">Created At</div>
-              <div class="text-body2">{{ formatDate(store.viewedAccount.created_at) }}</div>
-            </div>
           </div>
         </q-card-section>
 
         <q-separator />
-
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn unelevated label="Close" color="blue" v-close-popup />
+          <q-btn flat label="Cancel" color="grey-7" v-close-popup />
+          <q-btn
+            flat
+            label="Save Changes"
+            class="text-blue"
+            @click="updateUserAccount"
+            :loading="saving"
+            :disabled="!editRole"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <!-- ── Reset Password Dialog ──────────────────────────────────────────── -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- RESET PASSWORD DIALOG                                  -->
+    <!-- ══════════════════════════════════════════════════════ -->
     <q-dialog v-model="showResetPassword" persistent>
-      <q-card style="min-width: 460px">
-        <q-card-section class="bg-orange text-white">
-          <div class="row items-center q-gutter-sm">
-            <q-icon name="lock_reset" size="sm" />
-            <div>
-              <div class="text-h6">Reset Password</div>
-              <div class="text-caption">Confirm password reset</div>
-            </div>
-          </div>
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center">
+          <q-icon name="lock_reset" color="warning" size="md" class="q-mr-sm" />
+          <span>
+            Are you sure you want to reset the password for
+            <strong>{{ selectedUser?.name }}</strong
+            >?
+          </span>
         </q-card-section>
-
-        <q-card-section class="q-pt-md">
-          <div class="row items-center">
-            <q-icon name="warning" color="orange" size="md" class="q-mr-sm" />
-            <span class="text-body1">
-              Are you sure you want to reset the password for
-              <strong>{{ selectedEmployee?.name }}</strong
-              >?
-            </span>
-          </div>
-          <div class="text-caption text-grey-7 q-mt-md">
-            The user's password will be reset to the default.
-          </div>
-        </q-card-section>
-
-        <q-separator />
-
-        <q-card-actions align="right" class="q-pa-md">
+        <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey-7" v-close-popup />
           <q-btn
-            unelevated
+            flat
             label="Reset Password"
-            color="orange"
-            icon="lock_reset"
+            class="text-blue"
             @click="resetPassword"
-            :loading="store.saving"
+            :loading="saving"
           />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <!-- ── Toggle Active Dialog ──────────────────────────────────────────── -->
-    <q-dialog v-model="showToggleActiveDialog" persistent>
-      <q-card style="min-width: 460px">
-        <q-card-section
-          :class="selectedEmployee?.active === '1' ? 'bg-red' : 'bg-green'"
-          class="text-white"
-        >
-          <div class="row items-center q-gutter-sm">
-            <q-icon
-              :name="selectedEmployee?.active === '1' ? 'person_off' : 'how_to_reg'"
-              size="sm"
-            />
-            <div>
-              <div class="text-h6">
-                {{ selectedEmployee?.active === '1' ? 'Deactivate Account' : 'Activate Account' }}
-              </div>
-              <div class="text-caption">Confirm status change</div>
-            </div>
-          </div>
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- DELETE CONFIRMATION DIALOG                             -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <q-dialog v-model="showDeleteDialog">
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Confirm Delete</div>
         </q-card-section>
-
-        <q-card-section class="q-pt-md">
-          <div class="row items-center">
-            <q-icon
-              name="warning"
-              :color="selectedEmployee?.active === '1' ? 'red' : 'green'"
-              size="md"
-              class="q-mr-sm"
-            />
-            <span class="text-body1">
-              Are you sure you want to
-              <strong>{{ selectedEmployee?.active === '1' ? 'deactivate' : 'activate' }}</strong>
-              the account for <strong>{{ selectedEmployee?.name }}</strong
-              >?
-            </span>
-          </div>
-          <div class="text-caption text-grey-7 q-mt-md">
-            <span v-if="selectedEmployee?.active === '1'">
-              The user will no longer be able to log in until reactivated.
-            </span>
-            <span v-else> The user will regain access to the system. </span>
-          </div>
+        <q-card-section>
+          Are you sure you want to delete <strong>{{ selectedUser?.name }}</strong
+          >?
         </q-card-section>
-
-        <q-separator />
-
-        <q-card-actions align="right" class="q-pa-md">
+        <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey-7" v-close-popup />
-          <q-btn
-            unelevated
-            :label="selectedEmployee?.active === '1' ? 'Deactivate' : 'Activate'"
-            :color="selectedEmployee?.active === '1' ? 'red' : 'green'"
-            :icon="selectedEmployee?.active === '1' ? 'person_off' : 'how_to_reg'"
-            @click="toggleActive"
-            :loading="store.saving"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-
-    <!-- ── Delete User Dialog ──────────────────────────────────────────── -->
-    <q-dialog v-model="showDeleteDialog" persistent>
-      <q-card style="min-width: 460px">
-        <q-card-section class="bg-red text-white">
-          <div class="row items-center q-gutter-sm">
-            <q-icon name="delete_forever" size="sm" />
-            <div>
-              <div class="text-h6">Delete Account</div>
-              <div class="text-caption">This action cannot be undone</div>
-            </div>
-          </div>
-        </q-card-section>
-
-        <q-card-section class="q-pt-md">
-          <div class="row items-center">
-            <q-icon name="warning" color="red" size="md" class="q-mr-sm" />
-            <span class="text-body1">
-              Are you sure you want to permanently delete the account for
-              <strong>{{ selectedEmployee?.name }}</strong
-              >?
-            </span>
-          </div>
-          <div class="text-caption text-grey-7 q-mt-md">
-            All data associated with this account will be permanently removed.
-          </div>
-        </q-card-section>
-
-        <q-separator />
-
-        <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat label="Cancel" color="grey-7" v-close-popup />
-          <q-btn
-            unelevated
-            label="Delete Account"
-            color="red"
-            icon="delete_forever"
-            @click="deleteUser"
-            :loading="store.saving"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
-
-    <!-- ── Bulk Create Result Dialog ──────────────────────────────────────────── -->
-    <q-dialog v-model="showResultDialog" persistent>
-      <q-card style="min-width: 520px; max-width: 700px">
-        <q-card-section class="bg-green text-white">
-          <div class="row items-center q-gutter-sm">
-            <q-icon name="check_circle" size="sm" />
-            <div>
-              <div class="text-h6">Accounts Created</div>
-              <div class="text-caption">{{ createResults.length }} account(s) processed</div>
-            </div>
-          </div>
-        </q-card-section>
-
-        <q-card-section class="q-pt-md">
-          <q-list bordered separator>
-            <q-item v-for="(result, index) in createResults" :key="index">
-              <q-item-section avatar>
-                <q-icon
-                  :name="result.success ? 'check_circle' : 'error'"
-                  :color="result.success ? 'green' : 'red'"
-                />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>{{ result.name }}</q-item-label>
-                <q-item-label caption>
-                  <span v-if="result.success">
-                    Username: <strong>{{ result.username }}</strong> &nbsp;|&nbsp; Password:
-                    <strong>pms2026</strong> &nbsp;|&nbsp; Status:
-                    <strong :class="result.active ? 'text-green' : 'text-grey-6'">
-                      {{ result.active ? 'Active' : 'Inactive' }}
-                    </strong>
-                  </span>
-                  <span v-else class="text-red">{{ result.error }}</span>
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-badge
-                  :color="result.success ? 'green' : 'red'"
-                  :label="result.success ? 'Created' : 'Failed'"
-                />
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
-
-        <q-separator />
-
-        <q-card-actions align="right" class="q-pa-md">
-          <q-btn unelevated label="Close" color="green" v-close-popup />
+          <q-btn flat label="Delete" color="negative" @click="deleteUser" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -453,247 +929,613 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useSupervisoryUserStore } from 'src/stores/supervisoryUserStore'
-import { date } from 'quasar'
+import { ref, computed, onMounted, watch } from 'vue'
+import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
 
 export default {
-  name: 'SupervisoryUserPage',
+  name: 'UserPage',
 
   setup() {
-    const store = useSupervisoryUserStore()
+    const store = useUserManageStore()
 
-    const searchQuery = ref('')
-    const headSearchQuery = ref('')
-    const showCreateUserDialog = ref(false)
-    const showViewDialog = ref(false)
-    const showResetPassword = ref(false)
-    const showToggleActiveDialog = ref(false)
+    // ── Modal visibility ───────────────────────────────────────
+    const showRoleModal = ref(false)
+    const showDetailsModal = ref(false)
+    const showOfficeAssignmentModal = ref(false)
+    const showConfirmation = ref(false)
+    const showViewModal = ref(false)
+    const showEditModal = ref(false)
     const showDeleteDialog = ref(false)
-    const showResultDialog = ref(false)
+    const showResetPassword = ref(false)
 
+    // ── Loading states ─────────────────────────────────────────
+    const loading = ref(false)
+    const saving = ref(false)
+    const loadingOffices = ref(false)
+
+    // ── Selected data ──────────────────────────────────────────
+    const selectedUser = ref(null)
+    const selectedOffice = ref(null)
     const selectedEmployee = ref(null)
-    const selectedForCreate = ref([])
-    const createResults = ref([])
+    const selectedRole = ref(null)
+    const selectedPmtType = ref(null)
+    const username = ref('')
+    const selectedOfficeIds = ref([])
+    const editSelectedOfficeIds = ref([])
+    const editRole = ref(null)
+    const editUserActive = ref(true)
 
-    // Per-row active state map for the create dialog: { ControlNo: true/false }
-    const rowActiveMap = ref({})
+    // ── Filter and Search ──────────────────────────────────────
+    const searchQuery = ref('')
+    const roleFilter = ref(null)
+    const filteredUsers = ref([])
 
-    // ── Main table columns
-    const columns = [
-      { name: 'name', label: 'NAME', align: 'left', field: 'name', sortable: true },
+    const initialPagination = {
+      sortBy: 'datecreated',
+      descending: true,
+      rowsPerPage: 10,
+    }
+
+    // ── Filtered options ───────────────────────────────────────
+    const filteredOffices = ref([])
+    const filteredEmployees = ref([])
+    const pmtAvailableOffices = ref([])
+
+    // ── Static data ────────────────────────────────────────────
+    const roles = [
       {
-        name: 'position',
-        label: 'DESIGNATION',
-        align: 'left',
-        field: 'designation',
+        label: 'Office Admin',
+        value: 1,
+        description: 'Can manage office-specific settings and users',
+      },
+      {
+        label: 'Planning Admin',
+        value: 2,
+        description: 'Can manage planning-related functions and users',
+      },
+      {
+        label: 'HR Admin',
+        value: 3,
+        description: 'Creates accounts and manages the system',
+      },
+      {
+        label: 'PMT Admin',
+        value: 5,
+        description: 'Performance Management Team — evaluations and monitoring',
+      },
+      {
+        label: 'Receiving Staff',
+        value: 6,
+        description: 'Handles receiving and processing of documents and items',
+      },
+    ]
+
+    const roleFilterOptions = [
+      { label: 'Office Admin', value: 1 },
+      { label: 'Planning Admin', value: 2 },
+      { label: 'HR Admin', value: 3 },
+      { label: 'PMT Admin', value: 5 },
+      { label: 'Receiving Staff', value: 6 },
+    ]
+
+    const pmtTypes = [
+      { label: 'Member', value: 'member', icon: 'person' },
+      { label: 'Vice Chairperson', value: 'vice_chairperson', icon: 'supervisor_account' },
+      { label: 'Chairperson', value: 'chairperson', icon: 'manage_accounts' },
+    ]
+
+    // ── Table columns ──────────────────────────────────────────
+    const columns = [
+      { name: 'office_name', label: 'OFFICE', align: 'left', field: 'office_name', sortable: true },
+      { name: 'name', label: 'NAME', align: 'left', field: 'name', sortable: true },
+      { name: 'role_name', label: 'ROLE', align: 'center', field: 'role_name', sortable: true },
+      { name: 'status', label: 'STATUS', align: 'center', field: 'status', sortable: true },
+      {
+        name: 'datecreated',
+        label: 'DATE CREATED',
+        align: 'center',
+        field: 'datecreated',
         sortable: true,
       },
-      { name: 'username', label: 'USERNAME', align: 'left', field: 'username', sortable: true },
-      { name: 'status', label: 'STATUS', align: 'center', field: 'active', sortable: true },
       { name: 'action', label: 'ACTIONS', align: 'center', field: 'action' },
     ]
 
-    // ── Head employees table columns inside create dialog
-    const headColumns = [
-      { name: 'ControlNo', label: 'CONTROL NO', align: 'left', field: 'ControlNo', sortable: true },
-      { name: 'name', label: 'NAME', align: 'left', field: 'name', sortable: true },
-      { name: 'position', label: 'POSITION', align: 'left', field: 'position', sortable: true },
-      { name: 'office', label: 'OFFICE', align: 'left', field: 'office', sortable: true },
-      { name: 'preview', label: 'USERNAME / PASSWORD', align: 'left', field: 'preview' },
-      { name: 'active', label: 'STATUS', align: 'center', field: 'active' },
+    const officeAssignmentColumns = [
+      { name: 'select', label: 'SELECT', align: 'center', field: 'select', style: 'width: 80px' },
+      { name: 'name', label: 'OFFICE NAME', align: 'left', field: 'name' },
     ]
 
-    // ── Username: first letter of first name + _ + last name
-    // e.g. "JOGRAD M. MAHUSAY" → "j_mahusay"
-    const generateUsername = (fullName) => {
-      if (!fullName) return ''
-      const parts = fullName.trim().split(/\s+/)
-      const meaningful = parts.filter((p) => p.length > 1 && !p.endsWith('.'))
-      if (!meaningful.length) return fullName.toLowerCase().replace(/\s+/g, '_')
-      const firstName = meaningful[0]
-      const lastName = meaningful[meaningful.length - 1]
-      return `${firstName[0].toLowerCase()}_${lastName.toLowerCase()}`
-    }
+    // ── Computed ───────────────────────────────────────────────
+    const canProceedFromStep2 = computed(() => {
+      if (!selectedOffice.value || !selectedEmployee.value || !username.value) return false
+      // PMT Admin additionally requires a member type
+      if (selectedRole.value?.value === 5 && !selectedPmtType.value) return false
+      return true
+    })
 
-    // ── Per-row active helpers
-    const getRowActive = (controlNo) => {
-      // Default to true if not yet set
-      return rowActiveMap.value[controlNo] !== false
-    }
-
-    const setRowActive = (controlNo, val) => {
-      rowActiveMap.value = { ...rowActiveMap.value, [controlNo]: val }
-    }
-
-    // ── Filtered main table
-    const filteredEmployees = computed(() => {
-      if (!searchQuery.value) return store.employees
-      const query = searchQuery.value.toLowerCase()
-      return store.employees.filter(
-        (emp) =>
-          emp.name?.toLowerCase().includes(query) ||
-          emp.designation?.toLowerCase().includes(query) ||
-          emp.username?.toLowerCase().includes(query) ||
-          (emp.active === '1' ? 'active' : 'inactive').includes(query),
+    const assignedOfficesDetails = computed(() => {
+      return pmtAvailableOffices.value.filter((office) =>
+        selectedOfficeIds.value.includes(office.id),
       )
     })
 
-    // ── Filtered head employees inside create dialog
-    const filteredHeadEmployees = computed(() => {
-      if (!headSearchQuery.value) return store.headEmployees
-      const query = headSearchQuery.value.toLowerCase()
-      return store.headEmployees.filter(
-        (emp) =>
-          emp.name?.toLowerCase().includes(query) ||
-          emp.position?.toLowerCase().includes(query) ||
-          emp.ControlNo?.toLowerCase().includes(query) ||
-          emp.office?.toLowerCase().includes(query),
-      )
-    })
+    // ── Filter Users ───────────────────────────────────────────
+    const filterUsers = () => {
+      let filtered = [...store.users]
 
-    // ── Open create dialog
-    const openCreateUserDialog = async () => {
-      resetCreateState()
-      showCreateUserDialog.value = true
-      if (!store.headEmployees.length) {
-        await store.fetchHeadEmployees()
+      if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        filtered = filtered.filter(
+          (user) =>
+            (user.name && user.name.toLowerCase().includes(query)) ||
+            (user.username && user.username.toLowerCase().includes(query)) ||
+            (user.office_name && user.office_name.toLowerCase().includes(query)),
+        )
+      }
+
+      if (roleFilter.value) {
+        filtered = filtered.filter((user) => user.role_id === roleFilter.value)
+      }
+
+      filteredUsers.value = filtered
+    }
+
+    const clearFilters = () => {
+      searchQuery.value = ''
+      roleFilter.value = null
+      filterUsers()
+    }
+
+    // ── Role helpers ───────────────────────────────────────────
+    const getRoleName = (roleId) => {
+      const role = roles.find((r) => r.value === roleId)
+      return role ? role.label : 'Unknown'
+    }
+
+    const getRoleBadgeColor = (roleId) => {
+      const map = { 1: 'green-9', 2: 'pink-4', 3: 'red-9', 5: 'red-9', 6: 'blue-9' }
+      return map[roleId] || 'grey'
+    }
+
+    const getRoleIcon = (roleId) => {
+      const map = {
+        1: 'business',
+        2: 'insights',
+        3: 'admin_panel_settings',
+        5: 'groups',
+        6: 'inbox',
+      }
+      return map[roleId] || 'security'
+    }
+
+    // ── Filter functions ───────────────────────────────────────
+    const filterOfficesSelect = (val, update) => {
+      update(() => {
+        const needle = val.toLowerCase()
+        filteredOffices.value = store.offices.filter((o) =>
+          (o.name ?? '').toLowerCase().includes(needle),
+        )
+      })
+    }
+
+    const filterEmployeesSelect = (val, update) => {
+      update(() => {
+        const needle = val.toLowerCase()
+        filteredEmployees.value = store.employees.filter(
+          (e) =>
+            (e.name4 ?? '').toLowerCase().includes(needle) ||
+            (e.Designation ?? '').toLowerCase().includes(needle),
+        )
+      })
+    }
+
+    // ── Navigation ─────────────────────────────────────────────
+    const openCreateFlow = () => {
+      resetForm()
+      showRoleModal.value = true
+    }
+
+    const closeCreateFlow = () => {
+      showRoleModal.value = false
+      resetForm()
+    }
+
+    const selectRole = (role) => {
+      selectedRole.value = role
+    }
+
+    const openDetailsModal = async () => {
+      if (!selectedRole.value) return
+      showRoleModal.value = false
+      filteredOffices.value = store.offices || []
+      showDetailsModal.value = true
+    }
+
+    // Step 3 — PMT Admin only
+    const openOfficeAssignment = async () => {
+      if (!canProceedFromStep2.value) return
+      loadingOffices.value = true
+      try {
+        const offices = await store.fetchPmtAvailableOffices()
+        pmtAvailableOffices.value = offices
+        selectedOfficeIds.value = []
+        showDetailsModal.value = false
+        showOfficeAssignmentModal.value = true
+      } finally {
+        loadingOffices.value = false
       }
     }
 
-    const resetCreateState = () => {
-      selectedForCreate.value = []
-      headSearchQuery.value = ''
-      rowActiveMap.value = {}
+    // All non-PMT roles (Office Admin, Planning Admin, HR Admin, Receiving Staff)
+    // go directly from Step 2 → Confirmation
+    const openConfirmationDirect = () => {
+      if (!canProceedFromStep2.value) return
+      showDetailsModal.value = false
+      showConfirmation.value = true
     }
 
-    // ── Bulk create users
-    const createUsers = async () => {
-      const results = []
+    const goBackToRoleModal = () => {
+      showDetailsModal.value = false
+      selectedOffice.value = null
+      selectedEmployee.value = null
+      username.value = ''
+      selectedPmtType.value = null
+      filteredEmployees.value = []
+      showRoleModal.value = true
+    }
 
-      for (const emp of selectedForCreate.value) {
-        const username = generateUsername(emp.name)
-        const isActive = getRowActive(emp.ControlNo)
+    const goBackToDetailsFromOffice = () => {
+      showOfficeAssignmentModal.value = false
+      showDetailsModal.value = true
+    }
 
+    const goBackToDetailsFromConfirmation = () => {
+      showConfirmation.value = false
+      showDetailsModal.value = true
+    }
+
+    const goBackToOfficeAssignment = () => {
+      showConfirmation.value = false
+      showOfficeAssignmentModal.value = true
+    }
+
+    const onOfficeSelected = async (office) => {
+      selectedEmployee.value = null
+      filteredEmployees.value = []
+      if (!office) return
+      loading.value = true
+      try {
+        await store.fetchEmployees(office.name)
+        filteredEmployees.value = store.employees || []
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const selectAllOffices = () => {
+      selectedOfficeIds.value = pmtAvailableOffices.value.map((o) => o.id)
+    }
+
+    const clearAllOffices = () => {
+      selectedOfficeIds.value = []
+    }
+
+    const selectAllOfficesEdit = () => {
+      editSelectedOfficeIds.value = pmtAvailableOffices.value.map((o) => o.id)
+    }
+
+    const clearAllOfficesEdit = () => {
+      editSelectedOfficeIds.value = []
+    }
+
+    const openConfirmation = () => {
+      if (selectedOfficeIds.value.length === 0) return
+      showOfficeAssignmentModal.value = false
+      showConfirmation.value = true
+    }
+
+    // ── Status Toggle ──────────────────────────────────────────
+    const onStatusToggle = async (value) => {
+      const success = await store.updateUserStatus(selectedUser.value.user_id, value ? 1 : 0)
+      if (success) {
+        selectedUser.value.active = value ? 1 : 0
+        filterUsers()
+      }
+    }
+
+    // ── Save / CRUD ────────────────────────────────────────────
+    const confirmSave = async () => {
+      saving.value = true
+      try {
         const userData = {
-          name: emp.name,
-          designation: emp.position || emp.designation || '',
-          role_id: 4,
-          controlNo: emp.ControlNo,
-          username,
+          name: selectedEmployee.value.name4,
           password: 'pms2026',
-          active: isActive ? '1' : '0',
+          designation: selectedEmployee.value.Designation,
+          office_id: selectedOffice.value.id,
+          office_name: selectedOffice.value.name,
+          role_id: selectedRole.value.value,
+          username: username.value,
+          control_no: selectedEmployee.value.ControlNo,
+          active: true,
+          permissions: [],
+          // PMT Admin only extras
+          ...(selectedRole.value?.value === 5 && {
+            pmt_type: selectedPmtType.value,
+            office_id_assign: selectedOfficeIds.value,
+          }),
         }
 
-        const result = await store.createUser(userData)
-        results.push({
-          name: emp.name,
-          username,
-          active: isActive,
-          success: result.success,
-          error: result.error || null,
-        })
+        const success = await store.createUser(userData)
+        if (success) {
+          showConfirmation.value = false
+          resetForm()
+          filterUsers()
+        }
+      } finally {
+        saving.value = false
       }
-
-      createResults.value = results
-      showCreateUserDialog.value = false
-      showResultDialog.value = true
-      resetCreateState()
-      await store.fetchSupervisoryUser()
     }
 
-    // ── View account
-    const viewAccount = async (employee) => {
-      showViewDialog.value = true
-      await store.fetchAccountDetail(employee.id)
-    }
-
-    // ── Reset password
-    const confirmResetPassword = (employee) => {
-      selectedEmployee.value = employee
-      showResetPassword.value = true
-    }
-
-    const resetPassword = async () => {
-      const success = await store.resetPassword(selectedEmployee.value.id)
+    const viewUserDetails = async (user) => {
+      const success = await store.viewUserDetails(user.user_id)
       if (success) {
-        showResetPassword.value = false
-        selectedEmployee.value = null
+        selectedUser.value = store.selectedUser
+        showViewModal.value = true
       }
     }
 
-    // ── Toggle active / inactive
-    const confirmToggleActive = (employee) => {
-      selectedEmployee.value = employee
-      showToggleActiveDialog.value = true
-    }
-
-    const toggleActive = async () => {
-      const newActive = selectedEmployee.value.active === '1' ? '0' : '1'
-      const success = await store.updateActiveStatus(selectedEmployee.value.id, newActive)
+    const editUser = async (user) => {
+      const success = await store.viewUserDetails(user.user_id)
       if (success) {
-        showToggleActiveDialog.value = false
-        selectedEmployee.value = null
-        await store.fetchSupervisoryUser()
+        selectedUser.value = store.selectedUser
+        editRole.value = roles.find((r) => r.value === store.selectedUser.role_id) || null
+        editUserActive.value = store.selectedUser.active == 1
+
+        // Load PMT office list only when needed
+        if (editRole.value?.value === 5) {
+          loadingOffices.value = true
+          try {
+            const offices = await store.fetchPmtAvailableOffices()
+            pmtAvailableOffices.value = offices
+            editSelectedOfficeIds.value = store.selectedUser.assigned_offices
+              ? store.selectedUser.assigned_offices.map((o) => o.id)
+              : []
+          } finally {
+            loadingOffices.value = false
+          }
+        }
+
+        showEditModal.value = true
       }
     }
 
-    // ── Delete user
-    const confirmDeleteUser = (employee) => {
-      selectedEmployee.value = employee
+    const onEditRoleChange = async () => {
+      // Only fetch office list when switching to PMT Admin
+      if (editRole.value?.value === 5) {
+        loadingOffices.value = true
+        try {
+          const offices = await store.fetchPmtAvailableOffices()
+          pmtAvailableOffices.value = offices
+          editSelectedOfficeIds.value = []
+        } finally {
+          loadingOffices.value = false
+        }
+      }
+    }
+
+    const updateUserAccount = async () => {
+      saving.value = true
+      try {
+        const updateData = {
+          userId: selectedUser.value.user_id,
+          roleId: editRole.value.value,
+        }
+
+        // Office assignment only for PMT Admin
+        if (editRole.value?.value === 5) {
+          updateData.office_id_assign = editSelectedOfficeIds.value
+        }
+
+        if (editUserActive.value !== (selectedUser.value.active == 1)) {
+          await store.updateUserStatus(selectedUser.value.user_id, editUserActive.value ? 1 : 0)
+        }
+
+        const success = await store.updateUserAccount(updateData)
+        if (success) {
+          showEditModal.value = false
+          resetForm()
+          filterUsers()
+        }
+      } finally {
+        saving.value = false
+      }
+    }
+
+    const confirmDelete = (user) => {
+      selectedUser.value = user
       showDeleteDialog.value = true
     }
 
     const deleteUser = async () => {
-      const success = await store.deleteUser(selectedEmployee.value.id)
-      if (success) {
-        showDeleteDialog.value = false
-        selectedEmployee.value = null
-        await store.fetchSupervisoryUser()
+      await store.deleteUser(selectedUser.value.user_id)
+      showDeleteDialog.value = false
+      selectedUser.value = null
+      filterUsers()
+    }
+
+    const confirmResetPassword = (user) => {
+      selectedUser.value = user
+      showResetPassword.value = true
+    }
+
+    const resetPassword = async () => {
+      saving.value = true
+      try {
+        const success = await store.resetPassword({ userId: selectedUser.value.user_id })
+        if (success) showResetPassword.value = false
+      } finally {
+        saving.value = false
       }
     }
 
-    const formatDate = (val) => {
-      if (!val) return '—'
-      return date.formatDate(val, 'MMM DD, YYYY hh:mm A')
+    // ── Form reset ─────────────────────────────────────────────
+    const resetForm = () => {
+      selectedOffice.value = null
+      selectedEmployee.value = null
+      selectedRole.value = null
+      selectedPmtType.value = null
+      username.value = ''
+      selectedOfficeIds.value = []
+      editSelectedOfficeIds.value = []
+      filteredOffices.value = store.offices || []
+      filteredEmployees.value = []
     }
 
-    onMounted(() => {
-      store.fetchSupervisoryUser()
+    // ── Lifecycle ──────────────────────────────────────────────
+    onMounted(async () => {
+      await store.fetchUserAccounts()
+      await store.fetchOffices()
+      filteredOffices.value = store.offices || []
+      filterUsers()
     })
+
+    watch(
+      () => store.users,
+      () => {
+        filterUsers()
+      },
+    )
+
+    watch(
+      () => store.offices,
+      (val) => {
+        filteredOffices.value = val || []
+      },
+    )
 
     return {
       store,
-      searchQuery,
-      headSearchQuery,
-      columns,
-      headColumns,
-      filteredEmployees,
-      filteredHeadEmployees,
-      showCreateUserDialog,
-      showViewDialog,
-      showResetPassword,
-      showToggleActiveDialog,
+      showRoleModal,
+      showDetailsModal,
+      showOfficeAssignmentModal,
+      showConfirmation,
+      showViewModal,
+      showEditModal,
       showDeleteDialog,
-      showResultDialog,
+      showResetPassword,
+      loading,
+      saving,
+      loadingOffices,
+      selectedUser,
+      selectedOffice,
       selectedEmployee,
-      selectedForCreate,
-      createResults,
-      generateUsername,
-      getRowActive,
-      setRowActive,
-      openCreateUserDialog,
-      resetCreateState,
-      createUsers,
-      viewAccount,
+      selectedRole,
+      selectedPmtType,
+      editRole,
+      editUserActive,
+      username,
+      selectedOfficeIds,
+      editSelectedOfficeIds,
+      filteredOffices,
+      filteredEmployees,
+      pmtAvailableOffices,
+      filteredUsers,
+      searchQuery,
+      roleFilter,
+      roleFilterOptions,
+      columns,
+      officeAssignmentColumns,
+      roles,
+      pmtTypes,
+      initialPagination,
+      canProceedFromStep2,
+      assignedOfficesDetails,
+      getRoleName,
+      getRoleBadgeColor,
+      getRoleIcon,
+      filterOfficesSelect,
+      filterEmployeesSelect,
+      filterUsers,
+      clearFilters,
+      openCreateFlow,
+      closeCreateFlow,
+      selectRole,
+      openDetailsModal,
+      openOfficeAssignment,
+      openConfirmationDirect,
+      goBackToRoleModal,
+      goBackToDetailsFromOffice,
+      goBackToDetailsFromConfirmation,
+      goBackToOfficeAssignment,
+      onOfficeSelected,
+      selectAllOffices,
+      clearAllOffices,
+      selectAllOfficesEdit,
+      clearAllOfficesEdit,
+      openConfirmation,
+      onStatusToggle,
+      confirmSave,
+      viewUserDetails,
+      editUser,
+      onEditRoleChange,
+      updateUserAccount,
+      confirmDelete,
+      deleteUser,
       confirmResetPassword,
       resetPassword,
-      confirmToggleActive,
-      toggleActive,
-      confirmDeleteUser,
-      deleteUser,
-      formatDate,
     }
   },
 }
 </script>
+
+<style scoped>
+.role-card {
+  transition: all 0.2s ease;
+  border-color: #e0e0e0;
+}
+
+.role-card:hover:not(.role-card--selected) {
+  border-color: #722b2b;
+  background-color: #fdecea;
+}
+
+.role-card--selected {
+  background-color: #722b2b !important;
+  border-color: #722b2b !important;
+  color: white !important;
+}
+
+.role-card--selected .text-body2,
+.role-card--selected .text-caption {
+  color: white !important;
+}
+
+.pmt-card {
+  transition: all 0.2s ease;
+  border-color: #e0e0e0;
+  border-radius: 8px;
+}
+
+.pmt-card:hover:not(.pmt-card--selected) {
+  border-color: #722b2b;
+  background-color: #fdecea;
+}
+
+.pmt-card--selected {
+  background-color: #722b2b !important;
+  border-color: #722b2b !important;
+  color: white !important;
+}
+
+.office-assignment-table :deep(.q-table) {
+  max-height: 400px;
+}
+
+.office-assignment-table :deep(.q-table__container) {
+  border-radius: 8px;
+}
+
+.office-assignment-table :deep(.q-table thead tr) {
+  background-color: #f5f5f5;
+}
+</style>

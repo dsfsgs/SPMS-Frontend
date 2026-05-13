@@ -97,11 +97,7 @@
                   <div class="line"></div>
                 </div>
                 <div class="city-logo">
-                  <img
-                    class="logo"
-                    alt="City of Tagum Logo"
-                    src="https://phshirt.com/wp-content/uploads/2021/11/City-of-Tagum-Logo.png"
-                  />
+                  <img class="logo" alt="City of Tagum Logo" src="/logo.png" />
                 </div>
                 <div class="header-text">
                   <div class="text-green-9 text-caption padded-text">

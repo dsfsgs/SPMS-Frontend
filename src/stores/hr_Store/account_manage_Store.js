@@ -3,6 +3,7 @@ import { api } from 'boot/axios'
 import { Notify } from 'quasar'
 import { viewUserDetails, updateUserAccount, resetPassword } from 'src/service/userService'
 import { extractErrorMessage } from 'src/utils/errorHelper'
+
 export const useUserManageStore = defineStore('userManage', {
   // ─────────────────────────────────────────────
   // STATE
@@ -10,6 +11,7 @@ export const useUserManageStore = defineStore('userManage', {
   state: () => ({
     users: [],
     offices: [],
+    pmtAvailableOffices: [],
     employees: [],
     filteredOffices: [],
     filteredEmployees: [],
@@ -40,8 +42,13 @@ export const useUserManageStore = defineStore('userManage', {
       },
       {
         label: 'Performance Management Team',
-        value: 4,
+        value: 5,
         description: 'Can manage performance evaluations and monitoring',
+      },
+      {
+        label: 'Receiving Staff',
+        value: 6,
+        description: 'Handles receiving and processing of documents and items',
       },
     ],
 
@@ -100,6 +107,25 @@ export const useUserManageStore = defineStore('userManage', {
       }
     },
 
+    async fetchPmtAvailableOffices() {
+      this.loading = true
+      try {
+        const response = await api.get('/office/pmt/available')
+        this.pmtAvailableOffices = response.data
+        return response.data
+      } catch (error) {
+        console.error('Error fetching PMT available offices:', error)
+        Notify.create({
+          message: 'Failed to fetch available offices.',
+          color: 'negative',
+          position: 'top',
+        })
+        return []
+      } finally {
+        this.loading = false
+      }
+    },
+
     async fetchEmployees(officeName) {
       this.loading = true
       try {
@@ -108,7 +134,6 @@ export const useUserManageStore = defineStore('userManage', {
             office_name: officeName,
           },
         })
-
         this.employees = response.data
       } catch (error) {
         console.error('Error fetching employees:', error)
@@ -124,7 +149,50 @@ export const useUserManageStore = defineStore('userManage', {
     async createUser(userData) {
       this.saving = true
       try {
-        const response = await api.post('/user/register', userData)
+        let endpoint = '/user/register'
+        let payload = { ...userData }
+
+        // PMT Admin (role 5) — dedicated PMT endpoint
+        if (userData.role_id === 5 && userData.office_id_assign) {
+          endpoint = '/user/create/pmt/account'
+          payload = {
+            controlNo: userData.control_no,
+            name: userData.name,
+            designation: userData.designation,
+            role_id: userData.role_id,
+            office_id: userData.office_id,
+            password: 'pms2026',
+            username: userData.username,
+            active: true,
+            office_id_assign: userData.office_id_assign,
+            pmt_type: userData.pmt_type,
+          }
+        }
+        // Receiving Staff (role 6) — include office assignments and active flag
+        else if (userData.role_id === 6 && userData.office_id_assign) {
+          endpoint = '/user/create/receiving/account'
+          payload = {
+            controlNo: userData.control_no,
+            name: userData.name,
+            designation: userData.designation,
+            role_id: userData.role_id,
+            office_id: userData.office_id,
+            password: 'pms2026',
+            username: userData.username,
+            active: true,
+            office_id_assign: userData.office_id_assign,
+          }
+        }
+        // All other roles — generic register endpoint
+        else {
+          payload = {
+            ...userData,
+            password: 'pms2026',
+            active: true,
+          }
+        }
+
+        const response = await api.post(endpoint, payload)
         if (response.data) {
           Notify.create({
             message: 'User has been created successfully!',
@@ -178,6 +246,29 @@ export const useUserManageStore = defineStore('userManage', {
       }
     },
 
+    async updateUserStatus(userId, activeStatus) {
+      try {
+        await api.patch(`/user/${userId}/status`, { active: activeStatus })
+        await this.fetchUserAccounts()
+        Notify.create({
+          message: `User ${activeStatus === 1 ? 'activated' : 'deactivated'} successfully.`,
+          color: 'positive',
+          position: 'top',
+          timeout: 2500,
+        })
+        return true
+      } catch (error) {
+        console.error('Error updating user status:', error)
+        Notify.create({
+          message: extractErrorMessage(error, 'Failed to update user status.'),
+          color: 'negative',
+          position: 'top',
+          timeout: 2500,
+        })
+        return false
+      }
+    },
+
     // ── Delete ─────────────────────────────────
 
     async deleteUser(userId) {
@@ -219,10 +310,10 @@ export const useUserManageStore = defineStore('userManage', {
       )
     },
 
-    // view user details
+    // ── View user details ──────────────────────
+
     async viewUserDetails(userId) {
       this.loading = true
-
       try {
         const response = await viewUserDetails(userId)
         this.selectedUser = response.data.data
@@ -235,18 +326,18 @@ export const useUserManageStore = defineStore('userManage', {
           position: 'top',
           timeout: 2500,
         })
-
         return false
       } finally {
         this.loading = false
       }
     },
 
-    // updating user
+    // ── Update user account ────────────────────
+
     async updateUserAccount(userData) {
       this.saving = true
       try {
-        const response = await updateUserAccount(userData) // ✅ was using userId instead of userData
+        const response = await updateUserAccount(userData)
         if (response.data) {
           Notify.create({
             message: 'User role updated successfully!',
@@ -260,13 +351,6 @@ export const useUserManageStore = defineStore('userManage', {
         return false
       } catch (error) {
         console.error('Error updating user:', error)
-        // const responseData = error.response?.data
-        // let errorMessage = 'Error updating user. Please try again.'
-        // if (responseData?.errors) {
-        //   errorMessage = Object.values(responseData.errors).flat().join(' ')
-        // } else if (responseData?.message) {
-        //   errorMessage = responseData.message
-        // }
         Notify.create({
           message: extractErrorMessage(error, 'Error updating user. Please try again.'),
           color: 'negative',
@@ -279,15 +363,16 @@ export const useUserManageStore = defineStore('userManage', {
       }
     },
 
-    // reset password user
+    // ── Reset password ─────────────────────────
+
     async resetPassword(userData) {
       this.loading = true
       try {
-        const response = await resetPassword(userData.userId) // ✅ pass userId, not whole object
+        const response = await resetPassword(userData.userId)
         if (response.data) {
           Notify.create({
             message: 'Password reset successfully.',
-            color: 'positive', // ✅ was 'success', correct value is 'positive'
+            color: 'positive',
             position: 'top',
             timeout: 2500,
           })
@@ -297,7 +382,6 @@ export const useUserManageStore = defineStore('userManage', {
       } catch (error) {
         Notify.create({
           message: extractErrorMessage(error, 'Error resetting password. Please try again.'),
-
           color: 'negative',
           position: 'top',
           timeout: 2500,

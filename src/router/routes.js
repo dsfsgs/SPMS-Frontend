@@ -27,6 +27,17 @@ import PlanningDashboard from 'src/pages/Planning/PlanningDashboard.vue'
 import SPMS from 'src/pages/Planning/PlanningSPMS.vue'
 import PlanningAccount from 'src/pages/Planning/PlanningAccount.vue'
 
+// Supervisor Admin Pages
+import QPEF from 'src/pages/Supervisor/QPEF.vue'
+
+// PMT Admin Pages
+import PMTSPMS from 'src/pages/PMT/PMTSPMS.vue'
+
+// Receiving Staff Pages
+import ReceivingUWP from 'src/pages/Receiving/ReceivingUWP.vue'
+
+import RootRedirector from 'src/pages/RootRedirector.vue'
+
 export const routes = [
   {
     path: '/login',
@@ -40,26 +51,7 @@ export const routes = [
       // Root redirect
       {
         path: '',
-        redirect: () => {
-          const userStore = useUserStore()
-          userStore.loadUserData()
-          const role = userStore.role
-
-          if (!role) {
-            return '/login'
-          }
-
-          switch (role) {
-            case 'hr-admin':
-              return '/hr/dashboard'
-            case 'office-admin':
-              return '/office/dashboard'
-            case 'planning-admin':
-              return '/planning/dashboard'
-            default:
-              return '/login'
-          }
-        },
+        component: RootRedirector, // Use the imported component
       },
 
       // HR Admin Routes
@@ -104,7 +96,6 @@ export const routes = [
       //   meta: { role: 'hr-admin' },
       // },
 
-      // Office Admin Routes
       // Office Admin Routes
       {
         path: 'office/dashboard',
@@ -161,6 +152,27 @@ export const routes = [
         component: PlanningAccount,
         meta: { role: 'planning-admin' },
       },
+
+      //Supervisor Admin Routes
+      {
+        path: '/supervisor/qpef',
+        component: QPEF,
+        meta: { role: 'supervisor-admin' },
+      },
+
+      //PMT Admin Routes
+      {
+        path: '/pmt/spms',
+        component: PMTSPMS,
+        meta: { role: 'pmt-admin' },
+      },
+
+      //Receiving Staff Routes
+      {
+        path: '/receiving/uwp',
+        component: ReceivingUWP,
+        meta: { role: 'receiving-staff' },
+      },
     ],
   },
 ]
@@ -190,6 +202,12 @@ export function setupRouterGuard(router) {
           return next('/office/dashboard')
         case 'planning-admin':
           return next('/planning/dashboard')
+        case 'supervisor-admin':
+          return next('/supervisor/qpef')
+        case 'pmt-admin':
+          return next('/pmt/spms')
+        case 'receiving-staff':
+          return next('/receiving/uwp')
         default:
           return next('/login')
       }

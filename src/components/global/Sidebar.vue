@@ -12,11 +12,7 @@
     >
       <!-- Logo and Office Name -->
       <div class="sidebar__header">
-        <img
-          class="sidebar__logo"
-          alt="City of Tagum Logo"
-          src="https://phshirt.com/wp-content/uploads/2021/11/City-of-Tagum-Logo.png"
-        />
+        <img class="sidebar__logo" alt="City of Tagum Logo" src="/logo.png" />
         <div class="sidebar__title-container">
           <h3 class="sidebar__title">{{ userStore.officeName }}</h3>
         </div>
@@ -121,6 +117,9 @@ export default {
         1: 'bg-office-admin',
         2: 'bg-planning-admin',
         3: 'bg-hr-admin',
+        4: 'bg-supervisor-admin',
+        5: 'bg-pmt-admin',
+        6: 'bg-receiving-staff',
       }
       return classes[role] || 'bg-primary'
     })
@@ -170,6 +169,22 @@ export default {
               { label: 'User', icon: 'group', route: '/hr/account/user' },
               { label: 'Profile', icon: 'person_outline', route: '/hr/account/profile' },
             ],
+          },
+        ],
+        // Supervisory Admin
+        4: [{ label: 'QPEF', icon: 'reviews', route: '/supervisor/qpef' }],
+        // PMT Admin
+        5: [{ label: 'SPMS', icon: 'inventory_2', route: '/pmt/spms' }],
+        6: [
+          {
+            label: 'UWP',
+            icon: 'checklist',
+            route: '/receiving/uwp/',
+          },
+          {
+            label: 'IPCR',
+            icon: 'group',
+            route: '/receiving/ipcr',
           },
         ],
       }
@@ -393,6 +408,18 @@ export default {
 
 .bg-hr-admin {
   background-color: #722b2b;
+}
+
+.bg-pmt-admin {
+  background-color: #722b2b;
+}
+
+.bg-receiving-staff {
+  background-color: #722b2b;
+}
+
+.bg-supervisor-admin {
+  background-color: #008080;
 }
 
 /* Responsive styles */

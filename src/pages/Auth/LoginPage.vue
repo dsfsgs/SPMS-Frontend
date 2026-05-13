@@ -1,12 +1,7 @@
 <template>
   <div class="login-page">
     <div class="overlay">
-      <q-img
-        src="https://phshirt.com/wp-content/uploads/2021/11/City-of-Tagum-Logo.png"
-        class="logo"
-        spinner-color="white"
-        spinner-size="40px"
-      />
+      <q-img src="/logo.png" class="logo" spinner-color="white" spinner-size="40px" />
       <h2 class="title">Performance Management System</h2>
       <p class="subtitle">Login</p>
       <q-form class="login-form" @submit.prevent="login">
@@ -180,6 +175,12 @@ export default {
           router.push('/office/dashboard')
         } else if (role === 'planning-admin') {
           router.push('/planning/dashboard')
+        } else if (role === 'supervisor-admin') {
+          router.push('/supervisor/qpef')
+        } else if (role === 'pmt-admin') {
+          router.push('/pmt/qpef')
+        } else if (role === 'receiving-staff') {
+          router.push('/receiving/uwp')
         } else {
           router.push('/login')
         }
@@ -188,8 +189,6 @@ export default {
           color: 'negative',
           // message: error.response?.data?.errors?.name?.[0] || 'Login failed',
           message: extractErrorMessage(error, 'Login failed'),
-
-
         })
       } finally {
         isLoading.value = false

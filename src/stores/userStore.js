@@ -14,9 +14,12 @@ export const useUserStore = defineStore('user', () => {
   const role = computed(() => {
     if (!user.value) return null
     const roleMap = {
-      3: 'hr-admin',
       1: 'office-admin',
       2: 'planning-admin',
+      3: 'hr-admin',
+      4: 'supervisor-admin',
+      5: 'pmt-admin',
+      6: 'receiving-staff',
     }
     return roleMap[user.value.role_id] || null
   })

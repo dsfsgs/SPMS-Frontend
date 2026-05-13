@@ -1,6 +1,5 @@
 // composables/useCascadeDomino.js
 import { ref, computed, watch } from 'vue'
-import { useQuasar } from 'quasar'
 
 const HEAD_JOB_TITLES = [
   'office head',
@@ -28,6 +27,7 @@ const isHeadByJobTitle = (emp) => {
 }
 
 export function useCascadeDomino({
+  $q, // ✅ Receive $q as a parameter instead of calling useQuasar()
   officeLibraryIndicatorStore,
   quantityRestriction,
   employeeTabs,
@@ -35,8 +35,6 @@ export function useCascadeDomino({
   autoApply = true,
   debug = false,
 }) {
-  const $q = useQuasar()
-
   // ==================== STATE ====================
   const headEmployee = ref(null)
   const processingUpdate = ref(false)

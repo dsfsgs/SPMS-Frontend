@@ -74,20 +74,6 @@ export const useMfoStore = defineStore('mfo', {
   },
 
   actions: {
-    /**
-     * Fetch all data:  categories, MFOs, and outputs
-     * API response structure:
-     * {
-     *   "categories": [
-     *     {
-     *       "id": 1,
-     *       "name": "A.  STRATEGIC FUNCTION",
-     *       "mfos": [... ],
-     *       "category_outputs": [...]
-     *     }
-     *   ]
-     * }
-     */
     async fetchAllData(officeId) {
       this.loading = true
       this.error = null
