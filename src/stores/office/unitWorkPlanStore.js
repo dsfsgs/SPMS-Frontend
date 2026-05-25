@@ -1,7 +1,7 @@
 // src/stores/office/unitWorkPlanStore.js
-import { defineStore } from '/node_modules/.q-cache/dev-spa/vite-spa/deps/pinia.js?v=59aa931b'
+import { defineStore } from 'pinia'
 import { api } from '/src/boot/axios.js'
-import { v4 as uuidv4 } from '/node_modules/.q-cache/dev-spa/vite-spa/deps/uuid.js?v=59aa931b'
+import { v4 as uuidv4 } from 'uuid'
 
 /* -------------------------------------------------------------------------- */
 /* Helpers & constants                                                        */

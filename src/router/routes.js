@@ -35,6 +35,7 @@ import PMTSPMS from 'src/pages/PMT/PMTSPMS.vue'
 
 // Receiving Staff Pages
 import ReceivingUWP from 'src/pages/Receiving/ReceivingUWP.vue'
+import ReceivingIPCR from 'src/pages/Receiving/ReceivingIPCR.vue'
 
 import RootRedirector from 'src/pages/RootRedirector.vue'
 
@@ -171,6 +172,11 @@ export const routes = [
       {
         path: '/receiving/uwp',
         component: ReceivingUWP,
+        meta: { role: 'receiving-staff' },
+      },
+      {
+        path: '/receiving/ipcr',
+        component: ReceivingIPCR,
         meta: { role: 'receiving-staff' },
       },
     ],

@@ -789,12 +789,19 @@ const getNodeIcon = (node) => {
 
 const getStatusColor = (row) => {
   const s = row.ipcrStatus?.toLowerCase() || ''
+
+  if (s.includes('draft')) return 'blue'
+  if (s.includes('received target')) return 'warning'
+  if (s.includes('calibrated')) return 'purple'
+  if (s.includes('reviewed')) return 'teal'
+  if (s.includes('in progress')) return 'info'
   if (s.includes('approved')) return 'positive'
-  if (s.includes('draft')) return 'info'
-  if (s.includes('pending')) return 'warning'
-  if (s.includes('review')) return 'purple'
+  if (s.includes('received accomplishment')) return 'orange'
+  if (s.includes('prevalidated')) return 'cyan'
+  if (s.includes('validated')) return 'green'
   if (s.includes('rejected')) return 'negative'
   if (s.includes('returned')) return 'negative'
+
   return 'grey'
 }
 
