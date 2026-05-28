@@ -172,7 +172,10 @@ export default {
           },
         ],
         // Supervisory Admin
-        4: [{ label: 'QPEF', icon: 'reviews', route: '/supervisor/qpef' }],
+        4: [
+          { label: 'IPCR', icon: 'reviews', route: '/supervisor/ipcr' },
+          { label: 'QPEF', icon: 'reviews', route: '/supervisor/qpef' },
+        ],
         // PMT Admin
         5: [{ label: 'SPMS', icon: 'inventory_2', route: '/pmt/spms' }],
         6: [

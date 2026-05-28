@@ -28,7 +28,9 @@ import SPMS from 'src/pages/Planning/PlanningSPMS.vue'
 import PlanningAccount from 'src/pages/Planning/PlanningAccount.vue'
 
 // Supervisor Admin Pages
-import QPEF from 'src/pages/Supervisor/QPEF.vue'
+import QPEF from 'src/pages/Supervisor/SupervisorQPEF.vue'
+import SupervisorIPCR from 'src/pages/Supervisor/SupervisorIPCR.vue'
+import SupervisorUnitWorkPlan from 'src/pages/Supervisor/SupervisorUnitWorkPlan.vue'
 
 // PMT Admin Pages
 import PMTSPMS from 'src/pages/PMT/PMTSPMS.vue'
@@ -158,6 +160,19 @@ export const routes = [
       {
         path: '/supervisor/qpef',
         component: QPEF,
+        meta: { role: 'supervisor-admin' },
+      },
+
+      {
+        path: '/supervisor/ipcr',
+        component: SupervisorIPCR,
+        meta: { role: 'supervisor-admin' },
+      },
+
+      {
+        path: '/supervisor/unit-work-plan',
+        name: 'SupervisorUnitWorkPlan',
+        component: SupervisorUnitWorkPlan,
         meta: { role: 'supervisor-admin' },
       },
 

@@ -66,9 +66,9 @@
 
       <template v-slot:body-cell-opcr="props">
         <q-td :props="props" class="text-center">
-          <q-chip square dense :color="statusColor(props.row.opcr_status)" text-color="white">{{
-            props.row.opcr_status
-          }}</q-chip>
+          <q-chip square dense :color="statusColor(props.row.opcr_status)" text-color="white">
+            {{ props.row.opcr_status }}
+          </q-chip>
         </q-td>
       </template>
 
@@ -79,8 +79,9 @@
             dense
             :color="statusColor(props.row.unitworkplan_status)"
             text-color="white"
-            >{{ props.row.unitworkplan_status }}</q-chip
           >
+            {{ props.row.unitworkplan_status }}
+          </q-chip>
         </q-td>
       </template>
     </q-table>
@@ -109,11 +110,13 @@ const columns = [
   { name: 'action', label: 'ACTION', align: 'center' },
 ]
 
+// Step 1: Extract unique years from target periods (fetched from API), sorted descending (latest first)
 const yearOptions = computed(() => {
   const years = [...new Set((libStore.targetPeriods || []).map((tp) => String(tp.year)))]
   return years.sort((a, b) => Number(b) - Number(a))
 })
 
+// Step 1: Extract semesters for selected year from target periods, sorted with July-December first (latest)
 const semesterOptions = computed(() => {
   if (!selectedYear.value) return []
   const semesters = [
@@ -123,10 +126,11 @@ const semesterOptions = computed(() => {
         .map((tp) => tp.semester),
     ),
   ]
-  const order = { 'January-June': 1, 'July-December': 2 }
+  const order = { 'January-June': 0, 'July-December': 1 }
   return semesters.sort((a, b) => (order[b] || 0) - (order[a] || 0))
 })
 
+// Map status to color
 const statusColor = (status) => {
   switch ((status || '').toLowerCase()) {
     case 'draft':
@@ -140,41 +144,60 @@ const statusColor = (status) => {
   }
 }
 
-const fetchRecords = async () => {
-  if (!selectedYear.value || !selectedSemester.value) return
-  await uwpStore.fetchRecords(selectedYear.value, selectedSemester.value)
-}
-
+// Filter records based on search query
 const filteredRows = computed(() => {
   const q = (searchQuery.value || '').toLowerCase().trim()
   if (!q) return uwpStore.records
-  return uwpStore.records.filter(
-    (r) => (r.name || '').toLowerCase().includes(q) || (r.office || '').toLowerCase().includes(q),
-  )
+  return uwpStore.records.filter((r) => {
+    return (
+      (r.ControlNo || '').toLowerCase().includes(q) ||
+      (r.name || '').toLowerCase().includes(q) ||
+      (r.office || '').toLowerCase().includes(q) ||
+      (r.opcr_status || '').toLowerCase().includes(q) ||
+      (r.unitworkplan_status || '').toLowerCase().includes(q)
+    )
+  })
 })
 
+// Step 2: Watch for changes in year or semester to fetch UWP records using the store
 watch([selectedYear, selectedSemester], ([y, s]) => {
-  if (y && s) fetchRecords()
+  if (y && s) {
+    uwpStore.fetchRecords(y, s)
+  }
 })
 
+// Reset semester when year changes (only if initialized)
 watch(selectedYear, () => {
   if (initialized.value) {
     selectedSemester.value = null
   }
 })
 
+// Initialize on mount
 onMounted(async () => {
-  if (!libStore.targetPeriods.length) {
+  // Step 1: Fetch target periods to populate year and semester dropdowns
+  if (!libStore.targetPeriods || libStore.targetPeriods.length === 0) {
     await libStore.fetchTargetPeriods()
   }
 
-  if (yearOptions.value.length) {
+  // Set default year to latest (first in sorted array)
+  if (yearOptions.value.length > 0) {
     selectedYear.value = yearOptions.value[0]
-    if (semesterOptions.value.length) {
+
+    // Wait for semesterOptions to be computed with the new year
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // Set semester to latest (first in sorted array = July-December if available)
+    if (semesterOptions.value.length > 0) {
       selectedSemester.value = semesterOptions.value[0]
+      // This will trigger the watch and fetch records via uwpStore.fetchRecords()
     }
   }
 
   initialized.value = true
 })
 </script>
+
+<style scoped>
+/* Add any custom styles here */
+</style>
