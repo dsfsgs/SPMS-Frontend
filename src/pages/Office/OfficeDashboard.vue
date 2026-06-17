@@ -48,7 +48,7 @@
       <div class="row q-col-gutter-md q-mb-lg" style="max-width: 2500px; width: 100%">
         <!-- OPCR Rating Card -->
         <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" style="max-width: 550px; width: 100%">
-        <!-- OPCR Rating Card -->
+          <!-- OPCR Rating Card -->
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/ipcr')"
@@ -60,7 +60,7 @@
                 <div>
                   <div class="text-subtitle2 text-grey-7">OPCR Rating</div>
                   <div class="text-h6 text-weight-bold text-grey-9">
-                    {{ opcrRatingLabel.label }}
+                    {{ opcrRatingLabel.label}}
                   </div>
                 </div>
               </div>
@@ -73,21 +73,21 @@
                 <div class="row justify-between items-center">
                   <span class="text-caption">Strategic Function</span>
                   <strong class="text-positive">{{
-                    opcrRating?.strategic_functions ?? '—'
+                    opcrRating?.strategic_functions ?? '0'
                   }}</strong>
                 </div>
                 <div class="row justify-between items-center">
                   <span class="text-caption">Core Function</span>
-                  <strong class="text-positive">{{ opcrRating?.core_functions ?? '—' }}</strong>
+                  <strong class="text-positive">{{ opcrRating?.core_functions ?? '0' }}</strong>
                 </div>
                 <div class="row justify-between items-center">
                   <span class="text-caption">Support Function</span>
-                  <strong class="text-positive">{{ opcrRating?.support_functions ?? '—' }}</strong>
+                  <strong class="text-positive">{{ opcrRating?.support_functions ?? '0' }}</strong>
                 </div>
                 <div class="row justify-between items-center">
                   <span class="text-caption text-weight-bold">Final Rating</span>
                   <strong class="text-positive text-weight-bold">{{
-                    opcrRating?.final_rating ?? '—'
+                    opcrRating?.final_rating ?? '0'
                   }}</strong>
                 </div>
               </div>
@@ -96,109 +96,225 @@
         </div>
 
         <!-- Employee Card -->
-      <!-- Employee Card -->
-    <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" style="max-width: 550px; width: 100%">
-      <q-card
-        class="bg-white shadow-3 full-height clickable-card"
-        @click="$router.push('/office/employee')"
-      >
-        <q-card-section class="q-pa-md">
-          <!-- Total Employees -->
-          <div class="row items-center q-mb-md">
-            <q-icon name="people" color="green-9" size="md" class="q-mr-sm" />
-            <div>
-              <div class="text-subtitle2 text-grey-7">Total Employees</div>
-              <div class="text-h6 text-weight-bold">{{ totalEmployee }}</div>
-            </div>
-          </div>
-
-          <q-separator />
-
-          <!-- OPCR -->
-          <div class="row items-center q-mt-md q-mb-md">
-            <q-icon name="assessment" color="green-9" size="md" class="q-mr-sm" />
-            <div>
-              <div class="text-subtitle2 text-grey-7">OPCR</div>
-              <div class="text-h7 text-weight-bold text-grey-7">
-                {{ opcrStatus?.length ? opcrStatus[0].status : 'Not Created' }}
+        <!-- Employee Card -->
+        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" style="max-width: 550px; width: 100%">
+          <q-card
+            class="bg-white shadow-3 full-height clickable-card"
+            @click="$router.push('/office/employee')"
+          >
+            <q-card-section class="q-pa-md">
+              <!-- Total Employees -->
+              <div class="row items-center q-mb-md">
+                <q-icon name="people" color="green-9" size="md" class="q-mr-sm" />
+                <div>
+                  <div class="text-subtitle2 text-grey-7">Total Employees</div>
+                  <div class="text-h6 text-weight-bold">{{ totalEmployee }}</div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <q-separator />
+              <q-separator />
 
-          <!-- Unit Work Plan -->
-          <div class="row items-center q-mt-md">
-            <q-icon name="domain" color="green-9" size="md" class="q-mr-sm" />
-            <div>
-              <div class="text-subtitle2 text-grey-7">Unit Work Plan</div>
-              <div class="text-h7 text-weight-bold text-grey-7">
-                {{ unitWorkPlan?.length ? unitWorkPlan[0].status : 'Not Created' }}
+              <!-- OPCR -->
+              <div class="row items-center q-mt-md q-mb-md">
+                <q-icon name="assessment" color="green-9" size="md" class="q-mr-sm" />
+                <div>
+                  <div class="text-subtitle2 text-grey-7">OPCR</div>
+                  <div class="text-h7 text-weight-bold text-grey-7">
+                    {{ opcrStatus?.length ? opcrStatus[0].status : 'Not Created' }}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </q-card-section>
-      </q-card>
-    </div>
+
+              <q-separator />
+
+              <!-- Unit Work Plan -->
+              <div class="row items-center q-mt-md">
+                <q-icon name="domain" color="green-9" size="md" class="q-mr-sm" />
+                <div>
+                  <div class="text-subtitle2 text-grey-7">Unit Work Plan</div>
+                  <div class="text-h7 text-weight-bold text-grey-7">
+                    {{ unitWorkPlan?.length ? unitWorkPlan[0].status : 'Not Created' }}
+                  </div>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
 
         <!-- IPCR Card -->
+        <!-- IBTOM -->
         <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" style="max-width: 550px; width: 100%">
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/ipcr')"
           >
-            <!-- IPCR Card -->
             <q-card-section class="q-pa-md">
               <div class="row items-center q-mb-md">
                 <q-icon name="assignment_ind" color="green-9" size="md" class="q-mr-sm" />
                 <div>
                   <div class="text-subtitle2 text-grey-7">IPCR Status</div>
-                  <div class="text-h6 text-weight-bold">{{ ipcrStatus?.total_ipcr ?? '—' }}</div>
+                  <div class="text-h6 text-weight-bold">{{ ipcrStatus?.total_ipcr ?? '0' }}</div>
                 </div>
               </div>
-              <div>
-                <div class="q-mb-sm">
-                  <q-linear-progress
-                    size="xs"
-                    :value="(ipcrStatus?.Approved ?? 0) / (ipcrStatus?.total_ipcr || 1)"
-                    color="positive"
-                  />
-                  <span class="text-caption"
-                    >Approved:
-                    <strong class="text-positive">{{ ipcrStatus?.Approved ?? 0 }}</strong></span
-                  >
+
+              <!-- Target Section -->
+              <div class="row q-mt-sm">
+                <!-- Target Column -->
+                <div class="col">
+                  <div class="q-mb-sm">
+                    <div class="text-subtitle2 text-weight-bold">Target</div>
+                    <q-linear-blank />
+                    <!-- <q-linear-progress
+                      size="xs"
+                      :value="
+                        (ipTasksStatus?.Validated_target ?? 0) / (ipTasksStatus?.total_ip || 1)
+                      "
+                      color="positive"
+                    />
+                    <span class="text-caption"
+                      >Validated Target:
+                      <strong class="text-positive">{{
+                        ipTasksStatus?.Validated_target ?? 0
+                      }}</strong></span
+                    > -->
+                  </div>
+                  <div class="q-mb-sm">
+                    <span class="text-caption"
+                      >Calibrated & Validated:
+                      <strong class="text-warning">{{
+                        ipTasksStatus?.Calibrated_target ?? 0
+                      }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (ipTasksStatus?.Calibrated_target ?? 0) / (ipTasksStatus?.total_ip || 1)
+                      "
+                      color="warning"
+                    />
+                  </div>
+                       <div class="q-mb-sm">
+                    <span class="text-caption"
+                      >Received:
+                      <strong class="text-warning">{{ ipTasksStatus?.Approved ?? 0 }}</strong></span  
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="(ipTasksStatus?.Approved ?? 0) / (ipTasksStatus?.total_ip || 1)"
+                      color="warning"
+                    />
+                  </div>
+                  <div class="q-mb-sm">
+                    <span class="text-caption"
+                      >Approved:
+                      <strong class="text-warning">{{ ipTasksStatus?.Approved ?? 0 }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="(ipTasksStatus?.Approved ?? 0) / (ipTasksStatus?.total_ip || 1)"
+                      color="warning"
+                    />
+                  </div>
+                  <div class="q-mb-sm">
+                    <span class="text-caption"
+                      >Reviewed:
+                      <strong class="text-grey">{{ ipTasksStatus?.Reviewed ?? 0 }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="(ipTasksStatus?.Reviewed ?? 0) / (ipTasksStatus?.total_ip || 1)"
+                      color="grey"
+                    />
+                  </div>
+                  <div>
+                    <span class="text-caption"
+                      >Draft:
+                      <strong class="text-info">{{ ipTasksStatus?.Draft ?? 0 }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="(ipTasksStatus?.Draft ?? 0) / (ipTasksStatus?.total_ip || 1)"
+                      color="info"
+                    />
+                  </div>
                 </div>
-                <div class="q-mb-sm">
-                  <q-linear-progress
-                    size="xs"
-                    :value="(ipcrStatus?.Pending ?? 0) / (ipcrStatus?.total_ipcr || 1)"
-                    color="warning"
-                  />
-                  <span class="text-caption"
-                    >Pending:
-                    <strong class="text-warning">{{ ipcrStatus?.Pending ?? 0 }}</strong></span
-                  >
-                </div>
-                <div class="q-mb-sm">
-                  <q-linear-progress
-                    size="xs"
-                    :value="(ipcrStatus?.Draft ?? 0) / (ipcrStatus?.total_ipcr || 1)"
-                    color="grey"
-                  />
-                  <span class="text-caption"
-                    >Draft: <strong class="text-grey">{{ ipcrStatus?.Draft ?? 0 }}</strong></span
-                  >
-                </div>
-                <div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="(ipcrStatus?.Reviewed ?? 0) / (ipcrStatus?.total_ipcr || 1)"
-                    color="info"
-                  />
-                  <span class="text-caption"
-                    >Reviewed:
-                    <strong class="text-info">{{ ipcrStatus?.Reviewed ?? 0 }}</strong></span
-                  >
+
+                <!-- Vertical Divider -->
+                <q-separator vertical class="q-mx-sm" />
+
+                <!-- Accomplishment Column -->
+                <div class="col">
+                  <div class="q-mb-sm">
+                    <div class="text-subtitle2 text-weight-bold">Accomplishment</div>
+                    <!-- <q-linear-progress
+                      size="xs"
+                      :value="
+                        (ipTasksStatus?.Validated_accomplishment ?? 0) /
+                        (ipTasksStatus?.total_ip || 1)
+                      "
+                      color="positive"
+                    />
+                    <span class="text-caption"
+                      >Validated Accomplishment:
+                      <strong class="text-positive">{{
+                        ipTasksStatus?.Validated_accomplishment ?? 0
+                      }}</strong></span
+                    > -->
+                  </div>
+                  <div class="q-mb-sm">
+                    <span class="text-caption"
+                      >Calibrated & Validated:
+                      <strong class="text-warning">{{
+                        ipTasksStatus?.Calibrated_accomplishment ?? 0
+                      }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (ipTasksStatus?.Validated_accomplishment ?? 0) /
+                        (ipTasksStatus?.total_ip || 1)
+                      "
+                      color="positive"
+                    />
+                  </div>
+                  <div class="q-mb-sm">
+                    <span class="text-caption"
+                      >Pre validation:
+                      <strong class="text-grey">{{
+                        ipTasksStatus?.Pre_validation ?? 0
+                      }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="(ipTasksStatus?.Pre_validation ?? 0) / (ipTasksStatus?.total_ip || 1)"
+                      color="grey"
+                    />
+                  </div>
+
+                          <div class="q-mb-sm">
+                    <span class="text-caption"
+                      >Received:
+                      <strong class="text-grey">{{
+                        ipTasksStatus?.Pre_validation ?? 0
+                      }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="(ipTasksStatus?.Pre_validation ?? 0) / (ipTasksStatus?.total_ip || 1)"
+                      color="grey"
+                    />
+                  </div>
+                  <div>
+                    <span class="text-caption"
+                      >In Progress:
+                      <strong class="text-info">{{ ipTasksStatus?.In_Progress ?? 0 }}</strong></span
+                    >
+                    <q-linear-progress
+                      size="xs"
+                      :value="(ipTasksStatus?.In_Progress ?? 0) / (ipTasksStatus?.total_ip || 1)"
+                      color="info"
+                    />
+                  </div>
                 </div>
               </div>
             </q-card-section>

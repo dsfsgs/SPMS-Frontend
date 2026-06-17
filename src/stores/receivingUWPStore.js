@@ -12,9 +12,9 @@ export const useUWPReceivingStore = defineStore('UWPReceivingStore', {
       if (!year || !semester) return
       this.loading = true
       try {
-        const resp = await api.get('/hr/receiving/unitworkplan', {
-          params: { year, semester },
-        })
+        const resp = await api.get(
+          `hr/receiving/ipcr?year=${year}&semester=${encodeURIComponent(semester)}`,
+        )
         const arr = Array.isArray(resp.data?.data) ? resp.data.data : []
         this.records = arr.map((entry) => ({
           unitworkplan_id: entry.unitworkplan_id,
