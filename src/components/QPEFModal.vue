@@ -16,25 +16,14 @@
       <div class="report-header">
         <div class="row items-center no-wrap">
           <div class="col">
-            <div v-if="isViewMode" class="text-subtitle2 text-primary">
-              View Mode - This evaluation has been saved
-            </div>
-            <div v-else class="text-subtitle2 text-orange">
-              Assess the employee’s performance and contributions using the criteria provided below.
+            <div class="text-subtitle2 text-primary">
+              View Mode - Select a quarter to load evaluation data
             </div>
             <div v-if="currentDivisionPath" class="text-caption text-grey-7">
               Path: {{ currentDivisionPath }}
             </div>
           </div>
           <div class="flex justify-end q-gutter-sm">
-            <q-btn v-if="isViewMode" color="orange" icon="edit" label="Edit" @click="handleEdit" />
-            <q-btn
-              v-if="!isViewMode"
-              color="primary"
-              icon="save"
-              label="Save"
-              @click="handleSave"
-            />
             <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" />
           </div>
         </div>
@@ -206,98 +195,38 @@
                   </tr>
                   <tr>
                     <td colspan="2">1. Accomplishes assigned tasks efficiently and on time</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.jobPerformance.task1"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('task1', formData.jobPerformance)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.jobPerformance.task1 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.jobPerformance.task1Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.jobPerformance.task1Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">2. Demonstrates quality and accuracy in work output</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.jobPerformance.task2"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('task2', formData.jobPerformance)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.jobPerformance.task2 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.jobPerformance.task2Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.jobPerformance.task2Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">3. Observes proper work processes and procedures</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.jobPerformance.task3"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('task3', formData.jobPerformance)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.jobPerformance.task3 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.jobPerformance.task3Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.jobPerformance.task3Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">4. Shows initiative and resourcefulness in completing tasks</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.jobPerformance.task4"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('task4', formData.jobPerformance)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.jobPerformance.task4 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.jobPerformance.task4Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.jobPerformance.task4Remarks }}
                     </td>
                   </tr>
                   <tr class="subtotal-row">
@@ -326,26 +255,11 @@
                   </tr>
                   <tr>
                     <td colspan="2">1. Demonstrates cooperation and teamwork</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item1"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item1', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item1 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item1Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item1Remarks }}
                     </td>
                   </tr>
                   <tr>
@@ -353,74 +267,29 @@
                       2. Exhibits professionalism, courtesy, and respect in dealing with co-workers
                       and clients
                     </td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item2"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item2', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item2 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item2Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item2Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">3. Demonstrates reliability, honesty, and integrity</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item3"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item3', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item3 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item3Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item3Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">4. Adapts well to changing work assignments and challenges</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item4"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item4', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item4 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item4Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item4Remarks }}
                     </td>
                   </tr>
                   <tr>
@@ -428,52 +297,22 @@
                       5. Reports accurate information and spot errors in documents and other forms
                       of communication
                     </td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item5"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item5', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item5 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item5Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item5Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">
                       6. Adheres to agency's internal policies, office rules and regulations
                     </td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item6"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item6', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item6 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item6Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item6Remarks }}
                     </td>
                   </tr>
                   <tr>
@@ -481,52 +320,22 @@
                       7. Apply and adapt record management standards which maintains and organized
                       records
                     </td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item7"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item7', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item7 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item7Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item7Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">
                       8. Demonstrates attention to detail on documents, task and procedures
                     </td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.competencies.item8"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item8', formData.competencies)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.competencies.item8 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.competencies.item8Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.competencies.item8Remarks }}
                     </td>
                   </tr>
                   <tr class="subtotal-row">
@@ -557,74 +366,29 @@
                     <td colspan="2">
                       1. Maintains focus, alertness and manages work-related stress effectively
                     </td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.physical.item1"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item1', formData.physical)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.physical.item1 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.physical.item1Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.physical.item1Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">2. Demonstrates physical ability to perform assigned tasks</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.physical.item2"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item2', formData.physical)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.physical.item2 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.physical.item2Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.physical.item2Remarks }}
                     </td>
                   </tr>
                   <tr>
                     <td colspan="2">3. Observes proper grooming and personal hygiene</td>
-                    <td>
-                      <q-input
-                        v-model.number="formData.physical.item3"
-                        type="number"
-                        dense
-                        outlined
-                        class="rating-input"
-                        :readonly="isViewMode"
-                        :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
-                        @blur="validateRating('item3', formData.physical)"
-                      />
+                    <td class="text-center rating-display">
+                      {{ formData.physical.item3 }}
                     </td>
-                    <td>
-                      <q-input
-                        v-model="formData.physical.item3Remarks"
-                        dense
-                        outlined
-                        class="remarks-input"
-                        :readonly="isViewMode"
-                      />
+                    <td class="remarks-display">
+                      {{ formData.physical.item3Remarks }}
                     </td>
                   </tr>
                   <tr class="subtotal-row">
@@ -654,8 +418,7 @@
                         val="retention"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
-                        @update:model-value="handleRecommendationChange"
+                        disable
                       />
                       For retention / contract renewal
                     </td>
@@ -665,8 +428,7 @@
                         val="improvement"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
-                        @update:model-value="handleRecommendationChange"
+                        disable
                       />
                       For improvement(coaching/mentoring) needed
                     </td>
@@ -679,8 +441,7 @@
                         val="commendation"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
-                        @update:model-value="handleRecommendationChange"
+                        disable
                       />
                       For commendation
                     </td>
@@ -690,8 +451,7 @@
                         val="nonRenewal"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
-                        @update:model-value="handleRecommendationChange"
+                        disable
                       />
                       For non-renewal(due to unsatisfactory or poor performance)
                     </td>
@@ -702,15 +462,8 @@
                     </td>
                   </tr>
                   <tr>
-                    <td colspan="4">
-                      <q-input
-                        v-model="formData.supervisorComments"
-                        type="textarea"
-                        outlined
-                        rows="4"
-                        placeholder="Enter supervisor's comments and recommendations..."
-                        :readonly="isViewMode"
-                      />
+                    <td colspan="4" class="supervisor-comments-display">
+                      {{ formData.supervisorComments }}
                     </td>
                   </tr>
                   <tr class="table-header">
@@ -826,16 +579,14 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['close', 'print', 'save'])
+const emit = defineEmits(['close', 'print'])
 
 // State
 const selectedQuarter = ref(null)
 const currentYear = computed(() => new Date().getFullYear())
 const selectedRecommendation = ref(null)
-const isViewMode = ref(false)
-const currentQPEFId = ref(null) // Track current QPEF ID for editing
 
-// Form data
+// Form data (read-only, populated by fetch)
 const formData = reactive({
   jobPerformance: {
     task1: null,
@@ -846,7 +597,6 @@ const formData = reactive({
     task3Remarks: '',
     task4: null,
     task4Remarks: '',
-    itemIds: [], // Store IDs for editing
   },
   competencies: {
     item1: null,
@@ -865,7 +615,6 @@ const formData = reactive({
     item7Remarks: '',
     item8: null,
     item8Remarks: '',
-    itemIds: [], // Store IDs for editing
   },
   physical: {
     item1: null,
@@ -874,7 +623,6 @@ const formData = reactive({
     item2Remarks: '',
     item3: null,
     item3Remarks: '',
-    itemIds: [], // Store IDs for editing
   },
   recommendations: {
     retention: false,
@@ -896,102 +644,64 @@ const controlNo = computed(() => {
 })
 
 /**
- * Handle quarter selection change
- * Fetches existing QPEF data if available
+ * Handle quarter selection change — fetch and display existing data
  */
 const handleQuarterChange = async (quarter) => {
   if (!quarter || !controlNo.value) return
 
   try {
-    Loading.show({
-      message: 'Loading QPEF data...',
-    })
+    Loading.show({ message: 'Loading QPEF data...' })
 
     const data = await qpefStore.fetchQPEF(controlNo.value, quarter, currentYear.value)
 
     if (data) {
-      // Data exists - load it and switch to view mode
-      currentQPEFId.value = data.id // Store the ID for editing
       loadExistingData(data)
-      isViewMode.value = true
-      $q.notify({
-        type: 'info',
-        message: 'Existing QPEF data loaded',
-        position: 'top',
-      })
+      $q.notify({ type: 'info', message: 'Evaluation data loaded', position: 'top' })
     } else {
-      // No data exists - clear form and allow editing
-      currentQPEFId.value = null
       clearForm()
-      isViewMode.value = false
       $q.notify({
-        type: 'info',
-        message: 'No existing data. You can create a new evaluation.',
+        type: 'warning',
+        message: 'No evaluation found for this quarter',
         position: 'top',
       })
     }
   } catch (error) {
     console.error('Error fetching QPEF:', error)
-    currentQPEFId.value = null
     clearForm()
-    isViewMode.value = false
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to load QPEF data',
-      position: 'top',
-    })
+    $q.notify({ type: 'negative', message: 'Failed to load QPEF data', position: 'top' })
   } finally {
     Loading.hide()
   }
 }
 
 /**
- * Load existing QPEF data into the form
+ * Load fetched QPEF data into the form (read-only display)
  */
 const loadExistingData = (data) => {
-  // Job Performance
   if (data.job_performance?.items) {
-    formData.jobPerformance.itemIds = [] // Reset IDs array
     data.job_performance.items.forEach((item, index) => {
       const taskKey = `task${index + 1}`
       formData.jobPerformance[taskKey] = Number(item.rating)
       formData.jobPerformance[`${taskKey}Remarks`] = item.remarks || ''
-      // Store the ID for editing
-      if (item.id) {
-        formData.jobPerformance.itemIds[index] = item.id
-      }
     })
   }
 
-  // Competencies
   if (data.competencies_attitude?.items) {
-    formData.competencies.itemIds = [] // Reset IDs array
     data.competencies_attitude.items.forEach((item, index) => {
       const itemKey = `item${index + 1}`
       formData.competencies[itemKey] = Number(item.rating)
       formData.competencies[`${itemKey}Remarks`] = item.remarks || ''
-      // Store the ID for editing
-      if (item.id) {
-        formData.competencies.itemIds[index] = item.id
-      }
     })
   }
 
-  // Physical & Mental
   if (data.physical_mental?.items) {
-    formData.physical.itemIds = [] // Reset IDs array
     data.physical_mental.items.forEach((item, index) => {
       const itemKey = `item${index + 1}`
       formData.physical[itemKey] = Number(item.rating)
       formData.physical[`${itemKey}Remarks`] = item.remarks || ''
-      // Store the ID for editing
-      if (item.id) {
-        formData.physical.itemIds[index] = item.id
-      }
     })
   }
 
-  // Recommendations
   if (data.recommendation_development) {
     const rec = data.recommendation_development
     formData.recommendations.retention = Boolean(Number(rec.for_retention))
@@ -1000,46 +710,27 @@ const loadExistingData = (data) => {
     formData.recommendations.nonRenewal = Boolean(Number(rec.for_non_renewal))
     formData.supervisorComments = rec.recommendation || ''
 
-    // Set selected recommendation
     if (formData.recommendations.retention) selectedRecommendation.value = 'retention'
     else if (formData.recommendations.commendation) selectedRecommendation.value = 'commendation'
     else if (formData.recommendations.improvement) selectedRecommendation.value = 'improvement'
     else if (formData.recommendations.nonRenewal) selectedRecommendation.value = 'nonRenewal'
+    else selectedRecommendation.value = null
   }
 }
 
 /**
- * Clear the form
+ * Clear the form display
  */
 const clearForm = () => {
-  // Reset job performance
   Object.keys(formData.jobPerformance).forEach((key) => {
-    if (key === 'itemIds') {
-      formData.jobPerformance[key] = []
-    } else {
-      formData.jobPerformance[key] = key.includes('Remarks') ? '' : null
-    }
+    formData.jobPerformance[key] = key.includes('Remarks') ? '' : null
   })
-
-  // Reset competencies
   Object.keys(formData.competencies).forEach((key) => {
-    if (key === 'itemIds') {
-      formData.competencies[key] = []
-    } else {
-      formData.competencies[key] = key.includes('Remarks') ? '' : null
-    }
+    formData.competencies[key] = key.includes('Remarks') ? '' : null
   })
-
-  // Reset physical
   Object.keys(formData.physical).forEach((key) => {
-    if (key === 'itemIds') {
-      formData.physical[key] = []
-    } else {
-      formData.physical[key] = key.includes('Remarks') ? '' : null
-    }
+    formData.physical[key] = key.includes('Remarks') ? '' : null
   })
-
-  // Reset recommendations
   formData.recommendations.retention = false
   formData.recommendations.improvement = false
   formData.recommendations.commendation = false
@@ -1048,36 +739,7 @@ const clearForm = () => {
   selectedRecommendation.value = null
 }
 
-/**
- * Handle recommendation change
- */
-const handleRecommendationChange = (value) => {
-  formData.recommendations.retention = false
-  formData.recommendations.improvement = false
-  formData.recommendations.commendation = false
-  formData.recommendations.nonRenewal = false
-
-  if (value) {
-    formData.recommendations[value] = true
-  }
-}
-
-/**
- * Validate rating input
- */
-const validateRating = (field, section) => {
-  const value = section[field]
-  if (value !== null && value !== '' && (value < 1 || value > 5)) {
-    section[field] = null
-    $q.notify({
-      type: 'negative',
-      message: 'Rating must be between 1 and 5',
-      position: 'top',
-    })
-  }
-}
-
-// Computed values
+// Computed scores
 const jobPerformanceAverage = computed(() => {
   const values = [
     formData.jobPerformance.task1,
@@ -1085,14 +747,11 @@ const jobPerformanceAverage = computed(() => {
     formData.jobPerformance.task3,
     formData.jobPerformance.task4,
   ].filter((v) => v !== null && v !== '')
-
   if (values.length === 0) return 0
   return values.reduce((sum, val) => sum + Number(val), 0) / values.length
 })
 
-const jobPerformanceWeighted = computed(() => {
-  return jobPerformanceAverage.value * 0.4
-})
+const jobPerformanceWeighted = computed(() => jobPerformanceAverage.value * 0.4)
 
 const competenciesAverage = computed(() => {
   const values = [
@@ -1105,31 +764,25 @@ const competenciesAverage = computed(() => {
     formData.competencies.item7,
     formData.competencies.item8,
   ].filter((v) => v !== null && v !== '')
-
   if (values.length === 0) return 0
   return values.reduce((sum, val) => sum + Number(val), 0) / values.length
 })
 
-const competenciesWeighted = computed(() => {
-  return competenciesAverage.value * 0.5
-})
+const competenciesWeighted = computed(() => competenciesAverage.value * 0.5)
 
 const physicalAverage = computed(() => {
   const values = [formData.physical.item1, formData.physical.item2, formData.physical.item3].filter(
     (v) => v !== null && v !== '',
   )
-
   if (values.length === 0) return 0
   return values.reduce((sum, val) => sum + Number(val), 0) / values.length
 })
 
-const physicalWeighted = computed(() => {
-  return physicalAverage.value * 0.1
-})
+const physicalWeighted = computed(() => physicalAverage.value * 0.1)
 
-const finalRating = computed(() => {
-  return jobPerformanceWeighted.value + competenciesWeighted.value + physicalWeighted.value
-})
+const finalRating = computed(
+  () => jobPerformanceWeighted.value + competenciesWeighted.value + physicalWeighted.value,
+)
 
 const adjectivalRating = computed(() => {
   const rating = finalRating.value
@@ -1142,13 +795,7 @@ const adjectivalRating = computed(() => {
 
 const getDisplayStatus = (status) => {
   if (!status) return 'Quarterly'
-
-  // Convert CONTRACTUAL to JOB ORDER
-  if (status.toUpperCase() === 'CONTRACTUAL') {
-    return 'JOB ORDER'
-  }
-
-  // Return other statuses as-is (CASUAL, HONORARIUM, etc.)
+  if (status.toUpperCase() === 'CONTRACTUAL') return 'JOB ORDER'
   return status
 }
 
@@ -1157,17 +804,12 @@ const handleClose = () => emit('close')
 
 const handlePrint = async () => {
   try {
-    // Import pdfmake
     const pdfMake = await import('pdfmake/build/pdfmake')
     const pdfMakeInstance = pdfMake.default || pdfMake
-
-    // Import fonts
     const vfsFonts = await import('pdfmake/build/vfs_fonts')
     pdfMakeInstance.vfs = vfsFonts.default || vfsFonts.pdfMake?.vfs
 
     let logoBase64 = tagumLogo
-
-    // If for some reason it's not base64, try to convert it
     if (logoBase64 && !logoBase64.startsWith('data:image')) {
       try {
         const response = await fetch(logoBase64)
@@ -1184,7 +826,6 @@ const handlePrint = async () => {
       }
     }
 
-    // Build PDF content
     const docDefinition = {
       pageSize: 'LEGAL',
       pageOrientation: 'portrait',
@@ -1193,17 +834,9 @@ const handlePrint = async () => {
       header: function () {
         return {
           stack: [
-            // Green banner
             {
               canvas: [
-                {
-                  type: 'rect',
-                  x: (612 - 540) / 2,
-                  y: 60,
-                  w: 540,
-                  h: 20,
-                  color: '#008000',
-                },
+                { type: 'rect', x: (612 - 540) / 2, y: 60, w: 540, h: 20, color: '#008000' },
               ],
             },
             {
@@ -1212,18 +845,7 @@ const handlePrint = async () => {
                 {
                   width: 65,
                   stack: [
-                    {
-                      canvas: [
-                        {
-                          type: 'rect',
-                          x: 0,
-                          y: 0,
-                          w: 75,
-                          h: 80,
-                          color: '#ffffff',
-                        },
-                      ],
-                    },
+                    { canvas: [{ type: 'rect', x: 0, y: 0, w: 75, h: 80, color: '#ffffff' }] },
                     ...(logoBase64
                       ? [
                           {
@@ -1277,7 +899,6 @@ const handlePrint = async () => {
       },
 
       content: [
-        // Title
         {
           text: `${getDisplayStatus(props.employee?.Status || props.employee?.employeeData?.status || '')} PERFORMANCE EVALUATION FORM`,
           fontSize: 10,
@@ -1285,8 +906,6 @@ const handlePrint = async () => {
           alignment: 'center',
           margin: [0, -30, 0, 10],
         },
-
-        // Employee Information
         {
           columns: [
             {
@@ -1338,21 +957,12 @@ const handlePrint = async () => {
           ],
           margin: [0, 0, 0, 5],
         },
-
-        // Single unified table
         {
           table: {
             widths: ['20%', '35%', '20%', '25%'],
             body: [
-              // I. Purpose
               [
-                {
-                  text: 'I. Purpose',
-                  bold: true,
-                  fillColor: '#e0e0e0',
-                  fontSize: 7,
-                  colSpan: 4,
-                },
+                { text: 'I. Purpose', bold: true, fillColor: '#e0e0e0', fontSize: 7, colSpan: 4 },
                 {},
                 {},
                 {},
@@ -1367,8 +977,6 @@ const handlePrint = async () => {
                 {},
                 {},
               ],
-
-              // II. Performance Rating Scale
               [
                 {
                   text: 'II. Performance Rating Scale',
@@ -1437,8 +1045,6 @@ const handlePrint = async () => {
                 },
                 {},
               ],
-
-              // III. Areas of Evaluation
               [
                 {
                   text: 'III. Areas of Evaluation',
@@ -1451,8 +1057,6 @@ const handlePrint = async () => {
                 {},
                 {},
               ],
-
-              // A. Job Performance
               [
                 {
                   text: 'A. JOB PERFORMANCE (40%)',
@@ -1498,11 +1102,11 @@ const handlePrint = async () => {
                 },
                 {},
                 {
-                  text: formData.jobPerformance.task1?.toString() || '',
+                  text: formData.jobPerformance.task1?.toString(),
                   fontSize: 7,
                   alignment: 'center',
                 },
-                { text: formData.jobPerformance.task1Remarks || '', fontSize: 7 },
+                { text: formData.jobPerformance.task1Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1512,11 +1116,11 @@ const handlePrint = async () => {
                 },
                 {},
                 {
-                  text: formData.jobPerformance.task2?.toString() || '',
+                  text: formData.jobPerformance.task2?.toString(),
                   fontSize: 7,
                   alignment: 'center',
                 },
-                { text: formData.jobPerformance.task2Remarks || '', fontSize: 7 },
+                { text: formData.jobPerformance.task2Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1526,11 +1130,11 @@ const handlePrint = async () => {
                 },
                 {},
                 {
-                  text: formData.jobPerformance.task3?.toString() || '',
+                  text: formData.jobPerformance.task3?.toString(),
                   fontSize: 7,
                   alignment: 'center',
                 },
-                { text: formData.jobPerformance.task3Remarks || '', fontSize: 7 },
+                { text: formData.jobPerformance.task3Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1540,11 +1144,11 @@ const handlePrint = async () => {
                 },
                 {},
                 {
-                  text: formData.jobPerformance.task4?.toString() || '',
+                  text: formData.jobPerformance.task4?.toString(),
                   fontSize: 7,
                   alignment: 'center',
                 },
-                { text: formData.jobPerformance.task4Remarks || '', fontSize: 7 },
+                { text: formData.jobPerformance.task4Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1584,8 +1188,6 @@ const handlePrint = async () => {
                 },
                 { text: '', fillColor: '#f0f0f0' },
               ],
-
-              // B. Competencies
               [
                 {
                   text: 'B. COMPETENCIES AND ATTITUDE TOWARDS WORK (50%)',
@@ -1624,18 +1226,10 @@ const handlePrint = async () => {
                 },
               ],
               [
-                {
-                  text: '1. Demonstrates cooperation and teamwork',
-                  fontSize: 7,
-                  colSpan: 2,
-                },
+                { text: '1. Demonstrates cooperation and teamwork', fontSize: 7, colSpan: 2 },
                 {},
-                {
-                  text: formData.competencies.item1?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item1Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item1?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item1Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1644,12 +1238,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.competencies.item2?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item2Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item2?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item2Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1658,12 +1248,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.competencies.item3?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item3Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item3?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item3Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1672,12 +1258,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.competencies.item4?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item4Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item4?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item4Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1686,12 +1268,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.competencies.item5?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item5Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item5?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item5Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1700,12 +1278,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.competencies.item6?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item6Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item6?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item6Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1714,12 +1288,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.competencies.item7?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item7Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item7?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item7Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1728,12 +1298,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.competencies.item8?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.competencies.item8Remarks || '', fontSize: 7 },
+                { text: formData.competencies.item8?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.competencies.item8Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1773,8 +1339,6 @@ const handlePrint = async () => {
                 },
                 { text: '', fillColor: '#f0f0f0' },
               ],
-
-              // C. Physical & Mental
               [
                 {
                   text: 'C. PHYSICAL AND MENTAL CONDITION (10%)',
@@ -1819,12 +1383,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.physical.item1?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.physical.item1Remarks || '', fontSize: 7 },
+                { text: formData.physical.item1?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.physical.item1Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1833,12 +1393,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.physical.item2?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.physical.item2Remarks || '', fontSize: 7 },
+                { text: formData.physical.item2?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.physical.item2Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1847,12 +1403,8 @@ const handlePrint = async () => {
                   colSpan: 2,
                 },
                 {},
-                {
-                  text: formData.physical.item3?.toString() || '',
-                  fontSize: 7,
-                  alignment: 'center',
-                },
-                { text: formData.physical.item3Remarks || '', fontSize: 7 },
+                { text: formData.physical.item3?.toString(), fontSize: 7, alignment: 'center' },
+                { text: formData.physical.item3Remarks, fontSize: 7 },
               ],
               [
                 {
@@ -1892,8 +1444,6 @@ const handlePrint = async () => {
                 },
                 { text: '', fillColor: '#f0f0f0' },
               ],
-
-              // D. Recommendation
               [
                 {
                   text: 'D. RECOMMENDATION AND DEVELOPMENT PLAN',
@@ -1915,7 +1465,6 @@ const handlePrint = async () => {
                   ],
                   border: [true, true, true, true],
                 },
-
                 {
                   text: [
                     { text: formData.recommendations.improvement ? '[X]' : '[  ]', fontSize: 8 },
@@ -1935,7 +1484,6 @@ const handlePrint = async () => {
                   ],
                   border: [true, true, true, true],
                 },
-
                 {
                   text: [
                     { text: formData.recommendations.nonRenewal ? '[X]' : '[  ]', fontSize: 8 },
@@ -1963,7 +1511,7 @@ const handlePrint = async () => {
               ],
               [
                 {
-                  text: formData.supervisorComments || '',
+                  text: formData.supervisorComments,
                   fontSize: 7,
                   colSpan: 4,
                   margin: [0, 30, 0, 3],
@@ -1972,8 +1520,6 @@ const handlePrint = async () => {
                 {},
                 {},
               ],
-
-              // Final Rating Section
               [
                 { text: '', rowSpan: 6, border: [true, true, false, true] },
                 { text: 'Performance Indicators', bold: true, fontSize: 7, fillColor: '#f0f0f0' },
@@ -2031,32 +1577,21 @@ const handlePrint = async () => {
             ],
           },
           layout: {
-            hLineWidth: function () {
-              return 1
-            },
-            vLineWidth: function () {
-              return 1
-            },
-            hLineColor: function () {
-              return '#333'
-            },
-            vLineColor: function () {
-              return '#333'
-            },
+            hLineWidth: () => 1,
+            vLineWidth: () => 1,
+            hLineColor: () => '#333',
+            vLineColor: () => '#333',
           },
         },
-
-        // SIGNATURE SECTION - ADDED HERE
         {
           table: {
             widths: ['33.33%', '33.33%', '33.34%'],
             body: [
-              // Header row
               [
                 {
                   text: 'Discussed with:',
                   style: 'signatureHeader',
-                  border: [true, false, true, true], // [left, top, right, bottom]
+                  border: [true, false, true, true],
                 },
                 {
                   text: 'Assessed by:',
@@ -2069,7 +1604,6 @@ const handlePrint = async () => {
                   border: [false, false, true, true],
                 },
               ],
-              // Signature row
               [
                 {
                   text: props.employee?.label || props.employee?.name || 'N/A',
@@ -2093,13 +1627,8 @@ const handlePrint = async () => {
                   margin: [0, 30, 0, -10],
                 },
               ],
-              // Title/Position row
               [
-                {
-                  text: 'Employee',
-                  style: 'signatureTitle',
-                  border: [true, false, true, false],
-                },
+                { text: 'Employee', style: 'signatureTitle', border: [true, false, true, false] },
                 {
                   text: 'Immediate Supervisor',
                   style: 'signatureTitle',
@@ -2112,325 +1641,39 @@ const handlePrint = async () => {
                 },
               ],
               [
-                {
-                  text: 'Date:',
-                  border: [true, false, false, true],
-                  margin: [0, -10, 0, 0],
-                },
-                {
-                  text: 'Date:',
-                  border: [true, false, false, true],
-                  margin: [0, -10, 0, 0],
-                },
-                {
-                  text: 'Date:',
-                  border: [true, false, true, true],
-                  margin: [0, -10, 0, 0],
-                },
+                { text: 'Date:', border: [true, false, false, true], margin: [0, -10, 0, 0] },
+                { text: 'Date:', border: [true, false, false, true], margin: [0, -10, 0, 0] },
+                { text: 'Date:', border: [true, false, true, true], margin: [0, -10, 0, 0] },
               ],
             ],
           },
           layout: {
-            hLineWidth: function () {
-              // Return 1 for all horizontal lines to make them visible
-              return 1
-            },
-            vLineWidth: function () {
-              // Return 1 for all vertical lines to make them visible
-              return 1
-            },
-            hLineColor: function () {
-              return '#333'
-            },
-            vLineColor: function () {
-              return '#333'
-            },
-            paddingLeft: function () {
-              return 5
-            },
-            paddingRight: function () {
-              return 5
-            },
-            paddingTop: function () {
-              return 5
-            },
-            paddingBottom: function () {
-              return 5
-            },
+            hLineWidth: () => 1,
+            vLineWidth: () => 1,
+            hLineColor: () => '#333',
+            vLineColor: () => '#333',
+            paddingLeft: () => 5,
+            paddingRight: () => 5,
+            paddingTop: () => 5,
+            paddingBottom: () => 5,
           },
           margin: [0, 0, 0, 0],
         },
       ],
 
-      defaultStyle: {
-        fontSize: 7,
-      },
+      defaultStyle: { fontSize: 7 },
 
       styles: {
-        signatureHeader: {
-          fontSize: 7,
-          bold: true,
-          alignment: 'left',
-        },
-        signatureName: {
-          fontSize: 7,
-          bold: true,
-          alignment: 'left',
-          decoration: 'underline',
-        },
-        signatureTitle: {
-          fontSize: 7,
-          alignment: 'left',
-        },
+        signatureHeader: { fontSize: 7, bold: true, alignment: 'left' },
+        signatureName: { fontSize: 7, bold: true, alignment: 'left', decoration: 'underline' },
+        signatureTitle: { fontSize: 7, alignment: 'left' },
       },
     }
 
-    // Open PDF in browser's native viewer
     pdfMakeInstance.createPdf(docDefinition).open()
   } catch (error) {
     console.error('Error generating PDF:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to generate PDF',
-      position: 'top',
-    })
-  }
-}
-
-/**
- * Handle edit button click
- * Switches from view mode to edit mode
- */
-const handleEdit = () => {
-  isViewMode.value = false
-  $q.notify({
-    type: 'info',
-    message: 'Edit mode enabled. You can now modify the evaluation.',
-    position: 'top',
-  })
-}
-
-const handleSave = async () => {
-  try {
-    // Validate quarter selection
-    if (!selectedQuarter.value) {
-      $q.notify({
-        type: 'negative',
-        message: 'Please select a quarter',
-        position: 'top',
-      })
-      return
-    }
-
-    // Validate control number
-    const employeeControlNo = controlNo.value
-
-    if (!employeeControlNo) {
-      $q.notify({
-        type: 'negative',
-        message: 'Employee control number is missing',
-        position: 'top',
-      })
-      console.error('Employee object:', props.employee)
-      return
-    }
-
-    // Build job performance array (with IDs if editing)
-    const jobPerformanceItems = [
-      {
-        indicators: 'Accomplishes assigned tasks efficiently and on time',
-        rating: formData.jobPerformance.task1 || 0,
-        remarks: formData.jobPerformance.task1Remarks || '',
-      },
-      {
-        indicators: 'Demonstrates quality and accuracy in work output',
-        rating: formData.jobPerformance.task2 || 0,
-        remarks: formData.jobPerformance.task2Remarks || '',
-      },
-      {
-        indicators: 'Observes proper work processes and procedures',
-        rating: formData.jobPerformance.task3 || 0,
-        remarks: formData.jobPerformance.task3Remarks || '',
-      },
-      {
-        indicators: 'Shows initiative and resourcefulness in completing tasks',
-        rating: formData.jobPerformance.task4 || 0,
-        remarks: formData.jobPerformance.task4Remarks || '',
-      },
-    ]
-
-    // If editing, add IDs to existing items
-    if (currentQPEFId.value && formData.jobPerformance.itemIds) {
-      jobPerformanceItems.forEach((item, index) => {
-        if (formData.jobPerformance.itemIds[index]) {
-          item.id = formData.jobPerformance.itemIds[index]
-          item.qpef_id = currentQPEFId.value.toString()
-        }
-      })
-    }
-
-    // Build competencies array (with IDs if editing)
-    const competenciesItems = [
-      {
-        indicators: 'Demonstrates cooperation and teamwork',
-        rating: formData.competencies.item1 || 0,
-        remarks: formData.competencies.item1Remarks || '',
-      },
-      {
-        indicators:
-          'Exhibits professionalism, courtesy, and respect in dealing with co-workers and clients',
-        rating: formData.competencies.item2 || 0,
-        remarks: formData.competencies.item2Remarks || '',
-      },
-      {
-        indicators: 'Demonstrates reliability, honesty, and integrity',
-        rating: formData.competencies.item3 || 0,
-        remarks: formData.competencies.item3Remarks || '',
-      },
-      {
-        indicators: 'Adapts well to changing work assignments and challenges',
-        rating: formData.competencies.item4 || 0,
-        remarks: formData.competencies.item4Remarks || '',
-      },
-      {
-        indicators:
-          'Reports accurate information and spot errors in documents and other forms of communication',
-        rating: formData.competencies.item5 || 0,
-        remarks: formData.competencies.item5Remarks || '',
-      },
-      {
-        indicators: "Adheres to agency's internal policies, office rules and regulations",
-        rating: formData.competencies.item6 || 0,
-        remarks: formData.competencies.item6Remarks || '',
-      },
-      {
-        indicators:
-          'Apply and adapt record management standards which maintains and organized records',
-        rating: formData.competencies.item7 || 0,
-        remarks: formData.competencies.item7Remarks || '',
-      },
-      {
-        indicators: 'Demonstrates attention to detail on documents, task and procedures',
-        rating: formData.competencies.item8 || 0,
-        remarks: formData.competencies.item8Remarks || '',
-      },
-    ]
-
-    // If editing, add IDs to existing items
-    if (currentQPEFId.value && formData.competencies.itemIds) {
-      competenciesItems.forEach((item, index) => {
-        if (formData.competencies.itemIds[index]) {
-          item.id = formData.competencies.itemIds[index]
-          item.qpef_id = currentQPEFId.value.toString()
-        }
-      })
-    }
-
-    // Build physical/mental array (with IDs if editing)
-    const physicalItems = [
-      {
-        indicators: 'Maintains focus, alertness and manages work-related stress effectively',
-        rating: formData.physical.item1 || 0,
-        remarks: formData.physical.item1Remarks || '',
-      },
-      {
-        indicators: 'Demonstrates physical ability to perform assigned tasks',
-        rating: formData.physical.item2 || 0,
-        remarks: formData.physical.item2Remarks || '',
-      },
-      {
-        indicators: 'Observes proper grooming and personal hygiene',
-        rating: formData.physical.item3 || 0,
-        remarks: formData.physical.item3Remarks || '',
-      },
-    ]
-
-    // If editing, add IDs to existing items
-    if (currentQPEFId.value && formData.physical.itemIds) {
-      physicalItems.forEach((item, index) => {
-        if (formData.physical.itemIds[index]) {
-          item.id = formData.physical.itemIds[index]
-          item.qpef_id = currentQPEFId.value.toString()
-        }
-      })
-    }
-
-    // Build payload
-    const payload = {
-      control_no: employeeControlNo,
-      quarterly: selectedQuarter.value,
-      year: currentYear.value,
-      job_performance: jobPerformanceItems,
-      competencies_attitude: competenciesItems,
-      physical_mental: physicalItems,
-      recommendation_development: {
-        for_retention: formData.recommendations.retention,
-        for_commendation: formData.recommendations.commendation,
-        for_improvement: formData.recommendations.improvement,
-        for_non_renewal: formData.recommendations.nonRenewal,
-        recommendation: formData.supervisorComments || '',
-      },
-    }
-
-    Loading.show({
-      message: currentQPEFId.value ? 'Updating QPEF...' : 'Saving QPEF...',
-    })
-
-    let result
-    if (currentQPEFId.value) {
-      // Update existing QPEF
-      result = await qpefStore.updateQPEF(currentQPEFId.value, payload)
-      $q.notify({
-        type: 'positive',
-        message: 'QPEF updated successfully',
-        position: 'top',
-      })
-    } else {
-      // Create new QPEF
-      result = await qpefStore.saveQPEF(payload)
-      currentQPEFId.value = result.id // Store the new ID
-      $q.notify({
-        type: 'positive',
-        message: 'QPEF saved successfully',
-        position: 'top',
-      })
-    }
-
-    Loading.hide()
-
-    // Switch to view mode after successful save
-    isViewMode.value = true
-
-    emit('save', {
-      formData,
-      selectedQuarter: selectedQuarter.value,
-      finalRating: finalRating.value,
-      adjectivalRating: adjectivalRating.value,
-    })
-  } catch (error) {
-    Loading.hide()
-
-    console.error('Save error:', error)
-
-    let errorMessage = 'Failed to save QPEF'
-
-    if (error.response) {
-      errorMessage =
-        error.response.data?.message ||
-        error.response.data?.error ||
-        `Server error: ${error.response.status}`
-    } else if (error.request) {
-      errorMessage = 'No response from server. Please check your connection.'
-    } else {
-      errorMessage = error.message || 'Failed to save QPEF'
-    }
-
-    $q.notify({
-      type: 'negative',
-      message: errorMessage,
-      position: 'top',
-      timeout: 5000,
-    })
+    $q.notify({ type: 'negative', message: 'Failed to generate PDF', position: 'top' })
   }
 }
 </script>
@@ -2552,20 +1795,26 @@ const handleSave = async () => {
   background-color: #f0f0f0;
 }
 
-.rating-input {
-  width: 100%;
+/* View-only display cells */
+.rating-display {
+  font-weight: bold;
+  font-size: 14px;
+  color: #1a1a1a;
+  min-height: 40px;
+  vertical-align: middle;
 }
 
-.remarks-input {
-  width: 100%;
+.remarks-display {
+  color: #333;
+  min-height: 40px;
+  vertical-align: middle;
 }
 
-/* Make inputs look better in print */
-@media print {
-  .rating-input,
-  .remarks-input {
-    border: none;
-    border-bottom: 1px solid #000;
-  }
+.supervisor-comments-display {
+  min-height: 80px;
+  padding: 10px;
+  color: #333;
+  white-space: pre-wrap;
+  vertical-align: top;
 }
 </style>

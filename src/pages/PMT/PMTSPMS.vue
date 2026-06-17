@@ -70,7 +70,7 @@
                     input-debounce="300"
                     color="red-10"
                     class="full-width office-select"
-                    :loading="userManageStore.loading"
+                    :loading="pmtStore.pmtIsLoading"
                     @filter="filterOffices"
                     @update:model-value="onOfficeChange"
                   >
@@ -407,7 +407,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useOrganizationStore } from 'src/stores/office/spmsStore'
 import { useUserStore } from 'src/stores/userStore'
-import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
+import { usePMTStore } from 'src/stores/pmtStore'
 import { useQuasar } from 'quasar'
 import ipcr_Report from 'src/components/IPCRReportHR.vue'
 import OPCRModal from 'src/components/OPCRModalHR.vue'
@@ -421,7 +421,7 @@ import UWPModalHR from 'src/components/UWPModalHR.vue'
 const $q = useQuasar()
 const orgStore = useOrganizationStore()
 const userStore = useUserStore()
-const userManageStore = useUserManageStore()
+const pmtStore = usePMTStore()
 
 // ============================================================================
 // STATE
@@ -1040,10 +1040,12 @@ const onOfficeChange = async (office) => {
 
 const filterOffices = (val, update) => {
   update(() => {
-    const offices = userManageStore.offices || []
-    filteredOfficeOptions.value = val
-      ? offices.filter((o) => (o.name ?? '').toLowerCase().includes(val.toLowerCase()))
-      : offices
+    if (val) {
+      pmtStore.filterPMTOffices(val)
+    } else {
+      pmtStore.filterPMTOffices('')
+    }
+    filteredOfficeOptions.value = val ? pmtStore.filteredOffices : pmtStore.offices
   })
 }
 
@@ -1119,10 +1121,11 @@ const refreshData = async () => {
 // ============================================================================
 
 watch(
-  () => userManageStore.offices,
+  () => pmtStore.offices,
   (offices) => {
     if (offices?.length > 0) filteredOfficeOptions.value = offices
   },
+  { immediate: true },
 )
 
 // ============================================================================
@@ -1131,9 +1134,12 @@ watch(
 
 onMounted(async () => {
   await userStore.loadUserData()
-  await userManageStore.fetchOffices()
+
+  await pmtStore.fetchPMTOffices()
+  filteredOfficeOptions.value = pmtStore.offices || []
+  console.log(`✅ Loaded ${pmtStore.offices.length} offices from PMT store`)
+
   await orgStore.fetchListTargetPeriod()
-  filteredOfficeOptions.value = userManageStore.offices || []
 })
 </script>
 

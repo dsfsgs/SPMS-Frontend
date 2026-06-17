@@ -176,11 +176,13 @@ export default {
         } else if (role === 'planning-admin') {
           router.push('/planning/dashboard')
         } else if (role === 'supervisor-admin') {
-          router.push('/supervisor/qpef')
+          router.push('/supervisor/ipcr')
         } else if (role === 'pmt-admin') {
-          router.push('/pmt/qpef')
-        } else if (role === 'receiving-staff') {
+          router.push('/pmt/spms')
+        } else if (role === 'receiving-hr-staff') {
           router.push('/receiving/uwp')
+        } else if (role === 'receiving-planning-staff') {
+          router.push('/receiving/opcr')
         } else {
           router.push('/login')
         }

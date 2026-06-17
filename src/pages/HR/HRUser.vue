@@ -326,6 +326,34 @@
             </template>
           </q-input>
 
+          <!-- Honorific Title -->
+          <q-input
+            v-model="honorificTitle"
+            label="Honorific Title (optional)"
+            outlined
+            dense
+            class="q-mb-md"
+            placeholder="e.g., Dr., Atty., Engr."
+          >
+            <template v-slot:prepend>
+              <q-icon name="title" />
+            </template>
+          </q-input>
+
+          <!-- Post-Nominal -->
+          <q-input
+            v-model="postNominal"
+            label="Post-Nominal (optional)"
+            outlined
+            dense
+            class="q-mb-md"
+            placeholder="e.g., PhD, RN, CPA"
+          >
+            <template v-slot:prepend>
+              <q-icon name="grade" />
+            </template>
+          </q-input>
+
           <!-- PMT Member Type — PMT Admin (value: 5) only -->
           <template v-if="selectedRole?.value === 5">
             <q-separator class="q-mb-md" />
@@ -371,7 +399,7 @@
           >
             <q-tooltip v-if="!canProceedFromStep2">Please complete all required fields</q-tooltip>
           </q-btn>
-          <!-- All other roles (incl. Receiving Staff) → straight to Review -->
+          <!-- All other roles → straight to Review -->
           <q-btn
             v-else
             flat
@@ -436,8 +464,21 @@
 
           <!-- Office Selection Table with Checkboxes -->
           <div class="text-subtitle2 q-mb-sm">Available Offices</div>
+          <!-- Search -->
+          <q-input
+            v-model="officeSearchQuery"
+            outlined
+            dense
+            placeholder="Search offices..."
+            clearable
+            class="q-mb-sm"
+          >
+            <template v-slot:prepend>
+              <q-icon name="search" color="red-9" />
+            </template>
+          </q-input>
           <q-table
-            :rows="pmtAvailableOffices"
+            :rows="filteredPmtOffices"
             :columns="officeAssignmentColumns"
             row-key="id"
             flat
@@ -510,7 +551,7 @@
     <!-- REVIEW / CONFIRMATION DIALOG                           -->
     <!-- ══════════════════════════════════════════════════════ -->
     <q-dialog v-model="showConfirmation" persistent transition-show="scale" transition-hide="scale">
-      <q-card style="width: 100%; max-width: 600px">
+      <q-card style="width: 100%; max-width: 800px">
         <q-card-section class="bg-red-9 text-white">
           <div class="row items-center q-gutter-sm">
             <q-icon name="person_add" size="sm" />
@@ -556,6 +597,24 @@
             </div>
           </div>
 
+          <!-- Honorific Title — show only if filled -->
+          <div v-if="honorificTitle" class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="title" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Honorific Title</div>
+              <div class="text-body2 text-weight-medium">{{ honorificTitle }}</div>
+            </div>
+          </div>
+
+          <!-- Post-Nominal — show only if filled -->
+          <div v-if="postNominal" class="row items-center q-pa-sm rounded-borders bg-grey-1">
+            <q-icon name="grade" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Post-Nominal</div>
+              <div class="text-body2 text-weight-medium">{{ postNominal }}</div>
+            </div>
+          </div>
+
           <!-- PMT Member Type — PMT Admin only -->
           <div
             v-if="selectedRole?.value === 5 && selectedPmtType"
@@ -570,29 +629,27 @@
             </div>
           </div>
 
-          <!-- Assigned Offices — PMT Admin only -->
+          <!-- Assigned offices — PMT Admin only -->
           <div
-            v-if="selectedRole?.value === 5 && selectedOfficeIds.length > 0"
+            v-if="selectedUser?.role_id === 5 && selectedUser?.pmt_assign?.length > 0"
             class="q-pa-sm rounded-borders bg-grey-1"
           >
             <div class="row items-center q-mb-sm">
               <q-icon name="business_center" color="red-9" size="sm" class="q-mr-md" />
               <div>
-                <div class="text-caption text-grey-6">
-                  Assigned Offices ({{ selectedOfficeIds.length }})
-                </div>
+                <div class="text-caption text-grey-6">Assigned Offices</div>
               </div>
             </div>
             <div class="q-pl-lg">
               <q-chip
-                v-for="office in assignedOfficesDetails"
-                :key="office.id"
+                v-for="assign in selectedUser.pmt_assign"
+                :key="assign.id"
                 size="sm"
                 color="red-2"
                 text-color="red-9"
                 class="q-mr-xs q-mb-xs"
               >
-                {{ office.name }}
+                {{ assign.office.office_name }}
               </q-chip>
             </div>
           </div>
@@ -628,7 +685,7 @@
     <!-- VIEW USER MODAL                                        -->
     <!-- ══════════════════════════════════════════════════════ -->
     <q-dialog v-model="showViewModal">
-      <q-card style="width: 100%; max-width: 600px">
+      <q-card style="width: 100%; max-width: 800px">
         <q-card-section class="bg-red-9 text-white">
           <div class="row items-center q-gutter-sm">
             <q-icon name="account_circle" size="sm" />
@@ -652,6 +709,29 @@
             <div>
               <div class="text-caption text-grey-6">Username</div>
               <div class="text-body2 text-weight-medium">{{ selectedUser?.username }}</div>
+            </div>
+          </div>
+          <!-- Honorific Title -->
+          <div
+            v-if="selectedUser?.prefix"
+            class="row items-center q-pa-sm rounded-borders bg-grey-1"
+          >
+            <q-icon name="title" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Honorific Title</div>
+              <div class="text-body2 text-weight-medium">{{ selectedUser.prefix }}</div>
+            </div>
+          </div>
+
+          <!-- Post-Nominal -->
+          <div
+            v-if="selectedUser?.suffix"
+            class="row items-center q-pa-sm rounded-borders bg-grey-1"
+          >
+            <q-icon name="grade" color="red-9" size="sm" class="q-mr-md" />
+            <div>
+              <div class="text-caption text-grey-6">Post-Nominal</div>
+              <div class="text-body2 text-weight-medium">{{ selectedUser.suffix }}</div>
             </div>
           </div>
           <div class="row items-center q-pa-sm rounded-borders bg-grey-1">
@@ -696,7 +776,7 @@
 
           <!-- Assigned offices — PMT Admin only -->
           <div
-            v-if="selectedUser?.role_id === 5 && selectedUser?.assigned_offices"
+            v-if="selectedUser?.role_id === 5 && selectedUser?.pmt_assign?.length > 0"
             class="q-pa-sm rounded-borders bg-grey-1"
           >
             <div class="row items-center q-mb-sm">
@@ -707,14 +787,14 @@
             </div>
             <div class="q-pl-lg">
               <q-chip
-                v-for="office in selectedUser.assigned_offices"
-                :key="office.id"
+                v-for="assign in selectedUser.pmt_assign"
+                :key="assign.id"
                 size="sm"
                 color="red-2"
                 text-color="red-9"
                 class="q-mr-xs q-mb-xs"
               >
-                {{ office.name }}
+                {{ assign.office.office_name }}
               </q-chip>
             </div>
           </div>
@@ -731,7 +811,7 @@
     <!-- EDIT USER MODAL WITH STATUS TOGGLE                    -->
     <!-- ══════════════════════════════════════════════════════ -->
     <q-dialog v-model="showEditModal">
-      <q-card style="width: 100%; max-width: 600px">
+      <q-card style="width: 100%; max-width: 800px">
         <q-card-section class="bg-red-9 text-white">
           <div class="row items-center q-gutter-sm">
             <q-icon name="edit" size="sm" />
@@ -805,6 +885,36 @@
             </template>
           </q-select>
 
+          <q-separator class="q-mt-md q-mb-md" />
+
+          <!-- Honorific Title -->
+          <q-input
+            v-model="editHonorificTitle"
+            label="Honorific Title (optional)"
+            outlined
+            dense
+            class="q-mb-md"
+            placeholder="e.g., Dr., Atty., Engr."
+          >
+            <template v-slot:prepend>
+              <q-icon name="title" />
+            </template>
+          </q-input>
+
+          <!-- Post-Nominal -->
+          <q-input
+            v-model="editPostNominal"
+            label="Post-Nominal (optional)"
+            outlined
+            dense
+            class="q-mb-md"
+            placeholder="e.g., PhD, RN, CPA"
+          >
+            <template v-slot:prepend>
+              <q-icon name="grade" />
+            </template>
+          </q-input>
+
           <!-- Office Assignment — PMT Admin only in edit mode -->
           <div v-if="editRole?.value === 5">
             <q-separator class="q-mt-md q-mb-md" />
@@ -812,9 +922,21 @@
             <div class="text-caption text-grey-7 q-mb-md">
               Select offices that this PMT member can manage
             </div>
-
+            <!-- Search -->
+            <q-input
+              v-model="editOfficeSearchQuery"
+              outlined
+              dense
+              placeholder="Search offices..."
+              clearable
+              class="q-mb-sm"
+            >
+              <template v-slot:prepend>
+                <q-icon name="search" color="red-9" />
+              </template>
+            </q-input>
             <q-table
-              :rows="pmtAvailableOffices"
+              :rows="editFilteredPmtOffices"
               :columns="officeAssignmentColumns"
               row-key="id"
               flat
@@ -929,7 +1051,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, toRaw } from 'vue'
 import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
 
 export default {
@@ -964,11 +1086,19 @@ export default {
     const editSelectedOfficeIds = ref([])
     const editRole = ref(null)
     const editUserActive = ref(true)
+    const honorificTitle = ref('')
+    const postNominal = ref('')
+    const editHonorificTitle = ref('')
+    const editPostNominal = ref('')
 
     // ── Filter and Search ──────────────────────────────────────
     const searchQuery = ref('')
     const roleFilter = ref(null)
     const filteredUsers = ref([])
+
+    // ── Search Office ──────────────────────────────────────
+    const officeSearchQuery = ref('')
+    const editOfficeSearchQuery = ref('')
 
     const initialPagination = {
       sortBy: 'datecreated',
@@ -1004,9 +1134,14 @@ export default {
         description: 'Performance Management Team — evaluations and monitoring',
       },
       {
-        label: 'Receiving Staff',
+        label: 'Receiving HR Staff',
         value: 6,
-        description: 'Handles receiving and processing of documents and items',
+        description: 'Handles receiving and processing of HR documents and items',
+      },
+      {
+        label: 'Receiving Planning Staff',
+        value: 7,
+        description: 'Handles receiving and processing of planning documents and items',
       },
     ]
 
@@ -1015,7 +1150,8 @@ export default {
       { label: 'Planning Admin', value: 2 },
       { label: 'HR Admin', value: 3 },
       { label: 'PMT Admin', value: 5 },
-      { label: 'Receiving Staff', value: 6 },
+      { label: 'Receiving HR Staff', value: 6 },
+      { label: 'Receiving Planning Staff', value: 7 },
     ]
 
     const pmtTypes = [
@@ -1048,7 +1184,6 @@ export default {
     // ── Computed ───────────────────────────────────────────────
     const canProceedFromStep2 = computed(() => {
       if (!selectedOffice.value || !selectedEmployee.value || !username.value) return false
-      // PMT Admin additionally requires a member type
       if (selectedRole.value?.value === 5 && !selectedPmtType.value) return false
       return true
     })
@@ -1057,6 +1192,18 @@ export default {
       return pmtAvailableOffices.value.filter((office) =>
         selectedOfficeIds.value.includes(office.id),
       )
+    })
+
+    const filteredPmtOffices = computed(() => {
+      if (!officeSearchQuery.value) return pmtAvailableOffices.value
+      const needle = officeSearchQuery.value.toLowerCase()
+      return pmtAvailableOffices.value.filter((o) => o.name.toLowerCase().includes(needle))
+    })
+
+    const editFilteredPmtOffices = computed(() => {
+      if (!editOfficeSearchQuery.value) return pmtAvailableOffices.value
+      const needle = editOfficeSearchQuery.value.toLowerCase()
+      return pmtAvailableOffices.value.filter((o) => o.name.toLowerCase().includes(needle))
     })
 
     // ── Filter Users ───────────────────────────────────────────
@@ -1093,7 +1240,14 @@ export default {
     }
 
     const getRoleBadgeColor = (roleId) => {
-      const map = { 1: 'green-9', 2: 'pink-4', 3: 'red-9', 5: 'red-9', 6: 'blue-9' }
+      const map = {
+        1: 'green-9',
+        2: 'pink-4',
+        3: 'red-9',
+        5: 'red-9',
+        6: 'blue-9',
+        7: 'teal-9',
+      }
       return map[roleId] || 'grey'
     }
 
@@ -1104,6 +1258,7 @@ export default {
         3: 'admin_panel_settings',
         5: 'groups',
         6: 'inbox',
+        7: 'assignment',
       }
       return map[roleId] || 'security'
     }
@@ -1159,6 +1314,7 @@ export default {
         const offices = await store.fetchPmtAvailableOffices()
         pmtAvailableOffices.value = offices
         selectedOfficeIds.value = []
+        officeSearchQuery.value = ''
         showDetailsModal.value = false
         showOfficeAssignmentModal.value = true
       } finally {
@@ -1166,8 +1322,7 @@ export default {
       }
     }
 
-    // All non-PMT roles (Office Admin, Planning Admin, HR Admin, Receiving Staff)
-    // go directly from Step 2 → Confirmation
+    // All non-PMT roles go directly from Step 2 → Confirmation
     const openConfirmationDirect = () => {
       if (!canProceedFromStep2.value) return
       showDetailsModal.value = false
@@ -1235,12 +1390,8 @@ export default {
     }
 
     // ── Status Toggle ──────────────────────────────────────────
-    const onStatusToggle = async (value) => {
-      const success = await store.updateUserStatus(selectedUser.value.user_id, value ? 1 : 0)
-      if (success) {
-        selectedUser.value.active = value ? 1 : 0
-        filterUsers()
-      }
+    const onStatusToggle = (value) => {
+      editUserActive.value = value
     }
 
     // ── Save / CRUD ────────────────────────────────────────────
@@ -1258,6 +1409,8 @@ export default {
           control_no: selectedEmployee.value.ControlNo,
           active: true,
           permissions: [],
+          prefix: honorificTitle.value || null,
+          suffix: postNominal.value || null,
           // PMT Admin only extras
           ...(selectedRole.value?.value === 5 && {
             pmt_type: selectedPmtType.value,
@@ -1279,7 +1432,7 @@ export default {
     const viewUserDetails = async (user) => {
       const success = await store.viewUserDetails(user.user_id)
       if (success) {
-        selectedUser.value = store.selectedUser
+        selectedUser.value = toRaw(store.selectedUser)
         showViewModal.value = true
       }
     }
@@ -1287,35 +1440,49 @@ export default {
     const editUser = async (user) => {
       const success = await store.viewUserDetails(user.user_id)
       if (success) {
-        selectedUser.value = store.selectedUser
+        selectedUser.value = toRaw(store.selectedUser)
         editRole.value = roles.find((r) => r.value === store.selectedUser.role_id) || null
         editUserActive.value = store.selectedUser.active == 1
+        editHonorificTitle.value = store.selectedUser.prefix || ''
+        editPostNominal.value = store.selectedUser.suffix || ''
 
         // Load PMT office list only when needed
         if (editRole.value?.value === 5) {
           loadingOffices.value = true
           try {
-            const offices = await store.fetchPmtAvailableOffices()
-            pmtAvailableOffices.value = offices
-            editSelectedOfficeIds.value = store.selectedUser.assigned_offices
-              ? store.selectedUser.assigned_offices.map((o) => o.id)
+            const available = await store.fetchPmtAvailableOffices()
+
+            const assignedOffices = store.selectedUser.pmt_assign
+              ? store.selectedUser.pmt_assign.map((a) => ({
+                  id: Number(a.office_id),
+                  name: a.office.office_name,
+                }))
               : []
+
+            const assignedIds = assignedOffices.map((a) => a.id)
+
+            // assigned offices at top + available offices that aren't already assigned
+            pmtAvailableOffices.value = [
+              ...assignedOffices,
+              ...available.filter((o) => !assignedIds.includes(o.id)),
+            ]
+
+            editSelectedOfficeIds.value = assignedIds
           } finally {
             loadingOffices.value = false
           }
         }
-
+        editOfficeSearchQuery.value = ''
         showEditModal.value = true
       }
     }
 
     const onEditRoleChange = async () => {
-      // Only fetch office list when switching to PMT Admin
       if (editRole.value?.value === 5) {
         loadingOffices.value = true
         try {
-          const offices = await store.fetchPmtAvailableOffices()
-          pmtAvailableOffices.value = offices
+          const available = await store.fetchPmtAvailableOffices()
+          pmtAvailableOffices.value = available
           editSelectedOfficeIds.value = []
         } finally {
           loadingOffices.value = false
@@ -1326,18 +1493,22 @@ export default {
     const updateUserAccount = async () => {
       saving.value = true
       try {
-        const updateData = {
-          userId: selectedUser.value.user_id,
-          roleId: editRole.value.value,
+        const userId = selectedUser.value?.id ?? selectedUser.value?.user_id
+        if (!userId) {
+          console.error('No user selected or user_id missing', selectedUser.value)
+          return
         }
 
-        // Office assignment only for PMT Admin
+        const updateData = {
+          userId,
+          roleId: editRole.value.value,
+          active: editUserActive.value ? 1 : 0,
+          prefix: editHonorificTitle.value || null,
+          suffix: editPostNominal.value || null,
+        }
+
         if (editRole.value?.value === 5) {
           updateData.office_id_assign = editSelectedOfficeIds.value
-        }
-
-        if (editUserActive.value !== (selectedUser.value.active == 1)) {
-          await store.updateUserStatus(selectedUser.value.user_id, editUserActive.value ? 1 : 0)
         }
 
         const success = await store.updateUserAccount(updateData)
@@ -1389,6 +1560,10 @@ export default {
       editSelectedOfficeIds.value = []
       filteredOffices.value = store.offices || []
       filteredEmployees.value = []
+      honorificTitle.value = ''
+      postNominal.value = ''
+      editHonorificTitle.value = ''
+      editPostNominal.value = ''
     }
 
     // ── Lifecycle ──────────────────────────────────────────────
@@ -1439,6 +1614,10 @@ export default {
       filteredOffices,
       filteredEmployees,
       pmtAvailableOffices,
+      officeSearchQuery,
+      editOfficeSearchQuery,
+      filteredPmtOffices,
+      editFilteredPmtOffices,
       filteredUsers,
       searchQuery,
       roleFilter,
@@ -1450,6 +1629,10 @@ export default {
       initialPagination,
       canProceedFromStep2,
       assignedOfficesDetails,
+      honorificTitle,
+      postNominal,
+      editHonorificTitle,
+      editPostNominal,
       getRoleName,
       getRoleBadgeColor,
       getRoleIcon,

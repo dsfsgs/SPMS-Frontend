@@ -1,11 +1,9 @@
 <template>
   <q-page padding>
-    <div class="row items-center justify-between q-mb-md">
+    <div class="row items-center q-mb-md">
       <div>
-        <div class="text-h6">OPCR</div>
-        <div class="text-caption text-grey-6">
-          Pick a year and semester office to see list of OPCR.
-        </div>
+        <h6 class="text-h6 q-mb-xs">OPCR List</h6>
+        <div class="text-caption text-grey-7">Pick a year and semester to view OPCR statuses.</div>
       </div>
     </div>
 
