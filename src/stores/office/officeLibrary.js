@@ -74,17 +74,13 @@ export const useMfoStore = defineStore('mfo', {
   },
 
   actions: {
-    async fetchAllData(officeId) {
+    async fetchAllData() {
       this.loading = true
       this.error = null
 
       try {
         // Fetch the main data with categories, MFOs, and outputs
-        const response = await api.get('/office/mfo', {
-          params: {
-            office_id: officeId,
-          },
-        })
+        const response = await api.get('/office/mfo')
 
         // Parse the response
         let categoriesData = response.data

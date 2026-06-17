@@ -1,242 +1,188 @@
 import { useUserStore } from 'src/stores/userStore'
-import AuthLayout from 'src/layouts/AuthLayout.vue'
-import AdminLayout from 'src/layouts/MainLayout.vue'
-import Login from 'src/pages/Auth/LoginPage.vue'
-
-// HR Admin Pages
-import hrDashboard from 'src/pages/HR/HRdashboard.vue'
-import hrSpms from 'src/pages/HR/HRSPMS.vue'
-import hrlibrary from 'src/pages/HR/HRLibrary.vue'
-import opcr from 'src/pages/HR/HROPCR.vue'
-import ipcr from 'src/pages/HR/HRIPCR.vue'
-import user from 'src/pages/HR/HRUser.vue'
-import hrProfile from 'src/pages/HR/HRProfile.vue'
-
-// Office Admin Pages
-
-import officeDashboard from 'src/pages/Office/OfficeDashboard.vue'
-import employee from 'src/pages/Office/OfficeEmployee.vue'
-import officeSpms from 'src/pages/Office/OfficeSPMS.vue'
-import officeProfile from 'src/pages/Office/OfficeProfile.vue'
-import unitworkplan from 'src/pages/Office/OfficeUnitWorkPlan.vue'
-import library from 'src/pages/Office/OfficeLibrary.vue'
-import OfficeUser from 'src/pages/Office/OfficeUser.vue'
-
-// Planning Admin Pages
-import PlanningDashboard from 'src/pages/Planning/PlanningDashboard.vue'
-import SPMS from 'src/pages/Planning/PlanningSPMS.vue'
-import PlanningAccount from 'src/pages/Planning/PlanningAccount.vue'
-
-// Supervisor Admin Pages
-import QPEF from 'src/pages/Supervisor/SupervisorQPEF.vue'
-import SupervisorIPCR from 'src/pages/Supervisor/SupervisorIPCR.vue'
-import SupervisorUnitWorkPlan from 'src/pages/Supervisor/SupervisorUnitWorkPlan.vue'
-
-// PMT Admin Pages
-import PMTSPMS from 'src/pages/PMT/PMTSPMS.vue'
-
-// Receiving Staff Pages
-import ReceivingUWP from 'src/pages/Receiving/ReceivingUWP.vue'
-import ReceivingIPCR from 'src/pages/Receiving/ReceivingIPCR.vue'
-
-import RootRedirector from 'src/pages/RootRedirector.vue'
 
 export const routes = [
   {
     path: '/login',
-    component: AuthLayout,
-    children: [{ path: '', component: Login }],
+    component: () => import('src/layouts/AuthLayout.vue'),
+    children: [{ path: '', component: () => import('src/pages/Auth/LoginPage.vue') }],
   },
   {
     path: '/',
-    component: AdminLayout,
+    component: () => import('src/layouts/MainLayout.vue'),
     children: [
-      // Root redirect
-      {
-        path: '',
-        component: RootRedirector, // Use the imported component
-      },
+      { path: '', component: () => import('src/pages/RootRedirector.vue') },
 
-      // HR Admin Routes
       // HR Admin Routes
       {
         path: 'hr/dashboard',
-        component: hrDashboard,
+        component: () => import('src/pages/HR/HRdashboard.vue'),
         meta: { role: 'hr-admin' },
       },
       {
         path: 'hr/spms',
-        component: hrSpms,
+        component: () => import('src/pages/HR/HRSPMS.vue'),
         meta: { role: 'hr-admin' },
       },
       {
         path: 'hr/library',
-        component: hrlibrary,
+        component: () => import('src/pages/HR/HRLibrary.vue'),
         meta: { role: 'hr-admin' },
       },
       {
         path: 'hr/opcr',
-        component: opcr,
+        component: () => import('src/pages/HR/HROPCR.vue'),
         meta: { role: 'hr-admin' },
       },
       {
         path: 'hr/ipcr',
-        component: ipcr,
+        component: () => import('src/pages/HR/HRIPCR.vue'),
         meta: { role: 'hr-admin' },
       },
       {
         path: 'hr/account/user',
-        component: user,
+        component: () => import('src/pages/HR/HRUser.vue'),
         meta: { role: 'hr-admin' },
       },
       {
         path: 'hr/account/profile',
-        component: hrProfile,
+        component: () => import('src/pages/HR/HRProfile.vue'),
         meta: { role: 'hr-admin' },
       },
-      //   path: 'hr/library',
-      //   component:Library,
-      //   meta: { role: 'hr-admin' },
-      // },
 
       // Office Admin Routes
       {
         path: 'office/dashboard',
-        component: officeDashboard,
+        component: () => import('src/pages/Office/OfficeDashboard.vue'),
         meta: { role: 'office-admin' },
       },
       {
         path: 'office/employee',
-        component: employee,
+        component: () => import('src/pages/Office/OfficeEmployee.vue'),
         meta: { role: 'office-admin' },
-      },
-
-      {
-        path: '/unitworkplan',
-        name: 'unitworkplan',
-        component: unitworkplan,
       },
       {
         path: 'office/library',
-        component: library,
+        component: () => import('src/pages/Office/OfficeLibrary.vue'),
         meta: { role: 'office-admin' },
       },
       {
         path: 'office/spms',
-        component: officeSpms,
+        component: () => import('src/pages/Office/OfficeSPMS.vue'),
         meta: { role: 'office-admin' },
       },
-
       {
         path: 'office/profile',
-        component: officeProfile,
+        component: () => import('src/pages/Office/OfficeProfile.vue'),
         meta: { role: 'office-admin' },
       },
-
       {
         path: 'office/account/user',
-        component: OfficeUser,
+        component: () => import('src/pages/Office/OfficeUser.vue'),
         meta: { role: 'office-admin' },
       },
+      { path: 'unitworkplan', component: () => import('src/pages/Office/OfficeUnitWorkPlan.vue') },
 
       // Planning Admin Routes
       {
         path: 'planning/dashboard',
-        component: PlanningDashboard,
+        component: () => import('src/pages/Planning/PlanningDashboard.vue'),
         meta: { role: 'planning-admin' },
       },
       {
         path: 'planning/spms',
-        component: SPMS,
+        component: () => import('src/pages/Planning/PlanningSPMS.vue'),
+        meta: { role: 'planning-admin' },
+      },
+      {
+        path: 'planning/opcr',
+        component: () => import('src/pages/Planning/PlanningOPCR.vue'),
         meta: { role: 'planning-admin' },
       },
       {
         path: 'planning/account',
-        component: PlanningAccount,
+        component: () => import('src/pages/Planning/PlanningAccount.vue'),
         meta: { role: 'planning-admin' },
       },
 
-      //Supervisor Admin Routes
+      // Supervisor Routes
       {
-        path: '/supervisor/qpef',
-        component: QPEF,
+        path: 'supervisor/qpef',
+        component: () => import('src/pages/Supervisor/SupervisorQPEF.vue'),
+        meta: { role: 'supervisor-admin' },
+      },
+      {
+        path: 'supervisor/ipcr',
+        component: () => import('src/pages/Supervisor/SupervisorIPCR.vue'),
+        meta: { role: 'supervisor-admin' },
+      },
+      {
+        path: 'supervisor/unit-work-plan',
+        component: () => import('src/pages/Supervisor/SupervisorUnitWorkPlan.vue'),
         meta: { role: 'supervisor-admin' },
       },
 
+      // PMT Routes
       {
-        path: '/supervisor/ipcr',
-        component: SupervisorIPCR,
-        meta: { role: 'supervisor-admin' },
-      },
-
-      {
-        path: '/supervisor/unit-work-plan',
-        name: 'SupervisorUnitWorkPlan',
-        component: SupervisorUnitWorkPlan,
-        meta: { role: 'supervisor-admin' },
-      },
-
-      //PMT Admin Routes
-      {
-        path: '/pmt/spms',
-        component: PMTSPMS,
+        path: 'pmt/spms',
+        component: () => import('src/pages/PMT/PMTSPMS.vue'),
         meta: { role: 'pmt-admin' },
       },
 
-      //Receiving Staff Routes
+      // Receiving Routes
       {
-        path: '/receiving/uwp',
-        component: ReceivingUWP,
-        meta: { role: 'receiving-staff' },
+        path: 'receiving/uwp',
+        component: () => import('src/pages/Receiving/ReceivingUWP.vue'),
+        meta: { role: ['receiving-hr-staff', 'receiving-planning-staff'] },
       },
       {
-        path: '/receiving/ipcr',
-        component: ReceivingIPCR,
-        meta: { role: 'receiving-staff' },
+        path: 'receiving/ipcr',
+        component: () => import('src/pages/Receiving/ReceivingIPCR.vue'),
+        meta: { role: 'receiving-hr-staff' },
+      },
+      {
+        path: 'receiving/opcr',
+        component: () => import('src/pages/Receiving/ReceivingOPCR.vue'),
+        meta: { role: 'receiving-planning-staff' },
       },
     ],
   },
 ]
 
 export function setupRouterGuard(router) {
+  const roleRedirects = {
+    'hr-admin': '/hr/dashboard',
+    'office-admin': '/office/dashboard',
+    'planning-admin': '/planning/dashboard',
+    'supervisor-admin': '/supervisor/qpef',
+    'pmt-admin': '/pmt/spms',
+    'receiving-hr-staff': '/receiving/uwp',
+    'receiving-planning-staff': '/receiving/uwp',
+  }
+
   router.beforeEach(async (to, from, next) => {
     const userStore = useUserStore()
-
-    // Ensure user data is loaded properly
-    // await userStore.loadUser()
-    await userStore.loadUserData() // <-- Change this line
+    await userStore.loadUserData()
 
     const isAuthenticated = !!userStore.user?.role_id
     const userRole = userStore.role
 
-    // Redirect to login if not authenticated and not already on login
+    // Not authenticated
     if (!isAuthenticated && to.path !== '/login') {
       return next('/login')
     }
 
-    // Prevent logged-in users from accessing login
+    // Already authenticated on login page
     if (isAuthenticated && to.path === '/login') {
-      switch (userRole) {
-        case 'hr-admin':
-          return next('/hr/dashboard')
-        case 'office-admin':
-          return next('/office/dashboard')
-        case 'planning-admin':
-          return next('/planning/dashboard')
-        case 'supervisor-admin':
-          return next('/supervisor/qpef')
-        case 'pmt-admin':
-          return next('/pmt/spms')
-        case 'receiving-staff':
-          return next('/receiving/uwp')
-        default:
-          return next('/login')
-      }
+      return next(roleRedirects[userRole] || '/login')
     }
 
-    // Role-based access control
-    if (to.meta?.role && to.meta.role !== userRole) {
-      return next('/login')
+    // Role-based access (supports single role or array)
+    const allowedRoles = to.meta?.role
+    if (allowedRoles) {
+      const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]
+      if (!roles.includes(userRole)) {
+        return next('/login')
+      }
     }
 
     next()

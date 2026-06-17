@@ -46,9 +46,14 @@ export const useUserManageStore = defineStore('userManage', {
         description: 'Can manage performance evaluations and monitoring',
       },
       {
-        label: 'Receiving Staff',
+        label: 'Receiving HR Staff',
         value: 6,
-        description: 'Handles receiving and processing of documents and items',
+        description: 'Handles receiving and processing of HR documents and items',
+      },
+      {
+        label: 'Receiving Planning Staff',
+        value: 7,
+        description: 'Handles receiving and processing of planning documents and items',
       },
     ],
 
@@ -166,9 +171,11 @@ export const useUserManageStore = defineStore('userManage', {
             active: true,
             office_id_assign: userData.office_id_assign,
             pmt_type: userData.pmt_type,
+            prefix: userData.prefix ?? null,
+            suffix: userData.suffix ?? null,
           }
         }
-        // Receiving Staff (role 6) — include office assignments and active flag
+        // Receiving HR Staff (role 6) — include office assignments and active flag
         else if (userData.role_id === 6 && userData.office_id_assign) {
           endpoint = '/user/create/receiving/account'
           payload = {
@@ -181,9 +188,28 @@ export const useUserManageStore = defineStore('userManage', {
             username: userData.username,
             active: true,
             office_id_assign: userData.office_id_assign,
+            prefix: userData.prefix ?? null,
+            suffix: userData.suffix ?? null,
           }
         }
-        // All other roles — generic register endpoint
+        // Receiving Planning Staff (role 7) — include office assignments and active flag
+        else if (userData.role_id === 7 && userData.office_id_assign) {
+          endpoint = '/user/create/receiving/account'
+          payload = {
+            controlNo: userData.control_no,
+            name: userData.name,
+            designation: userData.designation,
+            role_id: userData.role_id,
+            office_id: userData.office_id,
+            password: 'pms2026',
+            username: userData.username,
+            active: true,
+            office_id_assign: userData.office_id_assign,
+            prefix: userData.prefix ?? null,
+            suffix: userData.suffix ?? null,
+          }
+        }
+        // All other roles — generic register endpoint (spreads everything including prefix/suffix)
         else {
           payload = {
             ...userData,
@@ -337,10 +363,27 @@ export const useUserManageStore = defineStore('userManage', {
     async updateUserAccount(userData) {
       this.saving = true
       try {
-        const response = await updateUserAccount(userData)
+        if (!userData.userId) {
+          throw new Error('userId is required')
+        }
+
+        const payload = {
+          userId: userData.userId,
+          roleId: userData.roleId,
+          active: userData.active !== undefined ? userData.active : 1,
+          prefix: userData.prefix ?? null,
+          suffix: userData.suffix ?? null,
+        }
+
+        // Add office assignments if present (for PMT Admin)
+        if (userData.office_id_assign && userData.office_id_assign.length > 0) {
+          payload.office_id_assign = userData.office_id_assign
+        }
+
+        const response = await updateUserAccount(payload)
         if (response.data) {
           Notify.create({
-            message: 'User role updated successfully!',
+            message: 'User updated successfully!',
             color: 'positive',
             position: 'top',
             timeout: 2500,
