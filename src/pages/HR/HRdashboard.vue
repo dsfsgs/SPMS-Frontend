@@ -1,11 +1,10 @@
 <template>
-  <q-page padding>
-    <div class="col-auto q-pb-md">
-      <div class="text-h6 text-green text-weight-bold">Dashboard</div>
-    </div>
-
-    <!-- Semester/Year Selector -->
-    <div class="row justify-end items-center q-mb-md">
+  <q-page class="q-px-md q-pb-md q-pt-xs">
+    <!-- Header Row: Title + Period Selector -->
+    <div class="row items-center justify-between q-my-md">
+      <div class="col-auto">
+        <div class="text-h6 text-green text-weight-bold">Dashboard</div>
+      </div>
       <div class="col-auto">
         <q-select
           v-model="selectedPeriod"
@@ -28,467 +27,449 @@
 
     <div v-else>
       <!-- Cards Row -->
-      <div class="row q-col-gutter-md q-mb-md">
-        <!-- Employee Card -->
-        <div class="col-xs-12 col-sm-6 col-md-3" style="max-width: 320px; width: 100%">
-          <q-card
-            class="bg-white shadow-3 full-height clickable-card"
-            @click="$router.push('/office/employee')"
-          >
-            <q-card-section class="q-pa-md">
-              <div class="row items-center">
-                <q-icon name="people" color="primary" size="md" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle2 text-grey-7">Total Employees</div>
-                  <div class="text-h6 text-weight-bold">
-                    {{ dashboardData?.total_employee || 0 }}
+      <div class="flex justify-center">
+        <div
+          class="row q-col-gutter-md q-mb-md items-stretch justify-center"
+          style="max-width: 1800px; width: 100%"
+        >
+          <!-- Employee Card -->
+          <div class="col-xs-12 col-sm-6 col-md-3">
+            <q-card
+              class="bg-white shadow-3 full-height clickable-card"
+              @click="$router.push('/office/employee')"
+            >
+              <q-card-section class="q-pa-md">
+                <div class="row items-center">
+                  <q-icon name="people" color="primary" size="md" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle2 text-grey-7">Total Employees</div>
+                    <div class="text-h6 text-weight-bold">
+                      {{ dashboardData?.total_employee || 0 }}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="q-mt-md">
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption"
-                    >Office: <strong>{{ dashboardData?.structure?.office || 0 }}</strong></span
-                  >
-                  <span class="text-caption"
-                    >Office 2: <strong>{{ dashboardData?.structure?.office2 || 0 }}</strong></span
-                  >
-                </div>
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption"
-                    >Group: <strong>{{ dashboardData?.structure?.group || 0 }}</strong></span
-                  >
-                  <span class="text-caption"
-                    >Division: <strong>{{ dashboardData?.structure?.division || 0 }}</strong></span
-                  >
-                </div>
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption"
-                    >Section: <strong>{{ dashboardData?.structure?.section || 0 }}</strong></span
-                  >
-                  <span class="text-caption"
-                    >Unit: <strong>{{ dashboardData?.structure?.unit || 0 }}</strong></span
-                  >
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <!-- OPCR Card -->
-        <!-- OPCR Card -->
-        <div class="col-xs-12 col-sm-6 col-md-3" style="max-width: 480px; width: 100%">
-          <q-card
-            class="bg-white shadow-3 full-height clickable-card"
-            @click="$router.push('/office/ipcr')"
-          >
-            <q-card-section class="q-pa-md">
-              <div class="row items-center q-mb-md">
-                <q-icon name="assignment_ind" color="blue-9" size="md" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle2 text-grey-7">OPCR</div>
-                  <div class="text-h6 text-weight-bold">
-                    {{ dashboardData?.opcr?.total_opcr ?? '—' }}
+                <div class="q-mt-md">
+                  <div class="row justify-between q-mb-xs">
+                    <span class="text-caption"
+                      >Office: <strong>{{ dashboardData?.structure?.office || 0 }}</strong></span
+                    >
+                    <span class="text-caption"
+                      >Office 2: <strong>{{ dashboardData?.structure?.office2 || 0 }}</strong></span
+                    >
+                  </div>
+                  <div class="row justify-between q-mb-xs">
+                    <span class="text-caption"
+                      >Group: <strong>{{ dashboardData?.structure?.group || 0 }}</strong></span
+                    >
+                    <span class="text-caption"
+                      >Division:
+                      <strong>{{ dashboardData?.structure?.division || 0 }}</strong></span
+                    >
+                  </div>
+                  <div class="row justify-between q-mb-xs">
+                    <span class="text-caption"
+                      >Section: <strong>{{ dashboardData?.structure?.section || 0 }}</strong></span
+                    >
+                    <span class="text-caption"
+                      >Unit: <strong>{{ dashboardData?.structure?.unit || 0 }}</strong></span
+                    >
                   </div>
                 </div>
-              </div>
+              </q-card-section>
+            </q-card>
+          </div>
 
-              <div class="row q-mt-sm">
-                <!-- Target Column -->
-                <div class="col">
-                  <div class="text-subtitle2 text-weight-bold q-mb-xs">Target</div>
+          <!-- OPCR Card -->
+          <div class="col-xs-12 col-sm-6 col-md-3">
+            <q-card
+              class="bg-white shadow-3 full-height clickable-card"
+              @click="$router.push('/office/ipcr')"
+            >
+              <q-card-section class="q-pa-md">
+                <div class="row items-center q-mb-md">
+                  <q-icon name="assignment_ind" color="blue-9" size="md" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle2 text-grey-7">OPCR</div>
+                    <div class="text-h6 text-weight-bold">
+                      {{ dashboardData?.opcr?.total_opcr ?? '—' }}
+                    </div>
+                  </div>
+                </div>
 
-                  <div class="row no-wrap items-center q-mb-xs text-caption">
-                    <span class="text-grey-50 col">Calivrated & Validated</span>
+                <div class="row q-mt-sm">
+                  <!-- Target Column -->
+                  <div class="col">
+                    <div class="text-subtitle2 text-weight-bold q-mb-xs">Target</div>
+
+                    <div class="row no-wrap items-center q-mb-xs text-caption">
+                      <span class="text-grey-50 col">Calibrated & Validated</span>
+                      <strong class="text-positive">{{
+                        dashboardData?.opcr?.Validated_target ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      class="q-mb-sm"
+                      :value="
+                        (dashboardData?.opcr?.Validated_target ?? 0) /
+                        (dashboardData?.opcr?.total_opcr || 1)
+                      "
+                      color="positive"
+                    />
+
+                    <div class="row no-wrap items-center q-mb-xs text-caption">
+                      <span class="text-grey-50 col">Receive</span>
+                      <strong class="text-warning">{{
+                        dashboardData?.opcr?.Receive_target ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      class="q-mb-sm"
+                      :value="
+                        (dashboardData?.opcr?.Receive_target ?? 0) /
+                        (dashboardData?.opcr?.total_opcr || 1)
+                      "
+                      color="warning"
+                    />
+
+                    <div class="row no-wrap items-center q-mb-xs text-caption">
+                      <span class="text-grey-50 col">Draft</span>
+                      <strong class="text-info">{{ dashboardData?.opcr?.Draft ?? 0 }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.opcr?.Draft ?? 0) / (dashboardData?.opcr?.total_opcr || 1)
+                      "
+                      color="info"
+                    />
+                  </div>
+
+                  <!-- Vertical Divider -->
+                  <q-separator vertical class="q-mx-sm" />
+
+                  <!-- Accomplishment Column -->
+                  <div class="col">
+                    <div class="text-subtitle2 text-weight-bold q-mb-xs">Accomplishment</div>
+
+                    <div class="row no-wrap items-center q-mb-xs text-caption">
+                      <span class="text-grey-50 col">Calibrated & Validated</span>
+                      <strong class="text-positive">{{
+                        dashboardData?.opcr?.Validated_accomplishment ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      class="q-mb-sm"
+                      :value="
+                        (dashboardData?.opcr?.Validated_accomplishment ?? 0) /
+                        (dashboardData?.opcr?.total_opcr || 1)
+                      "
+                      color="positive"
+                    />
+
+                    <div class="row no-wrap items-center q-mb-xs text-caption">
+                      <span class="text-grey-50 col">Receive</span>
+                      <strong class="text-warning">{{
+                        dashboardData?.opcr?.Calibrated_accomplishment ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.opcr?.Calibrated_accomplishment ?? 0) /
+                        (dashboardData?.opcr?.total_opcr || 1)
+                      "
+                      color="warning"
+                    />
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <!-- IPCR Card -->
+          <div class="col-xs-12 col-sm-6 col-md-3">
+            <q-card
+              class="bg-white shadow-3 full-height clickable-card"
+              @click="$router.push('/office/ipcr')"
+            >
+              <q-card-section class="q-pa-md">
+                <div class="row items-center q-mb-md">
+                  <q-icon name="assignment_ind" color="blue-9" size="md" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle2 text-grey-7">IPCR Status</div>
+                    <div class="text-h6 text-weight-bold">
+                      {{ dashboardData?.ipcr?.total_ipcr ?? '—' }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row q-mt-sm">
+                  <!-- Target Column -->
+                  <div class="col">
+                    <div class="text-subtitle2 text-weight-bold q-mb-xs">Target</div>
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Consolidated/Validated Target</span>
+                      <strong class="text-positive">{{
+                        dashboardData?.ipcr?.Validated_target ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Validated_target ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="positive"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Calibrated Target</span>
+                      <strong class="text-warning">{{
+                        dashboardData?.ipcr?.Calibrated_target ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Calibrated_target ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="warning"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Approved</span>
+                      <strong class="text-positive">{{
+                        dashboardData?.ipcr?.Approved ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Approved ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="positive"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Reviewed</span>
+                      <strong class="text-grey">{{ dashboardData?.ipcr?.Reviewed ?? 0 }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Reviewed ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="grey"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Receive Target</span>
+                      <strong class="text-grey">{{
+                        dashboardData?.ipcr?.Receive_target ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Receive_target ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="grey"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Draft</span>
+                      <strong class="text-info">{{ dashboardData?.ipcr?.Draft ?? 0 }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Draft ?? 0) / (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="info"
+                    />
+                  </div>
+
+                  <!-- Vertical Divider -->
+                  <q-separator vertical class="q-mx-sm" />
+
+                  <!-- Accomplishment Column -->
+                  <div class="col">
+                    <div class="text-subtitle2 text-weight-bold q-mb-xs">Accomplishment</div>
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Validated</span>
+                      <strong class="text-positive">{{
+                        dashboardData?.ipcr?.Validated_accomplishment ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Validated_accomplishment ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="positive"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Calibrated</span>
+                      <strong class="text-warning">{{
+                        dashboardData?.ipcr?.Calibrated_accomplishment ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Calibrated_accomplishment ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="warning"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Pre Validation</span>
+                      <strong class="text-grey">{{
+                        dashboardData?.ipcr?.Pre_validation ?? 0
+                      }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.Pre_validation ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="grey"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">In Progress</span>
+                      <strong class="text-info">{{ dashboardData?.ipcr?.In_Progress ?? 0 }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.In_Progress ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="info"
+                      class="q-mb-sm"
+                    />
+
+                    <div class="row items-center justify-between text-caption q-mb-xs">
+                      <span class="text-grey-50">Receive</span>
+                      <strong class="text-info">{{ dashboardData?.ipcr?.In_Progress ?? 0 }}</strong>
+                    </div>
+                    <q-linear-progress
+                      size="xs"
+                      :value="
+                        (dashboardData?.ipcr?.In_Progress ?? 0) /
+                        (dashboardData?.ipcr?.total_ipcr || 1)
+                      "
+                      color="info"
+                    />
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <!-- Unit Work Plan Card -->
+          <div class="col-xs-12 col-sm-6 col-md-3">
+            <q-card
+              class="bg-white shadow-3 full-height clickable-card"
+              @click="$router.push('/office/unit-work-plan')"
+            >
+              <q-card-section class="q-pa-md">
+                <div class="row items-center">
+                  <q-icon name="domain" color="primary" size="md" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle2 text-grey-7">Unit Work Plan</div>
+                    <div class="text-h6 text-weight-bold q-mb-sm">
+                      {{ dashboardData?.uwp?.total_unitworkplan || 0 }}
+                    </div>
+                  </div>
+                </div>
+                <div class="q-mb-sm">
+                  <span class="text-caption"
+                    >Approved:
                     <strong class="text-positive">{{
-                      dashboardData?.opcr?.Validated_target ?? 0
-                    }}</strong>
-                  </div>
+                      dashboardData?.uwp?.Approved || 0
+                    }}</strong></span
+                  >
                   <q-linear-progress
                     size="xs"
-                    class="q-mb-sm"
                     :value="
-                      (dashboardData?.opcr?.Validated_target ?? 0) /
-                      (dashboardData?.opcr?.total_opcr || 1)
+                      (dashboardData?.uwp?.Approved || 0) /
+                      (dashboardData?.uwp?.total_unitworkplan || 1)
                     "
                     color="positive"
-                  />
-
-                  <!-- <div class="row no-wrap items-center q-mb-xs text-caption">
-                    <span class="text-grey-50 col">Calibrated Target</span>
-                    <strong class="text-warning">{{
-                      dashboardData?.opcr?.Calibrated_target ?? 0
-                    }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    class="q-mb-sm"
-                    :value="
-                      (dashboardData?.opcr?.Calibrated_target ?? 0) /
-                      (dashboardData?.opcr?.total_opcr || 1)
-                    "
-                    color="warning"
-                  /> -->
-
-                  <!-- <div class="row no-wrap items-center q-mb-xs text-caption">
-                    <span class="text-grey-50 col">Approved</span>
-                    <strong class="text-positive">{{ dashboardData?.opcr?.Approved ?? 0 }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    class="q-mb-sm"
-                    :value="
-                      (dashboardData?.opcr?.Approved ?? 0) / (dashboardData?.opcr?.total_opcr || 1)
-                    "
-                    color="positive"
-                  /> -->
-
-                  <div class="row no-wrap items-center q-mb-xs text-caption">
-                    <span class="text-grey-50 col">Receive</span>
-                    <strong class="text-warning">{{
-                      dashboardData?.opcr?.Receive_target ?? 0
-                    }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    class="q-mb-sm"
-                    :value="
-                      (dashboardData?.opcr?.Receive_target ?? 0) /
-                      (dashboardData?.opcr?.total_opcr || 1)
-                    "
-                    color="warning"
-                  />
-
-                  <div class="row no-wrap items-center q-mb-xs text-caption">
-                    <span class="text-grey-50 col">Draft</span>
-                    <strong class="text-info">{{ dashboardData?.opcr?.Draft ?? 0 }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.opcr?.Draft ?? 0) / (dashboardData?.opcr?.total_opcr || 1)
-                    "
-                    color="info"
                   />
                 </div>
-
-                <!-- Vertical Divider -->
-                <q-separator vertical class="q-mx-sm" />
-
-                <!-- Accomplishment Column -->
-                <div class="col">
-                  <div class="text-subtitle2 text-weight-bold q-mb-xs">Accomplishment</div>
-
-                  <div class="row no-wrap items-center q-mb-xs text-caption">
-                    <span class="text-grey-50 col">Calibrated & Validated</span>
+                <div class="q-mb-sm">
+                  <span class="text-caption"
+                    >Reviewed:
                     <strong class="text-positive">{{
-                      dashboardData?.opcr?.Validated_accomplishment ?? 0
-                    }}</strong>
-                  </div>
+                      dashboardData?.uwp?.Approved || 0
+                    }}</strong></span
+                  >
                   <q-linear-progress
                     size="xs"
-                    class="q-mb-sm"
                     :value="
-                      (dashboardData?.opcr?.Validated_accomplishment ?? 0) /
-                      (dashboardData?.opcr?.total_opcr || 1)
+                      (dashboardData?.uwp?.Approved || 0) /
+                      (dashboardData?.uwp?.total_unitworkplan || 1)
                     "
                     color="positive"
                   />
-
-                  <div class="row no-wrap items-center q-mb-xs text-caption">
-                    <span class="text-grey-50 col">Receive</span>
+                </div>
+                <div class="q-mb-sm">
+                  <span class="text-caption"
+                    >Receive:
                     <strong class="text-warning">{{
-                      dashboardData?.opcr?.Calibrated_accomplishment ?? 0
-                    }}</strong>
-                  </div>
+                      dashboardData?.uwp?.Pending || 0
+                    }}</strong></span
+                  >
                   <q-linear-progress
                     size="xs"
                     :value="
-                      (dashboardData?.opcr?.Calibrated_accomplishment ?? 0) /
-                      (dashboardData?.opcr?.total_opcr || 1)
+                      (dashboardData?.uwp?.Pending || 0) /
+                      (dashboardData?.uwp?.total_unitworkplan || 1)
                     "
                     color="warning"
                   />
                 </div>
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <!-- IPCR Card -->
-        <div class="col-xs-12 col-sm-6 col-md-3" style="max-width: 480px; width: 100%">
-          <q-card
-            class="bg-white shadow-3 full-height clickable-card"
-            @click="$router.push('/office/ipcr')"
-          >
-            <q-card-section class="q-pa-md">
-              <div class="row items-center q-mb-md">
-                <q-icon name="assignment_ind" color="blue-9" size="md" class="q-mr-sm" />
                 <div>
-                  <div class="text-subtitle2 text-grey-7">IPCR Status</div>
-                  <div class="text-h6 text-weight-bold">
-                    {{ dashboardData?.ipcr?.total_ipcr ?? '—' }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Target Section -->
-              <div class="row q-mt-sm">
-                <!-- Target Column -->
-                <!-- Target Column -->
-                <div class="col">
-                  <div class="text-subtitle2 text-weight-bold q-mb-xs">Target</div>
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Validated Target</span>
-                    <strong class="text-positive">{{
-                      dashboardData?.ipcr?.Validated_target ?? 0
-                    }}</strong>
-                  </div>
+                  <span class="text-caption"
+                    >Draft:
+                    <strong class="text-grey">{{ dashboardData?.uwp?.Draft || 0 }}</strong></span
+                  >
                   <q-linear-progress
                     size="xs"
                     :value="
-                      (dashboardData?.ipcr?.Validated_target ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="positive"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Calibrated Target</span>
-                    <strong class="text-warning">{{
-                      dashboardData?.ipcr?.Calibrated_target ?? 0
-                    }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Calibrated_target ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="warning"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Approved</span>
-                    <strong class="text-positive">{{ dashboardData?.ipcr?.Approved ?? 0 }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Approved ?? 0) / (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="positive"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Reviewed</span>
-                    <strong class="text-grey">{{ dashboardData?.ipcr?.Reviewed ?? 0 }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Reviewed ?? 0) / (dashboardData?.ipcr?.total_ipcr || 1)
+                      (dashboardData?.uwp?.Draft || 0) /
+                      (dashboardData?.uwp?.total_unitworkplan || 1)
                     "
                     color="grey"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Receive Target</span>
-                    <strong class="text-grey">{{
-                      dashboardData?.ipcr?.Receive_target ?? 0
-                    }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Receive_target ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="grey"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Draft</span>
-                    <strong class="text-info">{{ dashboardData?.ipcr?.Draft ?? 0 }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Draft ?? 0) / (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="info"
                   />
                 </div>
-
-                <!-- Vertical Divider -->
-                <q-separator vertical class="q-mx-sm" />
-
-                <!-- Accomplishment Column -->
-                <!-- Accomplishment Column -->
-                <div class="col">
-                  <div class="text-subtitle2 text-weight-bold q-mb-xs">Accomplishment</div>
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Validated</span>
-                    <strong class="text-positive">{{
-                      dashboardData?.ipcr?.Validated_accomplishment ?? 0
-                    }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Validated_accomplishment ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="positive"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Calibrated</span>
-                    <strong class="text-warning">{{
-                      dashboardData?.ipcr?.Calibrated_accomplishment ?? 0
-                    }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Calibrated_accomplishment ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="warning"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Pre Validation</span>
-                    <strong class="text-grey">{{
-                      dashboardData?.ipcr?.Pre_validation ?? 0
-                    }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.Pre_validation ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="grey"
-                    class="q-mb-sm"
-                  />
-
-                  <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">In Progress</span>
-                    <strong class="text-info">{{ dashboardData?.ipcr?.In_Progress ?? 0 }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.In_Progress ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="info"
-                  />
-                          <div class="row items-center justify-between text-caption q-mb-xs">
-                    <span class="text-grey-50">Receive</span>
-                    <strong class="text-info">{{ dashboardData?.ipcr?.In_Progress ?? 0 }}</strong>
-                  </div>
-                  <q-linear-progress
-                    size="xs"
-                    :value="
-                      (dashboardData?.ipcr?.In_Progress ?? 0) /
-                      (dashboardData?.ipcr?.total_ipcr || 1)
-                    "
-                    color="info"
-                  />
-                </div>
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <!-- Unit Work Plan Card -->
-        <div class="col-xs-12 col-sm-6 col-md-3" style="max-width: 360px; width: 100%">
-          <q-card
-            class="bg-white shadow-3 full-height clickable-card"
-            @click="$router.push('/office/unit-work-plan')"
-          >
-            <q-card-section class="q-pa-md">
-              <div class="row items-center">
-                <q-icon name="domain" color="primary" size="md" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle2 text-grey-7">Unit Work Plan</div>
-                  <div class="text-h6 text-weight-bold q-mb-sm">
-                    {{ dashboardData?.uwp?.total_unitworkplan || 0 }}
-                  </div>
-                </div>
-              </div>
-              <div class="q-mb-sm">
-                <span class="text-caption"
-                  >Approved:
-                  <strong class="text-positive">{{
-                    dashboardData?.uwp?.Approved || 0
-                  }}</strong></span
-                >
-                <q-linear-progress
-                  size="xs"
-                  :value="
-                    (dashboardData?.uwp?.Approved || 0) /
-                    (dashboardData?.uwp?.total_unitworkplan || 1)
-                  "
-                  color="positive"
-                />
-              </div>
-              <div class="q-mb-sm">
-                <span class="text-caption"
-                  >Reviewed:
-                  <strong class="text-positive">{{
-                    dashboardData?.uwp?.Approved || 0
-                  }}</strong></span
-                >
-                <q-linear-progress
-                  size="xs"
-                  :value="
-                    (dashboardData?.uwp?.Approved || 0) /
-                    (dashboardData?.uwp?.total_unitworkplan || 1)
-                  "
-                  color="positive"
-                />
-              </div>
-              <div class="q-mb-sm">
-                <span class="text-caption"
-                  >Receive:
-                  <strong class="text-warning">{{ dashboardData?.uwp?.Pending || 0 }}</strong></span
-                >
-                <q-linear-progress
-                  size="xs"
-                  :value="
-                    (dashboardData?.uwp?.Pending || 0) /
-                    (dashboardData?.uwp?.total_unitworkplan || 1)
-                  "
-                  color="warning"
-                />
-              </div>
-              <div>
-                <span class="text-caption"
-                  >Draft:
-                  <strong class="text-grey">{{ dashboardData?.uwp?.Draft || 0 }}</strong></span
-                >
-                <q-linear-progress
-                  size="xs"
-                  :value="
-                    (dashboardData?.uwp?.Draft || 0) / (dashboardData?.uwp?.total_unitworkplan || 1)
-                  "
-                  color="grey"
-                />
-              </div>
-            </q-card-section>
-          </q-card>
+              </q-card-section>
+            </q-card>
+          </div>
         </div>
       </div>
 
@@ -500,186 +481,35 @@
       </div>
 
       <!-- Employment Type Cards -->
-      <div class="row q-col-gutter-md q-mb-lg">
-        <div v-for="type in employmentTypes" :key="type.key" class="col-xs-12 col-sm-6 col-md-3">
-          <q-card class="bg-white shadow-3 full-height clickable-card">
-            <q-card-section class="q-pa-md">
-              <div class="row items-center">
-                <q-icon :name="type.icon" color="primary" size="md" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle2 text-grey-7">{{ type.label }}</div>
-                  <div class="text-h6 text-weight-bold">
-                    {{ getCurrentEmploymentData(type.key) }}
-                  </div>
-                  <div
-                    v-if="selectedPeriods.length > 1"
-                    class="text-caption"
-                    :class="getChangeClass(getEmploymentChangeValue(type.key))"
-                  >
-                    {{ formatChange(getEmploymentChangeValue(type.key)) }}
+      <div class="flex justify-center">
+        <div
+          class="row q-col-gutter-md q-mb-lg items-stretch justify-center"
+          style="max-width: 1800px; width: 100%"
+        >
+          <div v-for="type in employmentTypes" :key="type.key" class="col-xs-12 col-sm-6 col-md-3">
+            <q-card class="bg-white shadow-3 full-height clickable-card">
+              <q-card-section class="q-pa-md">
+                <div class="row items-center">
+                  <q-icon :name="type.icon" color="primary" size="md" class="q-mr-sm" />
+                  <div>
+                    <div class="text-subtitle2 text-grey-7">{{ type.label }}</div>
+                    <div class="text-h6 text-weight-bold">
+                      {{ getCurrentEmploymentData(type.key) }}
+                    </div>
+                    <div
+                      v-if="selectedPeriods.length > 1"
+                      class="text-caption"
+                      :class="getChangeClass(getEmploymentChangeValue(type.key))"
+                    >
+                      {{ formatChange(getEmploymentChangeValue(type.key)) }}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </q-card-section>
-          </q-card>
+              </q-card-section>
+            </q-card>
+          </div>
         </div>
       </div>
-<!-- 
-      Main comparison chart
-      <q-card class="q-mb-md">
-        <q-card-section>
-          <div class="text-h6">Employment Type Distribution</div>
-          <div class="text-caption text-grey q-mb-md">
-            Comparing {{ selectedPeriods.length }} periods
-            <span v-if="selectedPeriods.length > 1">
-              (percentage changes from {{ selectedPeriods[selectedPeriods.length - 1]?.label }} to
-              {{ selectedPeriods[0]?.label }} shown above bars)
-            </span>
-          </div>
-
-          <div style="height: 400px" class="q-pa-md">
-            <bar-chart-comparison :chart-data="employmentChartData" />
-          </div>
-        </q-card-section>
-      </q-card> -->
-
-      <!-- Detailed comparison table
-      <q-card class="q-mb-md">
-        <q-card-section>
-          <div class="text-h6">Detailed Comparison by Employment Type</div>
-
-          <q-table
-            :rows="comparisonTableData"
-            :columns="tableColumns"
-            row-key="type"
-            dense
-            flat
-            bordered
-            class="q-mt-md"
-          >
-            <template v-slot:header="props">
-              <q-tr :props="props">
-                <q-th auto-width>Employment Type</q-th>
-                <q-th v-for="period in selectedPeriods" :key="period.value" class="text-center">
-                  {{ period.label }}
-                </q-th>
-                <q-th v-if="selectedPeriods.length > 1" class="text-center"> Change </q-th>
-              </q-tr>
-            </template>
-
-            <template v-slot:body="props">
-              <q-tr :props="props">
-                <q-td auto-width class="text-weight-medium">
-                  {{ props.row.type }}
-                </q-td>
-                <q-td v-for="period in selectedPeriods" :key="period.value" class="text-center">
-                  {{ props.row[period.value] }}
-                </q-td>
-                <q-td v-if="selectedPeriods.length > 1" class="text-center">
-                  <q-badge
-                    :color="getChangeColor(props.row.change)"
-                    :label="formatChange(props.row.change)"
-                  />
-                </q-td>
-              </q-tr>
-            </template>
-
-            <template v-slot:bottom-row>
-              <q-tr>
-                <q-td class="text-weight-bold">TOTAL</q-td>
-                <q-td
-                  v-for="period in selectedPeriods"
-                  :key="period.value"
-                  class="text-center text-weight-bold"
-                >
-                  {{ periodTotals[period.value] }}
-                </q-td>
-                <q-td v-if="selectedPeriods.length > 1" class="text-center">
-                  <q-badge
-                    :color="getChangeColor(totalChange)"
-                    :label="formatChange(totalChange)"
-                  />
-                </q-td>
-              </q-tr>
-            </template>
-          </q-table>
-        </q-card-section>
-      </q-card> -->
-
-      <!-- Period Distribution Pie Charts -->
-      <!-- <div class="row q-col-gutter-md q-mt-md">
-        <div
-          v-for="period in selectedPeriods"
-          :key="period.value"
-          class="col-12 col-md-6"
-          v-show="selectedPeriods.length <= 2"
-        >
-          <q-card>
-            <q-card-section>
-              <div class="text-h6">{{ period.label }} Distribution</div>
-              <div class="text-caption text-grey q-mb-md">
-                Total: {{ periodTotals[period.value] }} employees
-              </div>
-
-              <div style="height: 300px" class="q-pa-md">
-                <pie-chart :chart-data="getPieChartData(period.value)" />
-              </div>
-            </q-card-section>
-          </q-card>
-        </div>
-      </div> -->
-
-      <!-- Target Period Selector at Bottom for Comparison -->
-      <!-- <q-card class="q-mt-md">
-        <q-card-section>
-          <div class="row justify-between items-center">
-            <div class="col-auto">
-              <div class="text-h6 text-primary">Compare Target Periods</div>
-              <div class="text-caption text-grey">
-                Select multiple semesters and years to compare employment data
-              </div>
-            </div>
-            <div class="col-auto">
-              <q-select
-                v-model="selectedPeriods"
-                :options="availablePeriods"
-                label="Select Periods to Compare"
-                multiple
-                dense
-                outlined
-                color="primary"
-                use-chips
-                stack-label
-                emit-value
-                map-options
-                :display-value="selectedPeriodsDisplay"
-                class="target-period-dropdown"
-                @update:model-value="refreshData"
-                style="min-width: 300px"
-              />
-            </div>
-          </div> -->
-
-          <!-- Available Periods Summary Chips -->
-          <!-- <div class="row q-mt-md q-col-gutter-sm">
-            <div
-              v-for="period in availablePeriods"
-              :key="period.id"
-              class="col-12 col-sm-6 col-md-4 col-lg-3"
-            >
-              <q-chip
-                :color="selectedPeriods.includes(period) ? 'primary' : 'grey-3'"
-                :text-color="selectedPeriods.includes(period) ? 'white' : 'dark'"
-                clickable
-                @click="togglePeriod(period)"
-                class="full-width"
-              >
-                {{ period.label }}
-              </q-chip>
-            </div>
-          </div>
-        </q-card-section>
-      </q-card> -->
     </div>
   </q-page>
 </template>
@@ -708,16 +538,16 @@ export default defineComponent({
     const storeLoading = ref(false)
 
     // Employment types with icons
-const employmentTypes = [
-  { key: 'REGULAR',      label: 'Regular',            icon: 'lock' },
-  { key: 'TEMPORARY',    label: 'Temporary',           icon: 'hourglass_empty' },
-  { key: 'APPOINTED',    label: 'Appointed',           icon: 'how_to_reg' },
-  { key: 'ELECTIVE',     label: 'Elective',            icon: 'verified_user' },
-  { key: 'CO-TERMINOUS', label: 'Co-Terminous',        icon: 'work_outline' },
-  { key: 'CASUAL',       label: 'Casual',              icon: 'timer' },
-  { key: 'CONTRACTUAL',  label: 'Contractual',         icon: 'assignment' },
-  { key: 'HONORARIUM',   label: 'Honorarium',          icon: 'loyalty' },
-]
+    const employmentTypes = [
+      { key: 'REGULAR', label: 'Regular', icon: 'lock' },
+      { key: 'TEMPORARY', label: 'Temporary', icon: 'hourglass_empty' },
+      { key: 'APPOINTED', label: 'Appointed', icon: 'how_to_reg' },
+      { key: 'ELECTIVE', label: 'Elective', icon: 'verified_user' },
+      { key: 'CO-TERMINOUS', label: 'Co-Terminous', icon: 'work_outline' },
+      { key: 'CASUAL', label: 'Casual', icon: 'timer' },
+      { key: 'CONTRACTUAL', label: 'Contractual', icon: 'assignment' },
+      { key: 'HONORARIUM', label: 'Honorarium', icon: 'loyalty' },
+    ]
 
     // Available periods from API
     const availablePeriods = ref([])
@@ -889,7 +719,7 @@ const employmentTypes = [
         storeLoading.value = true
         await dashboardStore.fetchEmployeeSummary(
           selectedPeriod.value?.semester,
-          selectedPeriod.value?.year
+          selectedPeriod.value?.year,
         )
       } catch (error) {
         console.error('Error loading employment data:', error)

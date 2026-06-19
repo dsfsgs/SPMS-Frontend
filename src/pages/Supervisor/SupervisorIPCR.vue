@@ -58,8 +58,9 @@
         </q-input>
       </div>
 
-      <!-- Create UWP Button -->
-      <div class="col-12 col-sm-12 col-md-2 flex items-center">
+      <!-- Action Buttons -->
+      <div class="col-12 col-sm-12 col-md-2 flex items-center q-gutter-sm">
+        <!-- Create UWP Button -->
         <q-btn
           color="green-9"
           icon="add"
@@ -78,6 +79,26 @@
             Create Unit Work Plan for {{ apiResponseData.employee.name }}
           </q-tooltip>
         </q-btn>
+
+        <!-- Edit UWP Button -->
+        <q-btn
+          color="blue-9"
+          icon="edit"
+          label="Edit UWP"
+          :disable="!selectedYear || !selectedSemester || !apiResponseData?.employee"
+          :loading="editingUwp"
+          @click="handleEditUwp"
+          unelevated
+          class="full-width"
+        >
+          <q-tooltip v-if="!selectedYear || !selectedSemester">
+            Select a year and semester first
+          </q-tooltip>
+          <q-tooltip v-else-if="!apiResponseData?.employee"> No employee data available </q-tooltip>
+          <q-tooltip v-else>
+            Edit Unit Work Plan for {{ apiResponseData.employee.name }}
+          </q-tooltip>
+        </q-btn>
       </div>
     </div>
 
@@ -92,17 +113,33 @@
       wrap-cells
       :rows-per-page-options="[10, 20, 50]"
     >
+      <!-- Employment Status column -->
+      <template v-slot:body-cell-employmentStatus="props">
+        <q-td :props="props" class="text-center">
+          <q-badge
+            :color="getEmploymentStatusColor(props.row.status)"
+            text-color="white"
+            class="q-px-sm"
+          >
+            {{ props.row.status || 'N/A' }}
+          </q-badge>
+        </q-td>
+      </template>
+
       <!-- Target Period Status column -->
       <template v-slot:body-cell-targetStatus="props">
         <q-td :props="props" class="text-center">
-          <div>
-            <q-icon
-              v-if="props.row.has_target_period"
-              name="check_circle"
-              color="green"
-              size="20px"
-            />
-            <q-icon v-else name="cancel" color="red" size="20px" />
+          <div v-if="props.row.existing_target_period">
+            <q-badge
+              :color="getIpcrStatusColor(props.row.existing_target_period.status)"
+              text-color="white"
+              class="q-px-sm"
+            >
+              {{ props.row.existing_target_period.status || 'N/A' }}
+            </q-badge>
+          </div>
+          <div v-else>
+            <q-badge color="grey-6" text-color="white" class="q-px-sm"> No IPCR </q-badge>
           </div>
         </q-td>
       </template>
@@ -123,7 +160,7 @@
             class="neu-button"
             flat
             round
-            color="purple"
+            color="blue"
             icon="assignment_ind"
             :disable="!selectedYear || !selectedSemester"
             @click="openIpcrForEmployee(props.row)"
@@ -144,63 +181,35 @@
       </template>
     </q-table>
 
-    <!-- IPCR Modal -->
-    <q-dialog v-model="showIpcrModal" persistent>
-      <q-card v-if="ipcrSelectedEmployee" style="min-width: 600px">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6">IPCR for {{ ipcrSelectedEmployee.name }}</div>
-          <q-space />
-          <q-btn icon="close" flat round dense @click="closeIpcrModal" />
-        </q-card-section>
+    <!-- Edit UWP Modal -->
+    <q-dialog v-model="showEditModal" full-width transition-show="fade" transition-hide="fade">
+      <q-card class="full-height" style="border-radius: 0">
+        <EditUWPModal
+          v-if="editEmployeeData"
+          :employee="editEmployeeData"
+          :control-no="editEmployeeData.controlNo"
+          :semester="selectedSemester"
+          :year="selectedYear"
+          @close="closeEditModal"
+          @saved="handleEditSaved"
+        />
+      </q-card>
+    </q-dialog>
 
-        <q-separator />
-
-        <q-card-section class="q-pt-none">
-          <div class="q-mb-md">
-            <div class="text-caption text-grey-7">
-              Year: {{ selectedYear }} | Semester: {{ selectedSemester }}
-            </div>
-            <div class="text-caption text-grey-7">
-              Employee: {{ ipcrSelectedEmployee.controlNo }} - {{ ipcrSelectedEmployee.name }}
-            </div>
-            <div class="text-caption text-grey-7">
-              Position: {{ ipcrSelectedEmployee.position }}
-            </div>
-            <div class="text-caption text-grey-7">Office: {{ ipcrSelectedEmployee.office }}</div>
-            <div class="text-caption text-grey-7">
-              Job Title: {{ ipcrSelectedEmployee.job_title }}
-            </div>
-          </div>
-
-          <q-form @submit.prevent="handleIpcrSave">
-            <q-input
-              v-model="ipcrForm.performanceRating"
-              label="Performance Rating"
-              outlined
-              dense
-              class="q-mb-md"
-              type="number"
-              min="1"
-              max="5"
-              step="0.1"
-            />
-
-            <q-input
-              v-model="ipcrForm.remarks"
-              label="Remarks"
-              outlined
-              dense
-              class="q-mb-md"
-              type="textarea"
-              rows="5"
-            />
-
-            <div class="row justify-end q-gutter-sm">
-              <q-btn label="Cancel" color="grey" @click="closeIpcrModal" unelevated />
-              <q-btn label="Save" type="submit" color="primary" unelevated />
-            </div>
-          </q-form>
-        </q-card-section>
+    <!-- IPCR Report Modal -->
+    <q-dialog v-model="showIpcrModal" full-width transition-show="fade" transition-hide="fade">
+      <q-card class="full-height" style="border-radius: 0">
+        <IPCRReportSupervisor
+          v-if="ipcrSelectedEmployee"
+          :employee="ipcrEmployeeData"
+          :target-period="targetPeriodData"
+          :levels="hierarchyData"
+          :supervisory-signatory="supervisorySignatoryData"
+          :managerial-signatory="managerialSignatoryData"
+          :is-self="isSelf"
+          @close="closeIpcrModal"
+          @status-updated="handleStatusUpdated"
+        />
       </q-card>
     </q-dialog>
   </q-page>
@@ -209,14 +218,27 @@
 <script>
 import { useSupervisorStore } from 'src/stores/supervisorStore'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
+import { useUserStore } from 'src/stores/userStore'
+import IPCRReportSupervisor from 'src/components/IPCRReportSupervisor.vue'
+import EditUWPModal from 'src/components/EditUWPModal.vue'
 
 export default {
   name: 'IPCREmployeeUserPage',
 
+  components: {
+    IPCRReportSupervisor,
+    EditUWPModal,
+  },
+
   setup() {
+    const supervisorStore = useSupervisorStore()
+    const libStore = useLibraryStore()
+    const userStore = useUserStore()
+
     return {
-      supervisorStore: useSupervisorStore(),
-      libStore: useLibraryStore(),
+      supervisorStore,
+      libStore,
+      userStore,
     }
   },
 
@@ -226,17 +248,15 @@ export default {
       selectedYear: null,
       selectedSemester: null,
       creatingUwp: false,
+      editingUwp: false,
       apiResponseData: null,
 
       showIpcrModal: false,
       ipcrSelectedEmployee: null,
 
-      ipcrForm: {
-        performanceRating: '',
-        remarks: '',
-      },
+      showEditModal: false,
+      editEmployeeData: null,
 
-      // Job title priority order (lower number = higher rank, appears first)
       jobTitlePriority: {
         'Office Head': 1,
         'Sub Office Head': 2,
@@ -270,10 +290,17 @@ export default {
           sortable: true,
         },
         {
-          name: 'status',
-          label: 'STATUS',
+          name: 'employmentStatus',
+          label: 'EMPLOYMENT STATUS',
           align: 'center',
           field: 'status',
+          sortable: true,
+        },
+        {
+          name: 'targetStatus',
+          label: 'IPCR STATUS',
+          align: 'center',
+          field: 'existing_target_period.status',
           sortable: true,
         },
         {
@@ -281,13 +308,6 @@ export default {
           label: 'JOB TITLE',
           align: 'center',
           field: 'job_title',
-          sortable: true,
-        },
-        {
-          name: 'targetStatus',
-          label: 'TARGET PERIOD',
-          align: 'center',
-          field: 'targetStatus',
           sortable: true,
         },
         {
@@ -303,10 +323,8 @@ export default {
   },
 
   computed: {
-    // Get all subordinates from API response (including section head if in subordinates array)
     subordinatesList() {
       if (!this.apiResponseData?.subordinates) return []
-      // Return all subordinates as-is from the API
       return this.apiResponseData.subordinates
     },
 
@@ -329,17 +347,14 @@ export default {
     },
 
     filteredSubordinates() {
-      // Get all subordinates
       let rows = [...this.subordinatesList]
 
-      // Sort by job title priority (highest rank first)
       rows = rows.sort((a, b) => {
         const priorityA = this.jobTitlePriority[a.job_title] || 999
         const priorityB = this.jobTitlePriority[b.job_title] || 999
         return priorityA - priorityB
       })
 
-      // Apply search filter
       const q = (this.searchQuery || '').toLowerCase().trim()
       if (!q) return rows
 
@@ -350,9 +365,82 @@ export default {
           (emp.position || '').toLowerCase().includes(q) ||
           (emp.status || '').toLowerCase().includes(q) ||
           (emp.office || '').toLowerCase().includes(q) ||
-          (emp.job_title || '').toLowerCase().includes(q)
+          (emp.job_title || '').toLowerCase().includes(q) ||
+          (emp.existing_target_period?.status || '').toLowerCase().includes(q)
         )
       })
+    },
+
+    isSelf() {
+      if (!this.ipcrSelectedEmployee) return false
+
+      const loggedInUser = this.userStore.user
+      const loggedInControlNo =
+        loggedInUser?.controlNo ||
+        loggedInUser?.control_no ||
+        loggedInUser?.employee?.controlNo ||
+        loggedInUser?.employee?.control_no ||
+        loggedInUser?.employeeData?.ControlNo
+
+      if (!loggedInControlNo) return false
+
+      return this.ipcrSelectedEmployee.controlNo === loggedInControlNo
+    },
+
+    ipcrEmployeeData() {
+      if (!this.ipcrSelectedEmployee) return null
+
+      return {
+        label: this.ipcrSelectedEmployee.name,
+        name: this.ipcrSelectedEmployee.name,
+        position: this.ipcrSelectedEmployee.position,
+        control_no: this.ipcrSelectedEmployee.controlNo,
+        status: this.ipcrSelectedEmployee.status,
+        office: this.ipcrSelectedEmployee.office,
+        division: this.ipcrSelectedEmployee.division,
+        section: this.ipcrSelectedEmployee.section,
+        ipcrStatus: this.ipcrSelectedEmployee.existing_target_period?.status || null,
+        target_periods: this.ipcrSelectedEmployee.existing_target_period
+          ? [this.ipcrSelectedEmployee.existing_target_period]
+          : [],
+        employeeData: {
+          ControlNo: this.ipcrSelectedEmployee.controlNo,
+        },
+      }
+    },
+
+    targetPeriodData() {
+      if (!this.ipcrSelectedEmployee?.existing_target_period) {
+        return {
+          semester: this.selectedSemester,
+          year: this.selectedYear,
+        }
+      }
+      return {
+        id: this.ipcrSelectedEmployee.existing_target_period.id,
+        semester: this.ipcrSelectedEmployee.existing_target_period.semester,
+        year: this.ipcrSelectedEmployee.existing_target_period.year,
+      }
+    },
+
+    hierarchyData() {
+      const hierarchy = this.apiResponseData?.hierarchy || {}
+      return {
+        office: hierarchy.office?.label || this.ipcrSelectedEmployee?.office || null,
+        office2: hierarchy.office2?.label || null,
+        group: hierarchy.group?.label || null,
+        division: hierarchy.division?.label || this.ipcrSelectedEmployee?.division || null,
+        section: hierarchy.section?.label || this.ipcrSelectedEmployee?.section || null,
+        unit: hierarchy.unit?.label || null,
+      }
+    },
+
+    supervisorySignatoryData() {
+      return this.apiResponseData?.employee?.supervisorySignatory || null
+    },
+
+    managerialSignatoryData() {
+      return this.apiResponseData?.employee?.managerialSignatory || null
     },
   },
 
@@ -366,6 +454,50 @@ export default {
   },
 
   methods: {
+    getEmploymentStatusColor(status) {
+      const colorMap = {
+        REGULAR: 'positive',
+        CASUAL: 'orange',
+        CONTRACTUAL: 'blue-7',
+        PERMANENT: 'positive',
+        PROBATIONARY: 'amber',
+        TEMPORARY: 'grey-7',
+        'JOB ORDER': 'purple',
+        COTERMINUS: 'teal',
+        COS: 'cyan',
+        MOOE: 'indigo',
+      }
+      return colorMap[status?.toUpperCase()] || 'grey-7'
+    },
+
+    getIpcrStatusColor(status) {
+      const s = status?.toLowerCase().trim() || ''
+
+      switch (s) {
+        case 'draft':
+          return 'grey-6'
+        case 'discussed target':
+          return 'blue-6'
+        case 'approved target':
+        case 'approved accomplishment':
+          return 'cyan-7'
+        case 'received target':
+        case 'received accomplishment':
+          return 'indigo-6'
+        case 'returned target':
+        case 'returned accomplishment':
+          return 'red-6'
+        case 'reviewed target':
+        case 'reviewed accomplishment':
+          return 'purple-6'
+        case 'calibrated/validated target':
+        case 'calibrated/validated accomplishment':
+          return 'green-7'
+        default:
+          return 'grey'
+      }
+    },
+
     getJobTitleColor(jobTitle) {
       const colorMap = {
         'Office Head': 'red-8',
@@ -400,7 +532,6 @@ export default {
 
         this.apiResponseData = response.data?.data || null
 
-        // Update store with all subordinates
         if (this.apiResponseData) {
           this.supervisorStore.records = this.apiResponseData.subordinates || []
         } else {
@@ -423,36 +554,39 @@ export default {
     openIpcrForEmployee(employee) {
       this.ipcrSelectedEmployee = employee || null
       this.showIpcrModal = true
-      this.ipcrForm = {
-        performanceRating: '',
-        remarks: '',
-      }
     },
 
     closeIpcrModal() {
       this.showIpcrModal = false
       this.ipcrSelectedEmployee = null
-      this.ipcrForm = {
-        performanceRating: '',
-        remarks: '',
+      if (this.selectedYear && this.selectedSemester) {
+        this.fetchEmployeeData()
       }
     },
 
-    handleIpcrSave() {
+    handleStatusUpdated(updatedEmployee) {
+      if (updatedEmployee && this.apiResponseData?.subordinates) {
+        const index = this.apiResponseData.subordinates.findIndex(
+          (emp) => emp.controlNo === updatedEmployee.controlNo,
+        )
+        if (index !== -1) {
+          if (this.apiResponseData.subordinates[index].existing_target_period) {
+            this.apiResponseData.subordinates[index].existing_target_period.status =
+              updatedEmployee.ipcrStatus || 'Approved'
+          }
+        }
+      }
+
       this.$q.notify({
         type: 'positive',
-        message: 'IPCR saved successfully',
+        message: 'IPCR status updated successfully!',
         position: 'top',
+        timeout: 2000,
       })
-      this.closeIpcrModal()
     },
 
-    /**
-     * Handle Create UWP button click
-     * Prepares employee data and navigates to Unit Work Plan page
-     */
+    // ===== CREATE UWP =====
     async handleCreateUwp() {
-      // Validate required data
       if (!this.selectedYear || !this.selectedSemester) {
         this.$q.notify({
           type: 'warning',
@@ -471,7 +605,6 @@ export default {
         return
       }
 
-      // Prevent multiple clicks
       if (this.creatingUwp) return
 
       this.creatingUwp = true
@@ -480,7 +613,6 @@ export default {
         const employeeData = this.apiResponseData.employee
         const hierarchy = this.apiResponseData.hierarchy || {}
 
-        // Build breadcrumb from hierarchy
         const breadcrumb = []
         if (hierarchy.office?.label) breadcrumb.push(hierarchy.office.label)
         if (hierarchy.office2?.label) breadcrumb.push(hierarchy.office2.label)
@@ -489,7 +621,6 @@ export default {
         if (hierarchy.section?.label) breadcrumb.push(hierarchy.section.label)
         if (hierarchy.unit?.label) breadcrumb.push(hierarchy.unit.label)
 
-        // Prepare the data structure for the UWP page
         const uwpData = {
           type: 'employee',
           selectedNodeId: employeeData.id,
@@ -524,13 +655,9 @@ export default {
           timestamp: new Date().toISOString(),
         }
 
-        // Store the data in sessionStorage for the UWP page to consume
         sessionStorage.setItem('uwpData', JSON.stringify(uwpData))
 
-        // Navigate to the Unit Work Plan page
-        await this.$router.push({
-          name: 'SupervisorUnitWorkPlan',
-        })
+        await this.$router.push('/supervisor/unit-work-plan')
 
         this.$q.notify({
           type: 'positive',
@@ -551,31 +678,141 @@ export default {
       }
     },
 
-    /**
-     * Build breadcrumb from hierarchy data
-     */
-    buildBreadcrumb() {
-      const hierarchy = this.apiResponseData?.hierarchy || {}
-      const breadcrumb = []
+    // ===== EDIT UWP =====
+    async handleEditUwp() {
+      if (!this.selectedYear || !this.selectedSemester) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Please select year and semester first',
+          position: 'top',
+        })
+        return
+      }
 
-      if (hierarchy.office?.label) breadcrumb.push(hierarchy.office.label)
-      if (hierarchy.office2?.label) breadcrumb.push(hierarchy.office2.label)
-      if (hierarchy.group?.label) breadcrumb.push(hierarchy.group.label)
-      if (hierarchy.division?.label) breadcrumb.push(hierarchy.division.label)
-      if (hierarchy.section?.label) breadcrumb.push(hierarchy.section.label)
-      if (hierarchy.unit?.label) breadcrumb.push(hierarchy.unit.label)
+      if (!this.apiResponseData?.employee) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'No employee data available. Please refresh the page.',
+          position: 'top',
+        })
+        return
+      }
 
-      return breadcrumb
+      if (this.editingUwp) return
+
+      // Check if the employee has an existing target period
+      const employee = this.apiResponseData.employee
+      if (!employee.existing_target_period) {
+        this.$q
+          .dialog({
+            title: 'No Existing IPCR',
+            message: `This employee does not have an existing IPCR for ${this.selectedSemester} ${this.selectedYear}. Would you like to create one instead?`,
+            cancel: true,
+            persistent: true,
+            ok: {
+              label: 'Create UWP',
+              color: 'green-9',
+            },
+          })
+          .onOk(() => {
+            // Redirect to Create UWP
+            this.handleCreateUwp()
+          })
+        return
+      }
+
+      this.editingUwp = true
+
+      try {
+        // Prepare the employee data for the Edit modal
+        const employeeData = this.apiResponseData.employee
+        const hierarchy = this.apiResponseData.hierarchy || {}
+
+        // Build the employee object that EditUWPModal expects
+        this.editEmployeeData = {
+          id: employeeData.id,
+          controlNo: employeeData.controlNo,
+          name: employeeData.name,
+          label: employeeData.label || employeeData.name,
+          position: employeeData.position,
+          rank: employeeData.rank,
+          jobTitle: employeeData.jobTitle,
+          job_title: employeeData.jobTitle,
+          sg: employeeData.sg,
+          level: employeeData.level,
+          status: employeeData.status,
+          office: employeeData.office,
+          office2: employeeData.office2,
+          group: employeeData.group,
+          division: employeeData.division,
+          section: employeeData.section,
+          unit: employeeData.unit,
+          supervisorySignatory: employeeData.supervisorySignatory,
+          managerialSignatory: employeeData.managerialSignatory,
+          existing_target_period: employeeData.existing_target_period,
+          // Include the employee data for the Edit modal
+          employeeData: {
+            ...employeeData,
+            target_periods: employeeData.existing_target_period
+              ? [employeeData.existing_target_period]
+              : [],
+          },
+          // Hierarchy for breadcrumb
+          hierarchy: hierarchy,
+        }
+
+        // Show the Edit modal
+        this.showEditModal = true
+
+        this.$q.notify({
+          type: 'positive',
+          message: `Loading Unit Work Plan for ${employeeData.name}`,
+          position: 'top',
+          timeout: 1500,
+        })
+      } catch (error) {
+        console.error('Edit UWP failed:', error)
+        this.$q.notify({
+          type: 'negative',
+          message: error.message || 'Failed to load UWP for editing.',
+          position: 'top',
+          timeout: 4000,
+        })
+      } finally {
+        this.editingUwp = false
+      }
+    },
+
+    // ===== Edit Modal Handlers =====
+    closeEditModal() {
+      this.showEditModal = false
+      this.editEmployeeData = null
+      // Refresh data to get updated status
+      if (this.selectedYear && this.selectedSemester) {
+        this.fetchEmployeeData()
+      }
+    },
+
+    handleEditSaved() {
+      this.closeEditModal()
+      this.$q.notify({
+        type: 'positive',
+        message: 'Unit Work Plan updated successfully!',
+        position: 'top',
+        timeout: 2000,
+      })
     },
   },
 
   async mounted() {
-    // Fetch target periods if not already loaded
+    if (!this.userStore.user) {
+      await this.userStore.loadUserData()
+    }
+
     if (!this.libStore.targetPeriods || this.libStore.targetPeriods.length === 0) {
       await this.libStore.fetchTargetPeriods()
     }
 
-    // Set default selections
     if (this.yearOptions.length > 0) {
       this.selectedYear = this.yearOptions[0]
 
@@ -606,5 +843,9 @@ export default {
   box-shadow:
     2px 2px 4px rgba(0, 0, 0, 0.1),
     -2px -2px 4px rgba(255, 255, 255, 0.9);
+}
+
+.full-height {
+  height: 100vh;
 }
 </style>

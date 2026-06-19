@@ -788,21 +788,38 @@ const getNodeIcon = (node) => {
 }
 
 const getStatusColor = (row) => {
-  const s = row.ipcrStatus?.toLowerCase() || ''
+  const s = row.ipcrStatus?.toLowerCase().trim() || ''
 
-  if (s.includes('draft')) return 'blue'
-  if (s.includes('received target')) return 'warning'
-  if (s.includes('calibrated')) return 'purple'
-  if (s.includes('reviewed')) return 'teal'
-  if (s.includes('in progress')) return 'info'
-  if (s.includes('approved')) return 'positive'
-  if (s.includes('received accomplishment')) return 'orange'
-  if (s.includes('prevalidated')) return 'cyan'
-  if (s.includes('validated')) return 'green'
-  if (s.includes('rejected')) return 'negative'
-  if (s.includes('returned')) return 'negative'
+  switch (s) {
+    case 'draft':
+      return 'grey-6'
 
-  return 'grey'
+    case 'discussed target':
+      return 'blue-6'
+
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+
+    case 'received target':
+    case 'received accomplishment':
+      return 'indigo-6'
+
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+
+    case 'calibrated/validated target':
+    case 'calibrated/validated accomplishment':
+      return 'green-7'
+
+    default:
+      return 'grey'
+  }
 }
 
 const isLeafNode = (nodeId) => orgStore.getNodeCompletion(nodeId).isLeafNode === true

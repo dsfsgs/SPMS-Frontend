@@ -12,7 +12,7 @@
 
     <!-- Main Content Area -->
     <div class="main-content">
-      <!-- Employee Details Sidebar -->
+      <!-- Fixed Left Navigation -->
       <div class="division-nav">
         <div class="division-nav-header">
           <div class="text-h6">Employee Details</div>
@@ -53,21 +53,21 @@
               </q-item-label>
             </q-item-section>
           </q-item>
-          <q-separator class="q-my-md" />
 
-          <!-- Dynamic Status Button -->
-          <q-item
-            v-if="!isSelf && shouldShowStatusButton(employee?.ipcrStatus, isEmployeeHead(employee))"
-          >
+          <q-separator class="q-my-md" />
+          <q-item v-if="!isSelf && shouldShowStatusButton(employee?.ipcrStatus)">
             <q-btn
-              :color="getStatusButtonColor(employee?.ipcrStatus, isEmployeeHead(employee))"
-              :label="getStatusButtonLabel(employee?.ipcrStatus, isEmployeeHead(employee))"
+              :color="getButtonColor()"
+              :label="getButtonLabel()"
               class="full-width"
-              :disable="isStatusActionDisabled(employee?.ipcrStatus, isEmployeeHead(employee))"
+              :disable="isStatusCompleted"
               @click="openStatusModal"
             >
-              <q-tooltip>
-                {{ getStatusButtonTooltip(employee?.ipcrStatus, isEmployeeHead(employee)) }}
+              <q-tooltip v-if="isStatusCompleted">
+                This IPCR status is already completed
+              </q-tooltip>
+              <q-tooltip v-else>
+                {{ getButtonTooltip() }}
               </q-tooltip>
             </q-btn>
           </q-item>
@@ -86,12 +86,12 @@
               </div>
             </div>
             <div class="flex justify-end q-gutter-sm">
-              <q-btn
+              <!-- <q-btn
                 color="blue-9"
                 icon="edit"
                 label="Input Attendance"
                 @click="attendanceModalRef?.openModal()"
-              />
+              /> -->
               <q-btn
                 color="green-9"
                 icon="print"
@@ -2172,34 +2172,34 @@
   <q-dialog v-model="showStatusModal" persistent>
     <q-card style="min-width: 380px; border-radius: 12px; overflow: hidden">
       <div
-        :style="`background: linear-gradient(135deg, ${statusModalConfig.color}, ${statusModalConfig.color}dd); padding: 20px 24px 16px; position: relative;`"
+        :style="`background: linear-gradient(135deg, ${getModalGradient()}); padding: 20px 24px 16px; position: relative;`"
       >
         <div class="row items-center no-wrap">
-          <q-icon :name="statusModalConfig.icon" color="white" size="28px" class="q-mr-sm" />
+          <q-icon :name="getModalIcon()" color="white" size="28px" class="q-mr-sm" />
           <div>
-            <div class="text-white text-weight-bold" style="font-size: 16px">
-              {{ statusModalConfig.title }}
+            <div class="text-white text-weight-bold" style="font-size: 16px">Update Status</div>
+            <div class="text-white text-caption" style="opacity: 0.8">
+              {{ getModalSubtitle() }}
             </div>
-            <div class="text-white text-caption" style="opacity: 0.8">Target Period Update</div>
           </div>
         </div>
       </div>
       <q-card-section class="q-pt-lg q-pb-md q-px-lg">
         <div class="text-body1 text-grey-8 q-mb-md">
-          {{ statusModalConfig.message }}
+          Are you sure you want to update this target period to "{{ getNewStatus() }}"?
         </div>
         <div
           class="q-pa-sm rounded-borders q-mb-md"
-          style="background: #f5f5f5; border-left: 4px solid #f57c00; border-radius: 6px"
+          style="background: #f5f5f5; border-left: 4px solid #1565c0; border-radius: 6px"
         >
           <div class="row items-center q-gutter-xs">
-            <q-icon name="calendar_today" size="16px" color="orange-9" />
+            <q-icon name="calendar_today" size="16px" color="blue-9" />
             <span class="text-caption text-weight-medium text-grey-7"
               >{{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}</span
             >
           </div>
           <div class="row items-center q-gutter-xs q-mt-xs">
-            <q-icon name="badge" size="16px" color="orange-9" />
+            <q-icon name="badge" size="16px" color="blue-9" />
             <span class="text-caption text-grey-7"
               >Current:
               <q-badge
@@ -2212,11 +2212,7 @@
             <q-icon name="arrow_forward" size="16px" color="green-8" />
             <span class="text-caption text-grey-7"
               >New:
-              <q-badge
-                :color="getNewStatusColor()"
-                :label="statusModalConfig.nextStatus"
-                class="q-ml-xs"
-              />
+              <q-badge :color="getNewStatusColor()" :label="getNewStatus()" class="q-ml-xs" />
             </span>
           </div>
         </div>
@@ -2241,13 +2237,13 @@
           style="border-radius: 8px; padding: 8px 20px"
         />
         <q-btn
-          :label="statusModalConfig.title"
-          :icon="statusModalConfig.icon"
-          :color="statusModalConfig.color.includes('green') ? 'green-8' : 'purple-8'"
+          :label="getButtonLabel()"
+          :icon="getButtonIcon()"
+          :color="getButtonColor()"
           unelevated
           :loading="monitorStore.loading"
           :disable="monitorStore.loading"
-          @click="confirmApprove"
+          @click="confirmDiscussTarget"
           style="border-radius: 8px; padding: 8px 20px"
         />
       </q-card-actions>
@@ -2305,7 +2301,7 @@ const props = defineProps({
 })
 
 // ── Emits ───────────────────────────────────────────────────────────────────
-const emit = defineEmits(['close', 'approve', 'status-updated'])
+const emit = defineEmits(['close', 'discussed-target', 'status-updated'])
 
 // ── State ───────────────────────────────────────────────────────────────────
 const activeTab = ref('ipcr')
@@ -2351,241 +2347,42 @@ const currentData = computed(() => {
   }
 })
 
-// ── Helper: Check if employee is a Head ──────────────────────────────────
-const isEmployeeHead = (employee) => {
-  if (!employee) return false
-  const jobTitle = (
-    employee.employeeData?.job_title ||
-    employee.jobTitle ||
-    employee.job_title ||
-    ''
-  )
-    .toLowerCase()
-    .trim()
+// const isUpdateDisabled = computed(() => {
+//   // Check if it's self
+//   if (props.isSelf) {
+//     console.log('Button disabled: isSelf is true')
+//     return true
+//   }
 
-  return (
-    jobTitle === 'office head' ||
-    jobTitle === 'division head' ||
-    jobTitle === 'section head' ||
-    jobTitle === 'unit head' ||
-    jobTitle === 'group head' ||
-    jobTitle === 'office2 head'
-  )
-}
+// const currentStatus = props.employee?.ipcrStatus || ''
 
-// ── Status Button Helpers ──────────────────────────────────────────────────
-const getStatusButtonLabel = (status, isHead) => {
-  if (!status) return 'Update Status'
+// // List of statuses where the button should be disabled
+// const completedStatuses = [
+//   'Discussed Target',
+//   'Approved Target',
+//   'Received Target',
+//   'Reviewed Target',
+//   'Assessed Accomplishment',
+//   'Final Rating Accomplishment',
+//   'Received Accomplishment',
+//   'Reviewed Accomplishment',
+//   'Calibrated/Validated Accomplishment',
+// ]
 
-  const s = status.toLowerCase().trim()
+// ── Computed: Button State ──────────────────────────────────────────────────
+const isStatusCompleted = computed(() => {
+  const currentStatus = props.employee?.ipcrStatus || ''
 
-  // For Head employees: show based on status type
-  if (isHead) {
-    if (
-      s === 'draft' ||
-      s === 'discussed target' ||
-      s === 'returned target' ||
-      s === 'calibrated/validated target'
-    ) {
-      return 'Approved Target'
-    }
-    if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
-      return 'Final Rating Accomplishment'
-    }
-    return 'Update Status'
-  }
+  // These statuses should NOT have the button disabled
+  const enabledStatuses = [
+    'Draft',
+    'Returned Target',
+    'Calibrated/Validated Target',
+    'Returned Accomplishment',
+  ]
 
-  // For Non-Head employees: only show for specific statuses
-  if (s === 'discussed target') {
-    return 'Approved Target'
-  }
-  if (s === 'assessed accomplishment') {
-    return 'Final Rating Accomplishment'
-  }
-
-  return 'Update Status'
-}
-
-const getStatusButtonColor = (status, isHead) => {
-  if (!status) return 'orange'
-
-  const s = status.toLowerCase().trim()
-
-  if (isHead) {
-    if (
-      s === 'draft' ||
-      s === 'discussed target' ||
-      s === 'returned target' ||
-      s === 'calibrated/validated target'
-    ) {
-      return 'green-8'
-    }
-    if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
-      return 'purple-8'
-    }
-    return 'orange'
-  }
-
-  if (s === 'discussed target') {
-    return 'green-8'
-  }
-  if (s === 'assessed accomplishment') {
-    return 'purple-8'
-  }
-
-  return 'orange'
-}
-
-const getStatusButtonTooltip = (status, isHead) => {
-  if (!status) return 'Update the status of this target period'
-
-  const s = status.toLowerCase().trim()
-
-  if (isHead) {
-    if (
-      s === 'draft' ||
-      s === 'discussed target' ||
-      s === 'returned target' ||
-      s === 'calibrated/validated target'
-    ) {
-      return 'Approve the targets for this employee'
-    }
-    if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
-      return 'Submit the final rating accomplishment for this employee'
-    }
-    return 'Update the status of this target period'
-  }
-
-  if (s === 'discussed target') {
-    return 'Approve the targets for this employee'
-  }
-  if (s === 'assessed accomplishment') {
-    return 'Submit the final rating accomplishment for this employee'
-  }
-
-  return 'Update the status of this target period'
-}
-
-const isStatusActionDisabled = (status, isHead) => {
-  if (!status) return false
-
-  const s = status.toLowerCase().trim()
-
-  // Disable if already in final approved state
-  const disabledStates = ['approved accomplishment', 'completed', 'closed']
-
-  if (disabledStates.some((ds) => s.includes(ds))) {
-    return true
-  }
-
-  // For Heads: only enable for specific statuses
-  if (isHead) {
-    const enabledStatuses = [
-      'draft',
-      'discussed target',
-      'returned target',
-      'calibrated/validated target',
-      'assessed accomplishment',
-      'returned accomplishment',
-    ]
-    return !enabledStatuses.includes(s)
-  }
-
-  // For Non-Heads: only enable for Discussed Target and Assessed Accomplishment
-  return s !== 'discussed target' && s !== 'assessed accomplishment'
-}
-
-// ── SHOW BUTTON ONLY FOR SPECIFIC STATUSES ──────────────────────────────
-const shouldShowStatusButton = (status, isHead) => {
-  if (!status) return false
-
-  const s = status.toLowerCase().trim()
-
-  // For Head employees: show only for specific statuses
-  if (isHead) {
-    const headVisibleStatuses = [
-      'draft',
-      'discussed target',
-      'returned target',
-      'calibrated/validated target',
-      'assessed accomplishment',
-      'returned accomplishment',
-    ]
-    return headVisibleStatuses.includes(s)
-  }
-
-  // For Non-Head employees: only show for Discussed Target or Assessed Accomplishment
-  const nonHeadVisibleStatuses = ['discussed target', 'assessed accomplishment']
-  return nonHeadVisibleStatuses.includes(s)
-}
-
-// ── Open Status Modal with Dynamic Content ────────────────────────────────
-const openStatusModal = () => {
-  const status = props.employee?.ipcrStatus
-  const s = status?.toLowerCase().trim() || ''
-  const isHead = isEmployeeHead(props.employee)
-
-  // Determine the next status based on current status
-  let nextStatus = 'Approved Target'
-  let modalTitle = 'Approved Target'
-  let modalMessage = 'Are you sure you want to approve the targets for this employee?'
-  let modalIcon = 'check_circle'
-  let modalColor = '#2e7d32' // Green
-
-  if (isHead) {
-    // Head employee logic
-    if (
-      s === 'draft' ||
-      s === 'discussed target' ||
-      s === 'returned target' ||
-      s === 'calibrated/validated target'
-    ) {
-      nextStatus = 'Approved Target'
-      modalTitle = 'Approved Target'
-      modalMessage = `Are you sure you want to approve the targets for this employee?`
-      modalIcon = 'check_circle'
-      modalColor = '#2e7d32' // Green
-    } else if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
-      nextStatus = 'Approved Accomplishment'
-      modalTitle = 'Final Rating Accomplishment'
-      modalMessage = `Are you sure you want to submit the final rating accomplishment for this employee?`
-      modalIcon = 'star'
-      modalColor = '#6a1b9a' // Purple
-    }
-  } else {
-    // Non-Head employee logic
-    if (s === 'discussed target') {
-      nextStatus = 'Approved Target'
-      modalTitle = 'Approved Target'
-      modalMessage = `Are you sure you want to approve the targets for this employee?`
-      modalIcon = 'check_circle'
-      modalColor = '#2e7d32' // Green
-    } else if (s === 'assessed accomplishment') {
-      nextStatus = 'Approved Accomplishment'
-      modalTitle = 'Final Rating Accomplishment'
-      modalMessage = `Are you sure you want to submit the final rating accomplishment for this employee?`
-      modalIcon = 'star'
-      modalColor = '#6a1b9a' // Purple
-    }
-  }
-
-  // Show the modal with dynamic content
-  showStatusModal.value = true
-  statusModalConfig.value = {
-    title: modalTitle,
-    message: modalMessage,
-    icon: modalIcon,
-    color: modalColor,
-    nextStatus: nextStatus,
-  }
-}
-// ── Status Modal Config ────────────────────────────────────────────────────
-const statusModalConfig = ref({
-  title: 'Change Status',
-  message: 'Are you sure you want to change the status?',
-  icon: 'edit_notifications',
-  color: '#e65100',
-  nextStatus: 'Approved',
+  // Button is disabled (completed) if status is NOT in the enabled list
+  return !enabledStatuses.includes(currentStatus)
 })
 
 const hasData = computed(() => !!currentData.value)
@@ -2603,6 +2400,144 @@ const isFirstSemester = computed(() => {
   const s = props.targetPeriod?.semester?.toLowerCase() || ''
   return s.includes('first') || s.includes('1st') || s.includes('jan')
 })
+
+// ── Helper Methods for Modal ──────────────────────────────────────────────
+const getNewStatus = () => {
+  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
+
+  const isTargetStatus =
+    currentStatus === 'draft' ||
+    currentStatus === 'discussed target' ||
+    currentStatus === 'approved target' ||
+    currentStatus === 'received target' ||
+    currentStatus === 'reviewed target' ||
+    currentStatus === 'calibrated/validated target' ||
+    currentStatus === 'returned target'
+
+  const isAccomplishmentStatus =
+    currentStatus === 'approved accomplishment' ||
+    currentStatus === 'received accomplishment' ||
+    currentStatus === 'reviewed accomplishment' ||
+    currentStatus === 'calibrated/validated accomplishment' ||
+    currentStatus === 'returned accomplishment' ||
+    currentStatus === 'final rating accomplishment'
+
+  if (isTargetStatus) {
+    return 'Discussed Target'
+  } else if (isAccomplishmentStatus) {
+    return 'Assessed Accomplishment'
+  }
+  return 'Discussed Target' // Default
+}
+
+// ── Helper: Should show status button ─────────────────────────────────────
+const shouldShowStatusButton = (status) => {
+  if (!status) return false
+
+  const s = status.toLowerCase().trim()
+
+  // Only show for these specific statuses
+  const visibleStatuses = [
+    'draft',
+    'returned target',
+    'calibrated/validated target',
+    'returned accomplishment',
+  ]
+
+  return visibleStatuses.includes(s)
+}
+
+const getNewStatusColor = () => {
+  const newStatus = getNewStatus()
+  const colorMap = {
+    'Discussed Target': 'blue-6',
+    'Assessed Accomplishment': 'green-7',
+  }
+  return colorMap[newStatus] || 'blue-6'
+}
+
+const getModalGradient = () => {
+  const newStatus = getNewStatus()
+  if (newStatus === 'Assessed Accomplishment') {
+    return '#2e7d32, #388e3c' // Green gradient
+  }
+  return '#0d47a1, #1565c0' // Blue gradient
+}
+
+const getModalIcon = () => {
+  const newStatus = getNewStatus()
+  if (newStatus === 'Assessed Accomplishment') {
+    return 'assignment_turned_in'
+  }
+  return 'chat'
+}
+
+const getModalSubtitle = () => {
+  const newStatus = getNewStatus()
+  if (newStatus === 'Assessed Accomplishment') {
+    return 'Assess Accomplishment Period'
+  }
+  return 'Discuss Target Period'
+}
+
+const getButtonLabel = () => {
+  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
+
+  if (currentStatus === 'draft' || currentStatus === 'returned target') {
+    return 'Discussed Target'
+  }
+
+  if (
+    currentStatus === 'calibrated/validated target' ||
+    currentStatus === 'returned accomplishment'
+  ) {
+    return 'Assessed Accomplishment'
+  }
+
+  return 'Update Status'
+}
+
+const getButtonIcon = () => {
+  const newStatus = getNewStatus()
+  if (newStatus === 'Assessed Accomplishment') {
+    return 'assignment_turned_in'
+  }
+  return 'chat'
+}
+
+const getButtonColor = () => {
+  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
+
+  if (currentStatus === 'draft' || currentStatus === 'returned target') {
+    return 'blue-6' // Blue for Discussed Target
+  }
+
+  if (
+    currentStatus === 'calibrated/validated target' ||
+    currentStatus === 'returned accomplishment'
+  ) {
+    return 'green-7' // Green for Assessed Accomplishment
+  }
+
+  return 'orange'
+}
+
+const getButtonTooltip = () => {
+  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
+
+  if (currentStatus === 'draft' || currentStatus === 'returned target') {
+    return 'Mark the targets as discussed with the employee'
+  }
+
+  if (
+    currentStatus === 'calibrated/validated target' ||
+    currentStatus === 'returned accomplishment'
+  ) {
+    return 'Assess the accomplishment for this employee'
+  }
+
+  return 'Update the status of this target period'
+}
 
 // ── Computed: IPCR ───────────────────────────────────────────────────────────
 const ipcrPerformanceData = computed(() => {
@@ -2697,10 +2632,6 @@ const groupedPerformanceStandardsByCategory = computed(() => {
 })
 
 // ── Computed: Monthly Performance ────────────────────────────────────────────
-/**
- * FIX: The original bare <template> had no v-if, so it never rendered.
- * groupedMonthlyData now reliably returns an array of month objects.
- */
 const groupedMonthlyData = computed(() => {
   const monthlyData = ipcrStore.monthlyPerformance
   if (!monthlyData) return []
@@ -2811,10 +2742,6 @@ const computeWeekTotal = (data) => {
 
 const calculateTotal = (ratingData) => computeWeekTotal(ratingData)
 
-/**
- * FIX: Centralized attendance getter for MPO tab — replaces the broken
- * v-for="week in [..., 'total_absent']" pattern that caused undefined renders.
- */
 const getMonthAttendance = (monthName, type, key) => {
   const monthAtt = attendanceByMonth.value[monthName]
   if (!monthAtt) return ''
@@ -2961,40 +2888,77 @@ const processStandardsData = (standards) => {
 }
 
 // ── Modal Methods ────────────────────────────────────────────────────────────
+const openStatusModal = () => {
+  showStatusModal.value = true
+}
 
 const closeStatusModal = () => {
   showStatusModal.value = false
   monitorStore.error = ''
 }
 
-const confirmApprove = async () => {
+const confirmDiscussTarget = async () => {
   const tpId = targetPeriodId.value
   if (!tpId) {
     $q.notify({ type: 'negative', message: 'Target period ID not found.', position: 'top' })
     return
   }
 
-  // Use the nextStatus from the modal config
-  const nextStatus = statusModalConfig.value.nextStatus || 'Discussed Target'
+  // Determine the new status based on current status
+  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
+  let newStatus = ''
+
+  // Check if the current status is a "Target" type status
+  const isTargetStatus =
+    currentStatus === 'draft' ||
+    currentStatus === 'discussed target' ||
+    currentStatus === 'approved target' ||
+    currentStatus === 'received target' ||
+    currentStatus === 'reviewed target' ||
+    currentStatus === 'calibrated/validated target' ||
+    currentStatus === 'returned target'
+
+  // Check if the current status is an "Accomplishment" type status
+  const isAccomplishmentStatus =
+    currentStatus === 'approved accomplishment' ||
+    currentStatus === 'received accomplishment' ||
+    currentStatus === 'reviewed accomplishment' ||
+    currentStatus === 'calibrated/validated accomplishment' ||
+    currentStatus === 'returned accomplishment' ||
+    currentStatus === 'final rating accomplishment'
+
+  // Set the new status based on the current status
+  if (isTargetStatus) {
+    newStatus = 'Discussed Target'
+  } else if (isAccomplishmentStatus) {
+    newStatus = 'Assessed Accomplishment'
+  } else {
+    // Default fallback
+    newStatus = 'Discussed Target'
+  }
 
   try {
-    await monitorStore.ipcrApproveStatus({
-      targetperiodId: tpId,
-      status: nextStatus,
-    })
+    // Use the updated function with the determined new status
+    await monitorStore.updateIPCRStatus(tpId, newStatus)
+
+    // Emit status-updated event with the new status
     emit('status-updated', {
       ...props.employee,
-      ipcrStatus: nextStatus,
+      ipcrStatus: newStatus,
+      controlNo: controlNo.value,
     })
+
+    // Emit discussed-target event
+    emit('discussed-target')
+
     $q.notify({
       type: 'positive',
-      message: `Status updated to "${nextStatus}" successfully!`,
+      message: `Status updated to ${newStatus} successfully!`,
       position: 'top',
       timeout: 2000,
     })
     closeStatusModal()
     emit('close')
-    emit('approve')
   } catch (error) {
     console.error('Error updating status:', error)
     $q.notify({
@@ -5450,7 +5414,7 @@ watch(
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;
   width: 100%;
   overflow: hidden;
 }

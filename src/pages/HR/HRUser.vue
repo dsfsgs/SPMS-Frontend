@@ -794,7 +794,7 @@
                 text-color="red-9"
                 class="q-mr-xs q-mb-xs"
               >
-                {{ assign.office.office_name }}
+                {{ assign.office.office_name ?? assign.office.name }}
               </q-chip>
             </div>
           </div>
@@ -1455,7 +1455,7 @@ export default {
             const assignedOffices = store.selectedUser.pmt_assign
               ? store.selectedUser.pmt_assign.map((a) => ({
                   id: Number(a.office_id),
-                  name: a.office.office_name,
+                  name: a.office.office_name ?? a.office.name, // ← handle both
                 }))
               : []
 

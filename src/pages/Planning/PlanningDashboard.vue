@@ -578,6 +578,10 @@ onMounted(() => {
   width: 100%;
 }
 
+.text-h6 {
+  margin-top: 15px;
+}
+
 .q-card {
   border-radius: 8px;
 }

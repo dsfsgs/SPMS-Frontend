@@ -723,14 +723,38 @@ const getNodeIcon = (node) => {
 }
 
 const getStatusColor = (row) => {
-  const s = row.ipcrStatus?.toLowerCase() || ''
-  if (s.includes('approved')) return 'positive'
-  if (s.includes('draft')) return 'info'
-  if (s.includes('pending')) return 'warning'
-  if (s.includes('review')) return 'purple'
-  if (s.includes('rejected')) return 'negative'
-  if (s.includes('returned')) return 'negative'
-  return 'grey' // Grey for no status
+  const s = row.ipcrStatus?.toLowerCase().trim() || ''
+
+  switch (s) {
+    case 'draft':
+      return 'grey-6'
+
+    case 'discussed target':
+      return 'blue-6'
+
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+
+    case 'received target':
+    case 'received accomplishment':
+      return 'indigo-6'
+
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+
+    case 'calibrated/validated target':
+    case 'calibrated/validated accomplishment':
+      return 'green-7'
+
+    default:
+      return 'grey'
+  }
 }
 
 const isLeafNode = (nodeId) => orgStore.getNodeCompletion(nodeId).isLeafNode === true

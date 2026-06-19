@@ -113,6 +113,7 @@ export const routes = [
       {
         path: 'supervisor/ipcr',
         component: () => import('src/pages/Supervisor/SupervisorIPCR.vue'),
+        name: 'SupervisorUnitWorkPlan',
         meta: { role: 'supervisor-admin' },
       },
       {

@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <q-page class="q-px-md q-pb-md">
     <!-- Header with Target Period and User Info -->
@@ -44,11 +43,13 @@
     </div>
 
     <!-- Centered Cards Row -->
-    <div class="flex justify-center">
-      <div class="row q-col-gutter-md q-mb-lg" style="max-width: 2500px; width: 100%">
+    <div class="flex justify-center q-mb-lg">
+      <div
+        class="row q-col-gutter-md items-stretch justify-center"
+        style="max-width: 1800px; width: 100%"
+      >
         <!-- OPCR Rating Card -->
-        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" style="max-width: 550px; width: 100%">
-          <!-- OPCR Rating Card -->
+        <div class="col-xs-12 col-sm-6 col-md-4">
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/ipcr')"
@@ -60,15 +61,13 @@
                 <div>
                   <div class="text-subtitle2 text-grey-7">OPCR Rating</div>
                   <div class="text-h6 text-weight-bold text-grey-9">
-                    {{ opcrRatingLabel.label}}
+                    {{ opcrRatingLabel.label }}
                   </div>
                 </div>
               </div>
 
-              <!-- Divider -->
               <q-separator class="q-my-sm" />
 
-              <!-- Ratings -->
               <div class="column q-gutter-sm">
                 <div class="row justify-between items-center">
                   <span class="text-caption">Strategic Function</span>
@@ -96,14 +95,12 @@
         </div>
 
         <!-- Employee Card -->
-        <!-- Employee Card -->
-        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" style="max-width: 550px; width: 100%">
+        <div class="col-xs-12 col-sm-6 col-md-4">
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/employee')"
           >
             <q-card-section class="q-pa-md">
-              <!-- Total Employees -->
               <div class="row items-center q-mb-md">
                 <q-icon name="people" color="green-9" size="md" class="q-mr-sm" />
                 <div>
@@ -114,7 +111,6 @@
 
               <q-separator />
 
-              <!-- OPCR -->
               <div class="row items-center q-mt-md q-mb-md">
                 <q-icon name="assessment" color="green-9" size="md" class="q-mr-sm" />
                 <div>
@@ -127,7 +123,6 @@
 
               <q-separator />
 
-              <!-- Unit Work Plan -->
               <div class="row items-center q-mt-md">
                 <q-icon name="domain" color="green-9" size="md" class="q-mr-sm" />
                 <div>
@@ -142,8 +137,7 @@
         </div>
 
         <!-- IPCR Card -->
-        <!-- IBTOM -->
-        <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" style="max-width: 550px; width: 100%">
+        <div class="col-xs-12 col-sm-6 col-md-4">
           <q-card
             class="bg-white shadow-3 full-height clickable-card"
             @click="$router.push('/office/ipcr')"
@@ -157,26 +151,10 @@
                 </div>
               </div>
 
-              <!-- Target Section -->
               <div class="row q-mt-sm">
-                <!-- Target Column -->
                 <div class="col">
                   <div class="q-mb-sm">
                     <div class="text-subtitle2 text-weight-bold">Target</div>
-                    <q-linear-blank />
-                    <!-- <q-linear-progress
-                      size="xs"
-                      :value="
-                        (ipTasksStatus?.Validated_target ?? 0) / (ipTasksStatus?.total_ip || 1)
-                      "
-                      color="positive"
-                    />
-                    <span class="text-caption"
-                      >Validated Target:
-                      <strong class="text-positive">{{
-                        ipTasksStatus?.Validated_target ?? 0
-                      }}</strong></span
-                    > -->
                   </div>
                   <div class="q-mb-sm">
                     <span class="text-caption"
@@ -193,10 +171,10 @@
                       color="warning"
                     />
                   </div>
-                       <div class="q-mb-sm">
+                  <div class="q-mb-sm">
                     <span class="text-caption"
                       >Received:
-                      <strong class="text-warning">{{ ipTasksStatus?.Approved ?? 0 }}</strong></span  
+                      <strong class="text-warning">{{ ipTasksStatus?.Approved ?? 0 }}</strong></span
                     >
                     <q-linear-progress
                       size="xs"
@@ -239,27 +217,11 @@
                   </div>
                 </div>
 
-                <!-- Vertical Divider -->
                 <q-separator vertical class="q-mx-sm" />
 
-                <!-- Accomplishment Column -->
                 <div class="col">
                   <div class="q-mb-sm">
                     <div class="text-subtitle2 text-weight-bold">Accomplishment</div>
-                    <!-- <q-linear-progress
-                      size="xs"
-                      :value="
-                        (ipTasksStatus?.Validated_accomplishment ?? 0) /
-                        (ipTasksStatus?.total_ip || 1)
-                      "
-                      color="positive"
-                    />
-                    <span class="text-caption"
-                      >Validated Accomplishment:
-                      <strong class="text-positive">{{
-                        ipTasksStatus?.Validated_accomplishment ?? 0
-                      }}</strong></span
-                    > -->
                   </div>
                   <div class="q-mb-sm">
                     <span class="text-caption"
@@ -290,8 +252,7 @@
                       color="grey"
                     />
                   </div>
-
-                          <div class="q-mb-sm">
+                  <div class="q-mb-sm">
                     <span class="text-caption"
                       >Received:
                       <strong class="text-grey">{{
@@ -320,55 +281,6 @@
             </q-card-section>
           </q-card>
         </div>
-
-        <!-- Unit Work Plan Card -->
-        <!-- <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-          <q-card
-            class="bg-white shadow-3 full-height clickable-card"
-            @click="$router.push('/office/unit-work-plan')"
-          >
-            <q-card-section class="q-pa-md">
-              <div class="row items-center q-mb-md">
-                <q-icon name="domain" color="green-9" size="md" class="q-mr-sm" />
-                <div>
-                  <div class="text-subtitle2 text-grey-7">Unit Work Plan</div>
-                  <div class="text-h6 text-weight-bold text-grey-7">
-                    {{ unitWorkPlan?.length ? unitWorkPlan[0].status : 'Not Created' }}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption">Sub-Office: <strong>1/1</strong></span>
-                  <span class="text-caption text-positive">100%</span>
-                </div>
-                <q-linear-progress size="xs" :value="1 / 1" color="green-9" class="q-mb-sm" />
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption">Group: <strong>3/5</strong></span>
-                  <span class="text-caption text-positive">60%</span>
-                </div>
-                <q-linear-progress size="xs" :value="3 / 5" color="green-9" class="q-mb-sm" />
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption">Divisions: <strong>8/12</strong></span>
-                  <span class="text-caption text-positive">66%</span>
-                </div>
-                <q-linear-progress size="xs" :value="8 / 12" color="green-9" class="q-mb-sm" />
-
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption">Sections: <strong>6/10</strong></span>
-                  <span class="text-caption text-positive">60%</span>
-                </div>
-                <q-linear-progress size="xs" :value="6 / 10" color="green-9" class="q-mb-sm" />
-
-                <div class="row justify-between q-mb-xs">
-                  <span class="text-caption">Units: <strong>10/15</strong></span>
-                  <span class="text-caption text-positive">66%</span>
-                </div>
-                <q-linear-progress size="xs" :value="10 / 15" color="green-9" />
-              </div> 
-            </q-card-section>
-          </q-card>
-        </div> -->
       </div>
     </div>
 
@@ -384,27 +296,9 @@
           bordered
           :pagination="{ rowsPerPage: 5 }"
           class="dashboard-table"
-        >
-        </q-table>
+        />
       </q-card-section>
     </q-card>
-
-    <!-- Activity Logs Section -->
-    <!-- <q-card class="bg-white shadow-3">
-      <q-card-section class="q-pa-md">
-        <div class="text-subtitle1">Activity Logs</div>
-        <q-table
-          :rows="activityLogs"
-          :columns="activityColumns"
-          row-key="id"
-          flat
-          bordered
-          :pagination="{ rowsPerPage: 5 }"
-          class="dashboard-table"
-        >
-        </q-table>
-      </q-card-section>
-    </q-card> -->
   </q-page>
 </template>
 
@@ -418,6 +312,7 @@ const totalEmployee = computed(() => orgStore.totalEmployee)
 const ipcrStatus = computed(() => orgStore.ipcrStatus)
 const opcrStatus = computed(() => orgStore.opcrStatus)
 const unitWorkPlan = computed(() => orgStore.unitWorkPlanStatus)
+const ipTasksStatus = computed(() => orgStore.ipTasksStatus)
 
 // Bind directly to store state — no local refs needed
 const selectedSemester = computed({
@@ -507,6 +402,10 @@ const noIpcrColumns = [
 
 .q-card {
   border-radius: 8px;
+}
+
+.text-h6 {
+  margin-top: 15px;
 }
 
 .text-h4 {
