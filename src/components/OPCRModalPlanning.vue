@@ -30,11 +30,27 @@
       <div class="row justify-between items-center q-px-md q-py-sm bg-grey-3">
         <div class="text-body1">{{ opcrData.name }} - {{ employee?.position || 'N/A' }}</div>
         <div class="flex justify-end q-gutter-sm">
-          <!-- <q-btn color="blue-9" icon="edit" label="Input" @click="openEditModal" /> -->
-          <q-btn color="orange-9" icon="edit" label="Update" @click="openStatusModal">
+          <!-- Show Update button only for Draft or Returned Target status -->
+          <q-btn
+            v-if="shouldShowUpdateButton"
+            color="orange-9"
+            icon="edit"
+            label="Update"
+            @click="openStatusModal"
+          >
             <q-tooltip>Change Status</q-tooltip>
           </q-btn>
           <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" />
+        </div>
+      </div>
+
+      <!-- Status Badge Display -->
+      <div class="row q-px-md q-py-sm bg-grey-2">
+        <div class="text-subtitle2">
+          Status:
+          <q-badge :color="getStatusColor(opcrData)" class="q-py-sm">
+            {{ opcrData.opcr_status || 'N/A' }}
+          </q-badge>
         </div>
       </div>
 
@@ -254,19 +270,39 @@
                     {{ standard.opcr?.accountable || '-' }}
                   </td>
                   <td style="padding: 4px">
-                    {{ standard.opcr?.accomplishment || '-' }}
+                    {{
+                      standard.opcr_accomplishment?.accomplishment ||
+                      standard.opcr?.accomplishment ||
+                      '-'
+                    }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_q || '-' }}
+                    {{
+                      standard.opcr_accomplishment?.ratings?.quantity_rating ||
+                      standard.opcr?.rating_q ||
+                      '-'
+                    }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_e || '-' }}
+                    {{
+                      standard.opcr_accomplishment?.ratings?.effectiveness_rating ||
+                      standard.opcr?.rating_e ||
+                      '-'
+                    }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_t || '-' }}
+                    {{
+                      standard.opcr_accomplishment?.ratings?.timeliness_rating ||
+                      standard.opcr?.rating_t ||
+                      '-'
+                    }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_a || '-' }}
+                    {{
+                      standard.opcr_accomplishment?.ratings?.average_rating ||
+                      standard.opcr?.rating_a ||
+                      '-'
+                    }}
                   </td>
                   <td style="padding: 4px">
                     <div v-html="formatProficiencyResult(standard)"></div>
@@ -383,56 +419,84 @@
       <div class="text-grey-7 q-mt-md">No OPCR data available</div>
     </q-card-section>
 
+    <!-- Status Update Modal - Same style as IPCR -->
     <q-dialog v-model="showStatusModal" persistent>
-      <q-card style="min-width: 450px; max-width: 550px; border-radius: 16px; overflow: hidden">
-        <!-- Modal Header -->
-        <div style="background: #f57c00; padding: 24px 28px 20px; position: relative">
+      <q-card style="min-width: 380px; border-radius: 12px; overflow: hidden">
+        <div
+          :style="`background: linear-gradient(135deg, ${statusModalConfig.color}, ${statusModalConfig.color}dd); padding: 20px 24px 16px; position: relative;`"
+        >
           <div class="row items-center no-wrap">
-            <q-icon name="assignment_turned_in" color="white" size="28px" class="q-mr-sm" />
+            <q-icon :name="statusModalConfig.icon" color="white" size="28px" class="q-mr-sm" />
             <div>
-              <div class="text-white text-weight-bold" style="font-size: 18px">Update Status</div>
-              <div class="text-orange-2 text-caption">Change target period status</div>
+              <div class="text-white text-weight-bold" style="font-size: 16px">
+                {{ statusModalConfig.title }}
+              </div>
+              <div class="text-white text-caption" style="opacity: 0.8">Target Period Update</div>
             </div>
           </div>
-
-          <q-btn
-            flat
-            round
-            dense
-            icon="close"
-            class="absolute-top-right q-mt-sm q-mr-sm"
-            text-color="white"
-            @click="closeStatusModal"
-            :disable="statusLoading"
-          />
         </div>
-
-        <!-- Modal Body -->
-        <q-card-section class="q-pt-lg q-pb-md q-px-xl">
-          <!-- Period Summary -->
+        <q-card-section class="q-pt-lg q-pb-md q-px-lg">
+          <div class="text-body1 text-grey-8 q-mb-md">
+            {{ statusModalConfig.message }}
+          </div>
           <div
-            class="q-pa-md rounded-borders q-mb-lg"
-            style="background: #f8f9fa; border-left: 4px solid #f57c00; border-radius: 8px"
+            class="q-pa-sm rounded-borders q-mb-md"
+            style="background: #f5f5f5; border-left: 4px solid #f57c00; border-radius: 6px"
           >
-            <div class="row items-center q-gutter-sm">
-              <q-icon name="calendar_month" size="20px" color="orange-8" />
-              <span class="text-subtitle2 text-weight-medium text-grey-8">
-                {{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}
-              </span>
+            <div class="row items-center q-gutter-xs">
+              <q-icon name="calendar_today" size="16px" color="orange-9" />
+              <span class="text-caption text-weight-medium text-grey-7"
+                >{{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}</span
+              >
             </div>
-
-            <div class="row items-center q-gutter-sm q-mt-sm">
-              <q-icon name="badge" size="20px" color="orange-8" />
-              <span class="text-body2 text-grey-7">
-                Current Status:
+            <div class="row items-center q-gutter-xs q-mt-xs">
+              <q-icon name="badge" size="16px" color="orange-9" />
+              <span class="text-caption text-grey-7"
+                >Current:
                 <q-badge
-                  :color="getStatusBadgeColor(currentPeriod?.status || targetPeriod?.status)"
-                  :label="currentPeriod?.status || targetPeriod?.status || 'N/A'"
-                  class="q-ml-sm q-pa-sm"
-                  style="font-size: 0.8rem"
+                  :color="getStatusColor({ opcr_status: opcrData?.opcr_status })"
+                  :label="opcrData?.opcr_status || 'N/A'"
+                  class="q-ml-xs"
+              /></span>
+            </div>
+            <div class="row items-center q-gutter-xs q-mt-xs">
+              <q-icon name="arrow_forward" size="16px" color="green-8" />
+              <span class="text-caption text-grey-7"
+                >New:
+                <q-badge
+                  :color="getNewStatusColor()"
+                  :label="selectedStatus || 'Select status'"
+                  class="q-ml-xs"
                 />
               </span>
             </div>
+          </div>
+
+          <!-- Status Selection -->
+          <div class="q-mb-md">
+            <div class="text-subtitle2 text-weight-medium text-grey-8 q-mb-sm">
+              Select New Status
+            </div>
+            <q-btn-group spread>
+              <q-btn
+                label="Returned Target"
+                icon="undo"
+                color="red-6"
+                outline
+                :class="{ 'bg-red-1': selectedStatus === 'Returned Target' }"
+                @click="selectedStatus = 'Returned Target'"
+                :disable="statusLoading"
+              />
+              <q-btn
+                label="Reviewed Target"
+                icon="check_circle"
+                color="purple"
+                outline
+                :class="{ 'bg-purple-1': selectedStatus === 'Reviewed Target' }"
+                @click="selectedStatus = 'Reviewed Target'"
+                :disable="statusLoading"
+              />
+            </q-btn-group>
           </div>
 
           <!-- Remarks -->
@@ -441,7 +505,6 @@
               <div class="text-subtitle2 text-weight-medium text-grey-8">Remarks</div>
               <div class="text-caption text-grey-6 q-ml-sm">(Optional)</div>
             </div>
-
             <q-input
               v-model="statusRemarks"
               type="textarea"
@@ -449,7 +512,7 @@
               dense
               placeholder="Add any comments or notes about this status change..."
               :maxlength="500"
-              :rows="3"
+              :rows="2"
               :disable="statusLoading"
             >
               <template v-slot:counter>
@@ -458,41 +521,35 @@
             </q-input>
           </div>
 
-          <!-- Error -->
-          <q-slide-transition>
-            <div v-if="updateStatusStore.error">
-              <q-banner dense rounded class="text-white q-mb-md" style="background: #c62828">
-                <template v-slot:avatar>
-                  <q-icon name="error" />
-                </template>
-                {{ updateStatusStore.error }}
-              </q-banner>
-            </div>
-          </q-slide-transition>
+          <q-banner
+            v-if="updateStatusStore.error"
+            dense
+            rounded
+            class="text-white q-mb-md"
+            style="background: #c62828"
+          >
+            <template v-slot:avatar><q-icon name="error" /></template>
+            {{ updateStatusStore.error }}
+          </q-banner>
         </q-card-section>
-
-        <!-- Actions -->
-        <q-card-actions align="right" class="q-px-xl q-pb-lg q-pt-md bg-grey-1">
+        <q-card-actions align="right" class="q-px-lg q-pb-lg q-pt-none">
           <q-btn
             flat
-            label="Returned"
-            text-color="grey-7"
-            icon="undo"
+            label="Cancel"
+            color="grey-7"
             :disable="statusLoading"
-            @click="updateStatus('Returned')"
-            style="border-radius: 8px; padding: 8px 24px; border: 1px solid #e0e0e0"
-            class="q-mr-sm"
+            @click="closeStatusModal"
+            style="border-radius: 8px; padding: 8px 20px"
           />
           <q-btn
-            label="Reviewed"
-            icon="check_circle"
-            color="purple"
-            text-color="white"
+            label="Update Status"
+            icon="save"
+            :color="selectedStatus === 'Returned Target' ? 'red-6' : 'purple-6'"
             unelevated
             :loading="statusLoading"
-            :disable="statusLoading"
-            @click="updateStatus('Reviewed')"
-            style="border-radius: 8px; padding: 8px 24px; min-width: 120px"
+            :disable="statusLoading || !selectedStatus"
+            @click="updateStatus"
+            style="border-radius: 8px; padding: 8px 20px"
           />
         </q-card-actions>
       </q-card>
@@ -560,9 +617,10 @@ const updateStatusStore = useOpcrUpdateStatusStore()
 const editModalOpen = ref(false)
 const isPrinting = ref(false)
 
-// Status modal state (for your dialog)
+// Status modal state
 const showStatusModal = ref(false)
 const statusRemarks = ref('')
+const selectedStatus = ref('')
 
 // =========================
 // Store state bindings
@@ -572,6 +630,75 @@ const error = computed(() => opcrStore.error)
 const opcrData = computed(() => opcrStore.opcrData)
 
 const statusLoading = computed(() => updateStatusStore.loading)
+
+// =========================
+// Status Modal Config
+// =========================
+const statusModalConfig = ref({
+  title: 'Update Status',
+  message: 'Please select the new status for this target period.',
+  icon: 'assignment_turned_in',
+  color: '#f57c00',
+})
+
+// =========================
+// Status Helpers
+// =========================
+
+// Get status color based on status value
+const getStatusColor = (row) => {
+  const status = row?.opcr_status || row?.ipcrStatus || ''
+  const s = status?.toLowerCase().trim() || ''
+
+  switch (s) {
+    case 'draft':
+      return 'grey-6'
+    case 'discussed target':
+      return 'blue-6'
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+    case 'received target':
+    case 'received accomplishment':
+      return 'indigo-6'
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+    case 'calibrated/validated target':
+    case 'calibrated/validated accomplishment':
+      return 'green-7'
+    default:
+      return 'grey'
+  }
+}
+
+// Get new status color for the badge
+const getNewStatusColor = () => {
+  const s = selectedStatus.value?.toLowerCase().trim() || ''
+
+  switch (s) {
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+    default:
+      return 'grey'
+  }
+}
+
+// Determine if the update button should be shown
+const shouldShowUpdateButton = computed(() => {
+  const status = opcrData.value?.opcr_status?.toLowerCase().trim() || ''
+  return status === 'draft' || status === 'returned target' || status === 'received target'
+})
 
 // =========================
 // Derived data
@@ -617,16 +744,11 @@ const calculateCategoryRating = (category) => {
   let count = 0
 
   categoryStandards.forEach((standard) => {
-    if (!standard.opcr) return
+    if (!standard.opcr_accomplishment?.ratings) return
 
-    const avg =
-      (parseFloat(standard.opcr.rating_q || 0) +
-        parseFloat(standard.opcr.rating_e || 0) +
-        parseFloat(standard.opcr.rating_t || 0) +
-        parseFloat(standard.opcr.rating_a || 0)) /
-      4
+    const avg = standard.opcr_accomplishment.ratings.average_rating || 0
 
-    if (!isNaN(avg)) {
+    if (!isNaN(avg) && avg > 0) {
       totalRating += avg
       count++
     }
@@ -718,16 +840,11 @@ const calculateAverageRating = () => {
   let count = 0
 
   standards.forEach((standard) => {
-    if (!standard.opcr) return
+    if (!standard.opcr_accomplishment?.ratings) return
 
-    const avg =
-      (parseFloat(standard.opcr.rating_q || 0) +
-        parseFloat(standard.opcr.rating_e || 0) +
-        parseFloat(standard.opcr.rating_t || 0) +
-        parseFloat(standard.opcr.rating_a || 0)) /
-      4
+    const avg = standard.opcr_accomplishment.ratings.average_rating || 0
 
-    if (!isNaN(avg)) {
+    if (!isNaN(avg) && avg > 0) {
       totalRating += avg
       count++
     }
@@ -751,6 +868,15 @@ const getAdjectivalRating = (rating) => {
 // Status dialog handlers
 // =========================
 const openStatusModal = () => {
+  // Set default status based on current status
+  const currentStatus = opcrData.value?.opcr_status?.toLowerCase().trim() || ''
+
+  if (currentStatus === 'draft' || currentStatus === 'returned target') {
+    selectedStatus.value = 'Reviewed Target'
+  } else {
+    selectedStatus.value = ''
+  }
+
   statusRemarks.value = ''
   updateStatusStore.clearError()
   showStatusModal.value = true
@@ -761,17 +887,18 @@ const closeStatusModal = () => {
   showStatusModal.value = false
 }
 
-const getStatusBadgeColor = (status) => {
-  const s = String(status || '').toLowerCase()
-  if (s === 'reviewed') return 'purple'
-  if (s === 'returned') return 'grey-7'
-  if (s === 'approved' || s === 'approve') return 'green-8'
-  return 'orange-8'
-}
+const updateStatus = async () => {
+  if (!selectedStatus.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'Please select a status',
+      position: 'top',
+    })
+    return
+  }
 
-const updateStatus = async (status) => {
-  const officeId = opcrData.value?.office_id ?? opcrData.value?.opcr_status?.office_id
-  const officeOpcrId = opcrData.value?.opcr_status?.id
+  const officeId = opcrData.value?.office_id
+  const officeOpcrId = opcrData.value?.office_opcr_id
 
   if (!officeId) {
     $q.notify({
@@ -794,14 +921,14 @@ const updateStatus = async (status) => {
   try {
     await updateStatusStore.updateStatus({
       office_id: Number(officeId),
-      office_opcr_id: Number(officeOpcrId),
-      status,
+      office_opcr_id: [Number(officeOpcrId)],
+      status: selectedStatus.value,
       remarks: statusRemarks.value,
     })
 
     $q.notify({
       type: 'positive',
-      message: `Status updated to "${status}".`,
+      message: `Status updated to "${selectedStatus.value}".`,
       position: 'top',
     })
 
@@ -817,6 +944,7 @@ const updateStatus = async (status) => {
     })
   }
 }
+
 // =========================
 // PDF helpers
 // =========================
@@ -905,7 +1033,6 @@ const handlePrint = async () => {
 
 // =========================
 // Generate OPCR PDF Content
-// (Your original function kept here, unchanged in behavior.)
 // =========================
 const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   const employeeName = opcrData.value?.name || 'N/A'
@@ -1398,31 +1525,42 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
           border: [true, true, true, true],
         },
         {
-          text: standard.opcr?.accomplishment || '-',
+          text:
+            standard.opcr_accomplishment?.accomplishment || standard.opcr?.accomplishment || '-',
           fontSize: 7,
           border: [true, true, true, true],
           margin: [2, 2, 2, 2],
         },
         {
-          text: standard.opcr?.rating_q || '-',
+          text:
+            standard.opcr_accomplishment?.ratings?.quantity_rating ||
+            standard.opcr?.rating_q ||
+            '-',
           fontSize: 7,
           alignment: 'center',
           border: [true, true, true, true],
         },
         {
-          text: standard.opcr?.rating_e || '-',
+          text:
+            standard.opcr_accomplishment?.ratings?.effectiveness_rating ||
+            standard.opcr?.rating_e ||
+            '-',
           fontSize: 7,
           alignment: 'center',
           border: [true, true, true, true],
         },
         {
-          text: standard.opcr?.rating_t || '-',
+          text:
+            standard.opcr_accomplishment?.ratings?.timeliness_rating ||
+            standard.opcr?.rating_t ||
+            '-',
           fontSize: 7,
           alignment: 'center',
           border: [true, true, true, true],
         },
         {
-          text: standard.opcr?.rating_a || '-',
+          text:
+            standard.opcr_accomplishment?.ratings?.average_rating || standard.opcr?.rating_a || '-',
           fontSize: 7,
           alignment: 'center',
           border: [true, true, true, true],

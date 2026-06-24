@@ -689,6 +689,8 @@
                                     class="full-width"
                                     @update:model-value="generateSuccessIndicator(index)"
                                   />
+
+                                  <!-- Add multiple, use-chips and change value back to value && value.length > 0  -->
                                   <q-select
                                     outlined
                                     v-model="standard.indicatorName"
@@ -703,15 +705,13 @@
                                     option-label="name"
                                     emit-value
                                     map-options
-                                    multiple
-                                    use-chips
                                     clearable
                                     @update:model-value="
                                       async (value) => {
                                         generateSuccessIndicator(index)
                                         const std = currentEmployee.performanceStandards[index]
                                         if (std?.rows?.mfo && !isCurrentEmployeeOfficeHead) {
-                                          if (value && value.length > 0) {
+                                          if (value) {
                                             await checkAndShowCascadeModal(index)
                                           } else {
                                             std.quantityRestriction = null

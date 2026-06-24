@@ -56,8 +56,8 @@
           >
             <q-card-section class="q-pa-md">
               <!-- Header -->
-              <div class="row items-center q-mb-md">
-                <q-icon name="assignment_ind" color="green-9" size="md" class="q-mr-sm" />
+              <div class="row items-center">
+                <q-icon name="fact_check" color="green-9" size="md" class="q-mr-sm" />
                 <div>
                   <div class="text-subtitle2 text-grey-7">OPCR Rating</div>
                   <div class="text-h6 text-weight-bold text-grey-9">
@@ -112,7 +112,7 @@
               <q-separator />
 
               <div class="row items-center q-mt-md q-mb-md">
-                <q-icon name="assessment" color="green-9" size="md" class="q-mr-sm" />
+                <q-icon name="fact_check" color="green-9" size="md" class="q-mr-sm" />
                 <div>
                   <div class="text-subtitle2 text-grey-7">OPCR</div>
                   <div class="text-h7 text-weight-bold text-grey-7">
@@ -124,7 +124,7 @@
               <q-separator />
 
               <div class="row items-center q-mt-md">
-                <q-icon name="domain" color="green-9" size="md" class="q-mr-sm" />
+                <q-icon name="checklist" color="green-9" size="md" class="q-mr-sm" />
                 <div>
                   <div class="text-subtitle2 text-grey-7">Unit Work Plan</div>
                   <div class="text-h7 text-weight-bold text-grey-7">
@@ -195,7 +195,7 @@
                   </div>
                   <div class="q-mb-sm">
                     <span class="text-caption"
-                      >Reviewed:
+                      >Discussed:
                       <strong class="text-grey">{{ ipTasksStatus?.Reviewed ?? 0 }}</strong></span
                     >
                     <q-linear-progress
@@ -241,7 +241,7 @@
                   </div>
                   <div class="q-mb-sm">
                     <span class="text-caption"
-                      >Pre validation:
+                      >Prevalidation:
                       <strong class="text-grey">{{
                         ipTasksStatus?.Pre_validation ?? 0
                       }}</strong></span
@@ -402,10 +402,6 @@ const noIpcrColumns = [
 
 .q-card {
   border-radius: 8px;
-}
-
-.text-h6 {
-  margin-top: 15px;
 }
 
 .text-h4 {

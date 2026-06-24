@@ -24,7 +24,7 @@
               clearable
             />
           </div>
-          <div class="col-6 col-sm-3 col-md-3">
+          <div class="col-6 col-sm-3 col-md-2">
             <q-select
               v-model="selectedSemester"
               :options="semesterOptions"
@@ -35,7 +35,7 @@
               :disable="!selectedYear"
             />
           </div>
-          <div class="col-12 col-sm-3 col-md-3">
+          <div class="col-12 col-sm-4 col-md-3">
             <q-select
               v-model="selectedOffice"
               :options="filteredOfficeOptions"
@@ -62,10 +62,24 @@
               </template>
             </q-select>
           </div>
-          <div class="col-12 col-sm-3 col-md-4">
+          <div class="col-6 col-sm-3 col-md-2">
+            <q-select
+              v-model="selectedStatus"
+              :options="statusFilterOptions"
+              label="Status"
+              dense
+              outlined
+              clearable
+              option-label="label"
+              option-value="value"
+              map-options
+              emit-value
+            />
+          </div>
+          <div class="col-6 col-sm-5 col-md-3">
             <q-input v-model="searchQuery" label="Search" dense outlined clearable>
               <template v-slot:prepend>
-                <q-icon name="search" color="green" />
+                <q-icon name="search" color="grey-6" />
               </template>
             </q-input>
           </div>
@@ -75,13 +89,31 @@
 
     <!-- Bulk Actions Bar -->
     <transition name="fade">
-      <q-card v-if="selectedRows.length > 0" flat bordered class="q-mb-md bg-blue-1 border-blue">
+      <q-card
+        v-if="selectedRows.length > 0"
+        flat
+        bordered
+        class="q-mb-md"
+        :class="hasMixedStatuses ? 'bg-orange-1 border-orange' : 'bg-blue-1 border-blue'"
+      >
         <q-card-section class="q-py-xs q-px-md">
           <div class="row items-center justify-between no-wrap">
-            <div class="text-body2">
-              <q-icon name="check_circle" color="blue" size="xs" class="q-mr-xs" />
-              <span class="text-weight-bold">{{ selectedRows.length }}</span>
-              {{ selectedRows.length === 1 ? 'record' : 'records' }} selected
+            <div class="text-body2 row items-center q-gutter-xs">
+              <q-icon
+                :name="hasMixedStatuses ? 'warning' : 'check_circle'"
+                :color="hasMixedStatuses ? 'orange-8' : 'blue'"
+                size="xs"
+              />
+              <span>
+                <span class="text-weight-bold">{{ selectedRows.length }}</span>
+                {{ selectedRows.length === 1 ? 'record' : 'records' }} selected
+              </span>
+              <span v-if="hasMixedStatuses" class="text-caption text-orange-9">
+                — mixed statuses selected; only same-status records can be bulk updated
+              </span>
+              <span v-else class="text-caption text-grey-7">
+                — all <strong>{{ commonStatus }}</strong>
+              </span>
             </div>
             <div class="row q-gutter-xs">
               <q-btn
@@ -91,8 +123,20 @@
                 unelevated
                 size="sm"
                 no-caps
+                :disable="hasMixedStatuses || bulkTransitionOptions.length === 0"
                 @click="openBulkUpdateModal"
-              />
+              >
+                <q-tooltip v-if="hasMixedStatuses" anchor="top middle" self="bottom middle">
+                  Select records with the same status to bulk update
+                </q-tooltip>
+                <q-tooltip
+                  v-else-if="bulkTransitionOptions.length === 0"
+                  anchor="top middle"
+                  self="bottom middle"
+                >
+                  No transitions available for the current status
+                </q-tooltip>
+              </q-btn>
               <q-btn
                 color="grey-7"
                 label="Clear"
@@ -130,38 +174,32 @@
           </div>
         </template>
 
-        <template v-slot:body-cell-office="props">
-          <q-td :props="props" class="text-left">
-            {{ props.value }}
-          </q-td>
-        </template>
-
         <template v-slot:body-cell-status="props">
           <q-td :props="props" class="text-center">
-            <q-chip
-              square
-              dense
+            <q-badge
               :color="statusColor(props.row.status)"
-              text-color="white"
-              class="text-caption"
-            >
-              {{ formatStatus(props.row.status) }}
-            </q-chip>
+              :label="formatStatus(props.row.status)"
+              class="q-px-sm q-py-xs"
+              style="border-radius: 4px; font-size: 11px; letter-spacing: 0.3px"
+            />
           </q-td>
         </template>
 
         <template v-slot:body-cell-action="props">
           <q-td :props="props" class="text-center">
-            <q-btn
-              flat
-              round
-              color="primary"
-              icon="sync_alt"
-              size="sm"
-              @click="openUpdateModal(props.row)"
-            >
-              <q-tooltip>Update Status</q-tooltip>
-            </q-btn>
+            <template v-if="getStatusOptions(props.row.status).length > 0">
+              <q-btn
+                flat
+                round
+                color="primary"
+                icon="sync_alt"
+                size="sm"
+                @click="openUpdateModal(props.row)"
+              >
+                <q-tooltip anchor="top middle" self="bottom middle">Update Status</q-tooltip>
+              </q-btn>
+            </template>
+            <span v-else class="text-grey-4">—</span>
           </q-td>
         </template>
       </q-table>
@@ -169,58 +207,102 @@
 
     <!-- Individual Update Modal -->
     <q-dialog v-model="showUpdateModal" persistent>
-      <q-card style="min-width: min(420px, 95vw)">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-subtitle1 text-weight-bold">Update IPCR Status</div>
+      <q-card style="width: 460px; max-width: 95vw">
+        <q-card-section class="row items-center q-pb-sm">
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="sync_alt" color="primary" size="20px" />
+            <div class="text-subtitle1 text-weight-bold">Update IPCR Status</div>
+          </div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense size="sm" v-close-popup />
         </q-card-section>
 
-        <q-separator class="q-mt-sm" />
+        <q-separator />
 
-        <q-card-section class="q-pt-md q-pb-sm">
-          <q-item dense class="q-px-none q-mb-md">
-            <q-item-section avatar>
-              <q-avatar color="green-1" text-color="green-8" icon="person" size="40px" />
-            </q-item-section>
-            <q-item-section>
-              <q-item-label class="text-weight-bold">{{ selectedRecord?.name }}</q-item-label>
-              <q-item-label caption>{{ selectedRecord?.position }}</q-item-label>
-              <q-item-label caption class="q-mt-xs row items-center q-gutter-xs">
-                <span class="text-grey-6">Current:</span>
-                <q-chip
-                  :color="statusColor(selectedRecord?.status)"
-                  text-color="white"
-                  dense
-                  square
-                  size="sm"
-                >
-                  {{ formatStatus(selectedRecord?.status) }}
-                </q-chip>
-              </q-item-label>
-            </q-item-section>
-          </q-item>
+        <q-card-section class="q-pt-md">
+          <!-- Employee Info -->
+          <div
+            class="row items-start q-pa-sm q-mb-md bg-grey-1"
+            style="border: 1px solid #e0e0e0; border-radius: 8px"
+          >
+            <q-avatar
+              color="green-1"
+              text-color="green-8"
+              icon="person"
+              size="40px"
+              class="q-mr-sm"
+            />
+            <div class="col">
+              <div class="text-body2 text-weight-medium text-grey-9">
+                {{ selectedRecord?.name }}
+              </div>
+              <div class="text-caption text-grey-6">{{ selectedRecord?.position }}</div>
+              <div class="text-caption text-grey-6">{{ selectedRecord?.office }}</div>
+            </div>
+            <q-badge
+              :color="statusColor(selectedRecord?.status)"
+              :label="formatStatus(selectedRecord?.status)"
+              class="q-px-sm q-py-xs col-auto"
+              style="border-radius: 4px; font-size: 11px"
+            />
+          </div>
 
-          <q-select
-            v-model="newStatus"
-            :options="statusOptions"
-            label="New Status"
-            outlined
-            dense
-            emit-value
-            map-options
-          />
+          <!-- Status Selection -->
+          <div
+            class="text-caption text-grey-6 text-weight-medium q-mb-sm"
+            style="letter-spacing: 0.5px; text-transform: uppercase"
+          >
+            Select New Status
+          </div>
+
+          <div class="column q-gutter-sm">
+            <div
+              v-for="option in availableStatusOptions"
+              :key="option.value"
+              class="status-option row items-center q-pa-sm cursor-pointer"
+              :class="newStatus === option.value ? 'status-option--active' : 'status-option--idle'"
+              @click="newStatus = option.value"
+            >
+              <q-radio
+                :model-value="newStatus"
+                :val="option.value"
+                color="primary"
+                dense
+                class="q-mr-sm"
+                @update:model-value="newStatus = option.value"
+              />
+              <div class="col">
+                <div class="text-body2 text-weight-medium text-grey-9">{{ option.label }}</div>
+                <div class="text-caption text-grey-6">{{ option.description }}</div>
+              </div>
+              <q-badge
+                :color="option.color"
+                :label="option.label"
+                class="q-px-sm q-py-xs col-auto"
+                style="border-radius: 4px; font-size: 11px"
+              />
+            </div>
+          </div>
         </q-card-section>
 
         <q-separator />
 
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat label="Cancel" color="grey-7" v-close-popup no-caps />
+          <q-btn
+            flat
+            label="Cancel"
+            color="grey-7"
+            size="sm"
+            v-close-popup
+            :disable="updatingStatus"
+          />
           <q-btn
             unelevated
-            label="Update"
+            label="Apply Update"
             color="primary"
+            size="sm"
             :loading="updatingStatus"
+            :disable="!newStatus"
             no-caps
             @click="handleUpdateStatus"
           />
@@ -230,16 +312,20 @@
 
     <!-- Bulk Update Modal -->
     <q-dialog v-model="showBulkUpdateModal" persistent>
-      <q-card style="min-width: min(420px, 95vw)">
-        <q-card-section class="row items-center q-pb-none">
-          <div class="text-subtitle1 text-weight-bold">Bulk Update IPCR Status</div>
+      <q-card style="width: 460px; max-width: 95vw">
+        <q-card-section class="row items-center q-pb-sm">
+          <div class="row items-center q-gutter-sm">
+            <q-icon name="sync_alt" color="primary" size="20px" />
+            <div class="text-subtitle1 text-weight-bold">Bulk Update IPCR Status</div>
+          </div>
           <q-space />
-          <q-btn icon="close" flat round dense v-close-popup />
+          <q-btn icon="close" flat round dense size="sm" v-close-popup />
         </q-card-section>
 
-        <q-separator class="q-mt-sm" />
+        <q-separator />
 
-        <q-card-section class="q-pt-md q-pb-sm">
+        <q-card-section class="q-pt-md">
+          <!-- Info Banner -->
           <q-banner rounded dense class="bg-blue-1 text-blue-9 q-mb-md">
             <template v-slot:avatar>
               <q-icon name="info" color="blue" />
@@ -248,32 +334,83 @@
             <strong
               >{{ selectedRows.length }} record{{ selectedRows.length !== 1 ? 's' : '' }}</strong
             >
-            across {{ uniqueOfficeCount }} office(s).
+            across {{ uniqueOfficeCount }} office(s). All records are currently
+            <strong>{{ commonStatus }}</strong
+            >.
           </q-banner>
 
-          <div class="text-caption text-grey-7 q-mb-xs">Selected employees</div>
-          <div class="text-body2 q-mb-md">{{ getEmployeeNames() }}</div>
+          <!-- Selected Employees -->
+          <div
+            class="q-pa-sm q-mb-md bg-grey-1"
+            style="border: 1px solid #e0e0e0; border-radius: 8px"
+          >
+            <div
+              class="text-caption text-grey-6 text-weight-medium q-mb-xs"
+              style="letter-spacing: 0.4px; text-transform: uppercase"
+            >
+              Selected Employees
+            </div>
+            <div class="text-body2 text-grey-8">{{ getEmployeeNames() }}</div>
+          </div>
 
-          <q-select
-            v-model="bulkNewStatus"
-            :options="statusOptions"
-            label="New Status"
-            outlined
-            dense
-            emit-value
-            map-options
-          />
+          <!-- Bulk Status Options — same transitions as individual, driven by commonStatus -->
+          <div
+            class="text-caption text-grey-6 text-weight-medium q-mb-sm"
+            style="letter-spacing: 0.5px; text-transform: uppercase"
+          >
+            Select New Status
+          </div>
+
+          <div class="column q-gutter-sm">
+            <div
+              v-for="option in bulkTransitionOptions"
+              :key="option.value"
+              class="status-option row items-center q-pa-sm cursor-pointer"
+              :class="
+                bulkNewStatus === option.value ? 'status-option--active' : 'status-option--idle'
+              "
+              @click="bulkNewStatus = option.value"
+            >
+              <q-radio
+                :model-value="bulkNewStatus"
+                :val="option.value"
+                color="primary"
+                dense
+                class="q-mr-sm"
+                @update:model-value="bulkNewStatus = option.value"
+              />
+              <div class="col">
+                <div class="text-body2 text-weight-medium text-grey-9">{{ option.label }}</div>
+                <div class="text-caption text-grey-6">{{ option.description }}</div>
+              </div>
+              <q-badge
+                :color="option.color"
+                :label="option.label"
+                class="q-px-sm q-py-xs col-auto"
+                style="border-radius: 4px; font-size: 11px"
+              />
+            </div>
+          </div>
         </q-card-section>
 
         <q-separator />
 
         <q-card-actions align="right" class="q-pa-md">
-          <q-btn flat label="Cancel" color="grey-7" v-close-popup no-caps />
+          <q-btn
+            flat
+            label="Cancel"
+            color="grey-7"
+            size="sm"
+            v-close-popup
+            :disable="updatingStatus"
+          />
           <q-btn
             unelevated
-            :label="`Update ${selectedRows.length} Record${selectedRows.length !== 1 ? 's' : ''}`"
+            :label="`Apply to ${selectedRows.length} Record${selectedRows.length !== 1 ? 's' : ''}`"
             color="primary"
+            size="sm"
             :loading="updatingStatus"
+            :disable="!bulkNewStatus"
             no-caps
             @click="handleBulkUpdateStatus"
           />
@@ -287,17 +424,18 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
-import { useUWPReceivingStore } from 'src/stores/receivingUWPStore'
+import { useReceivingIPCRStore } from 'src/stores/receivingIPCRStore'
 import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
 
 const $q = useQuasar()
 const libStore = useLibraryStore()
-const ipcrStore = useUWPReceivingStore()
+const ipcrStore = useReceivingIPCRStore()
 const accountManageStore = useUserManageStore()
 
 const selectedYear = ref(null)
 const selectedSemester = ref(null)
 const selectedOffice = ref(null)
+const selectedStatus = ref(null)
 const searchQuery = ref('')
 const initialized = ref(false)
 const showUpdateModal = ref(false)
@@ -310,52 +448,119 @@ const selectedRows = ref([])
 const officeSearch = ref('')
 const filteredOfficeOptions = ref([])
 
-const statusOptions = [
-  { label: 'Returned', value: 'returned' },
-  { label: 'Received', value: 'received' },
+// ─── Status Transition Map ────────────────────────────────────────────────────
+const STATUS_TRANSITIONS = {
+  'approved target': [
+    {
+      label: 'Received Target',
+      value: 'Received Target',
+      color: 'indigo-6',
+      description: 'Accept the approved target submission.',
+    },
+    {
+      label: 'Returned Target',
+      value: 'Returned Target',
+      color: 'red-6',
+      description: 'Send the target back to the employee for revision.',
+    },
+  ],
+  'returned target': [
+    {
+      label: 'Received Target',
+      value: 'Received Target',
+      color: 'indigo-6',
+      description: 'Accept the resubmitted target.',
+    },
+  ],
+  'final rating accomplishment': [
+    {
+      label: 'Received Accomplishment',
+      value: 'Received Accomplishment',
+      color: 'indigo-6',
+      description: 'Mark the final rating accomplishment as received.',
+    },
+    {
+      label: 'Returned Accomplishment',
+      value: 'Returned Accomplishment',
+      color: 'red-6',
+      description: 'Return the final rating accomplishment for corrections.',
+    },
+  ],
+  'returned accomplishment': [
+    {
+      label: 'Received Accomplishment',
+      value: 'Received Accomplishment',
+      color: 'indigo-6',
+      description: 'Accept the resubmitted accomplishment report.',
+    },
+  ],
+}
+
+// All distinct status values that appear in the records — used for the status filter dropdown
+const STATUS_FILTER_OPTIONS = [
+  { label: 'Draft', value: 'draft' },
+  { label: 'Discussed Target', value: 'discussed target' },
+  { label: 'Approved Target', value: 'approved target' },
+  { label: 'Received Target', value: 'received target' },
+  { label: 'Returned Target', value: 'returned target' },
+  { label: 'Reviewed Target', value: 'reviewed target' },
+  { label: 'Calibrated/Validated Target', value: 'calibrated/validated target' },
+  { label: 'Final Rating Accomplishment', value: 'final rating accomplishment' },
+  { label: 'Approved Accomplishment', value: 'approved accomplishment' },
+  { label: 'Received Accomplishment', value: 'received accomplishment' },
+  { label: 'Returned Accomplishment', value: 'returned accomplishment' },
+  { label: 'Reviewed Accomplishment', value: 'reviewed accomplishment' },
+  { label: 'Calibrated/Validated Accomplishment', value: 'calibrated/validated accomplishment' },
 ]
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const getStatusOptions = (status) => {
+  if (!status) return []
+  return STATUS_TRANSITIONS[status.toLowerCase().trim()] || []
+}
+
+const formatStatus = (status) => {
+  if (!status) return 'Pending'
+  return status.charAt(0).toUpperCase() + status.slice(1)
+}
+
+const statusColor = (status) => {
+  switch ((status || '').toLowerCase().trim()) {
+    case 'draft':
+      return 'grey-6'
+    case 'discussed target':
+      return 'blue-6'
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+    case 'received target':
+    case 'received accomplishment':
+      return 'indigo-6'
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+    case 'calibrated/validated target':
+    case 'calibrated/validated accomplishment':
+      return 'green-7'
+    default:
+      return 'blue-grey-4'
+  }
+}
+
+// ─── Table columns ─────────────────────────────────────────────────────────────
 const columns = [
-  {
-    name: 'control_no',
-    label: 'CONTROL NO',
-    align: 'center',
-    field: 'control_no',
-  },
-  {
-    name: 'office',
-    label: 'OFFICE',
-    align: 'left',
-    field: 'office',
-    sortable: true,
-  },
-  {
-    name: 'name',
-    label: 'NAME',
-    align: 'left',
-    field: 'name',
-    sortable: true,
-  },
-  {
-    name: 'position',
-    label: 'POSITION',
-    align: 'left',
-    field: 'position',
-    sortable: true,
-  },
-  {
-    name: 'status',
-    label: 'STATUS',
-    align: 'center',
-    field: 'status',
-  },
-  {
-    name: 'action',
-    label: 'ACTION',
-    align: 'center',
-  },
+  { name: 'control_no', label: 'CONTROL NO', align: 'center', field: 'control_no' },
+  { name: 'office', label: 'OFFICE', align: 'left', field: 'office', sortable: true },
+  { name: 'name', label: 'NAME', align: 'left', field: 'name', sortable: true },
+  { name: 'position', label: 'POSITION', align: 'left', field: 'position', sortable: true },
+  { name: 'status', label: 'STATUS', align: 'center', field: 'status' },
+  { name: 'action', label: 'ACTION', align: 'center' },
 ]
 
+// ─── Computed ─────────────────────────────────────────────────────────────────
 const yearOptions = computed(() => {
   const years = [...new Set((libStore.targetPeriods || []).map((tp) => String(tp.year)))]
   return years.sort((a, b) => Number(b) - Number(a))
@@ -371,13 +576,65 @@ const semesterOptions = computed(() => {
     ),
   ]
   const order = { 'January-June': 0, 'July-December': 1 }
-  return semesters.sort((a, b) => (order[b] || 0) - (order[a] || 0))
+  return semesters.sort((a, b) => (order[a] || 0) - (order[b] || 0))
 })
 
 const officeOptions = computed(() => accountManageStore.offices || [])
-
 const uniqueOfficeCount = computed(() => new Set(selectedRows.value.map((r) => r.office)).size)
 
+// Only show status values that actually appear in the loaded records
+const statusFilterOptions = computed(() => {
+  const presentStatuses = new Set(
+    (ipcrStore.records || []).map((r) => (r.status || '').toLowerCase().trim()),
+  )
+  return STATUS_FILTER_OPTIONS.filter((o) => presentStatuses.has(o.value))
+})
+
+// Determine if selected rows share a single common status
+const commonStatus = computed(() => {
+  if (!selectedRows.value.length) return null
+  const statuses = [
+    ...new Set(selectedRows.value.map((r) => (r.status || '').toLowerCase().trim())),
+  ]
+  return statuses.length === 1 ? statuses[0] : null
+})
+
+const hasMixedStatuses = computed(() => {
+  if (!selectedRows.value.length) return false
+  return commonStatus.value === null
+})
+
+// Transitions available for bulk — mirrors individual logic, driven by commonStatus
+const bulkTransitionOptions = computed(() => {
+  if (!commonStatus.value) return []
+  return STATUS_TRANSITIONS[commonStatus.value] || []
+})
+
+// Options for the individual update modal
+const availableStatusOptions = computed(() => getStatusOptions(selectedRecord.value?.status))
+
+const filteredRows = computed(() => {
+  let rows = ipcrStore.records || []
+
+  if (selectedStatus.value) {
+    rows = rows.filter(
+      (r) => (r.status || '').toLowerCase().trim() === selectedStatus.value.toLowerCase().trim(),
+    )
+  }
+
+  const q = (searchQuery.value || '').toLowerCase().trim()
+  if (q) {
+    rows = rows.filter((r) =>
+      [r.control_no, r.office, r.name, r.position, r.status].some((f) =>
+        (f || '').toLowerCase().includes(q),
+      ),
+    )
+  }
+
+  return rows
+})
+
+// ─── Methods ──────────────────────────────────────────────────────────────────
 const filterOffices = (val, update) => {
   update(() => {
     const needle = val.toLowerCase().trim()
@@ -386,43 +643,6 @@ const filterOffices = (val, update) => {
       : officeOptions.value
   })
 }
-
-const formatStatus = (status) => {
-  if (!status) return 'Pending'
-  return status.charAt(0).toUpperCase() + status.slice(1)
-}
-
-const statusColor = (status) => {
-  switch ((status || '').toLowerCase()) {
-    case 'draft':
-      return 'orange'
-    case 'pending':
-      return 'grey'
-    case 'approved':
-      return 'green'
-    case 'received':
-      return 'blue'
-    case 'returned':
-      return 'red'
-    case 'submitted':
-      return 'cyan'
-    default:
-      return 'blue-grey'
-  }
-}
-
-const filteredRows = computed(() => {
-  const q = (searchQuery.value || '').toLowerCase().trim()
-  if (!q) return ipcrStore.records
-  return ipcrStore.records.filter(
-    (r) =>
-      (r.control_no || '').toLowerCase().includes(q) ||
-      (r.office || '').toLowerCase().includes(q) ||
-      (r.name || '').toLowerCase().includes(q) ||
-      (r.position || '').toLowerCase().includes(q) ||
-      (r.status || '').toLowerCase().includes(q),
-  )
-})
 
 const getEmployeeNames = () => {
   const names = selectedRows.value.map((r) => r.name)
@@ -436,7 +656,8 @@ const clearSelection = () => {
 
 const openUpdateModal = (row) => {
   selectedRecord.value = row
-  newStatus.value = row.status?.toLowerCase() || 'pending'
+  const options = getStatusOptions(row.status)
+  newStatus.value = options[0]?.value ?? null
   showUpdateModal.value = true
 }
 
@@ -445,7 +666,18 @@ const openBulkUpdateModal = () => {
     $q.notify({ type: 'warning', message: 'No records selected', position: 'top' })
     return
   }
-  bulkNewStatus.value = null
+  if (hasMixedStatuses.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'Mixed statuses selected',
+      caption: 'Please select records with the same status to bulk update.',
+      position: 'top',
+    })
+    return
+  }
+  // Pre-select first option if only one is available
+  bulkNewStatus.value =
+    bulkTransitionOptions.value.length === 1 ? bulkTransitionOptions.value[0].value : null
   showBulkUpdateModal.value = true
 }
 
@@ -454,21 +686,14 @@ const handleUpdateStatus = async () => {
     $q.notify({ type: 'warning', message: 'Please select a status', position: 'top' })
     return
   }
-  if (newStatus.value === selectedRecord.value.status?.toLowerCase()) {
-    $q.notify({
-      type: 'warning',
-      message: `Status is already set to ${formatStatus(newStatus.value)}`,
-      position: 'top',
-    })
-    return
-  }
 
   updatingStatus.value = true
   try {
     await ipcrStore.updateIPCRStatus(selectedRecord.value.id, newStatus.value)
     $q.notify({
       type: 'positive',
-      message: `Status updated to ${formatStatus(newStatus.value)}`,
+      message: 'Status updated successfully',
+      caption: `Changed to "${newStatus.value}"`,
       position: 'top',
     })
     showUpdateModal.value = false
@@ -498,7 +723,8 @@ const handleBulkUpdateStatus = async () => {
     await ipcrStore.bulkUpdateIPCRStatus(selectedIds, bulkNewStatus.value)
     $q.notify({
       type: 'positive',
-      message: `${selectedRows.value.length} record(s) updated to ${formatStatus(bulkNewStatus.value)}`,
+      message: `${selectedRows.value.length} record(s) updated successfully`,
+      caption: `Changed to "${bulkNewStatus.value}"`,
       position: 'top',
     })
     showBulkUpdateModal.value = false
@@ -516,10 +742,12 @@ const handleBulkUpdateStatus = async () => {
   }
 }
 
+// ─── Watchers ─────────────────────────────────────────────────────────────────
 watch([selectedYear, selectedSemester, selectedOffice], ([y, s, o]) => {
   if (y && s && o) {
     ipcrStore.fetchIPCRRecords(y, s, o)
     clearSelection()
+    selectedStatus.value = null
   }
 })
 
@@ -527,6 +755,7 @@ watch(selectedYear, () => {
   if (initialized.value) {
     selectedSemester.value = null
     selectedOffice.value = null
+    selectedStatus.value = null
     clearSelection()
   }
 })
@@ -534,10 +763,17 @@ watch(selectedYear, () => {
 watch(selectedSemester, () => {
   if (initialized.value) {
     selectedOffice.value = null
+    selectedStatus.value = null
     clearSelection()
   }
 })
 
+// Clear selection when status filter changes — avoids stale cross-status selections
+watch(selectedStatus, () => {
+  clearSelection()
+})
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   try {
     if (!libStore.targetPeriods?.length) await libStore.fetchTargetPeriods()
@@ -555,7 +791,6 @@ onMounted(async () => {
 
     initialized.value = true
   } catch (error) {
-    console.error('Error during initialization:', error)
     $q.notify({
       type: 'negative',
       message: 'Failed to initialize IPCR List',
@@ -585,13 +820,30 @@ onMounted(async () => {
   vertical-align: middle;
 }
 
-:deep(.ipcr-table .q-table__top),
-:deep(.ipcr-table .q-table__bottom) {
-  padding: 8px 12px;
-}
-
 .border-blue {
   border: 1px solid #bbdefb !important;
+}
+
+.border-orange {
+  border: 1px solid #ffe0b2 !important;
+}
+
+.status-option {
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+.status-option--idle {
+  border-color: #e0e0e0;
+  background-color: #fafafa;
+}
+.status-option--idle:hover {
+  border-color: #bdbdbd;
+  background-color: #f5f5f5;
+}
+.status-option--active {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
 }
 
 .fade-enter-active,

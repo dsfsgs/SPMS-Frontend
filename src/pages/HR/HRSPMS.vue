@@ -562,10 +562,24 @@ const firstSubLevel = computed(() => {
   const officeNode = getOfficeNode(orgStore.structure)
   if (!officeNode || !officeNode.children) return []
 
+  // Helper to check if a node has countable employees (Regular, Casual, Coterminous)
+  const hasCountableEmployees = (node) => {
+    if (!node) return false
+    if (node.type === 'employee') {
+      const status = node.employeeData?.status?.toUpperCase() || ''
+      return ['REGULAR', 'CASUAL', 'COTERMINOUS'].includes(status)
+    }
+    if (node.children) {
+      return node.children.some((child) => hasCountableEmployees(child))
+    }
+    return false
+  }
+
   return officeNode.children.filter(
     (child) =>
       child.type !== 'employee' &&
-      ['office2', 'group', 'division', 'section', 'unit'].includes(child.type),
+      ['office2', 'group', 'division', 'section', 'unit'].includes(child.type) &&
+      hasCountableEmployees(child), // Only include nodes that have countable employees
   )
 })
 

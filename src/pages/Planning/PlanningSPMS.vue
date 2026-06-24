@@ -406,7 +406,7 @@ import { useQuasar } from 'quasar'
 import ipcr_Report from 'src/components/IPCRReportHR.vue'
 import OPCRModal from 'src/components/OPCRModalPlanning.vue'
 import QPEFModal from 'src/components/QPEFModal.vue'
-import UWPModalHR from 'src/components/UWPModalHR.vue'
+import UWPModalHR from 'src/components/UWPModalPlanning.vue'
 
 // ============================================================================
 // INITIALIZATION
@@ -544,10 +544,24 @@ const firstSubLevel = computed(() => {
   const officeNode = getOfficeNode(orgStore.structure)
   if (!officeNode || !officeNode.children) return []
 
+  // Helper to check if a node has countable employees (Regular, Casual, Coterminous)
+  const hasCountableEmployees = (node) => {
+    if (!node) return false
+    if (node.type === 'employee') {
+      const status = node.employeeData?.status?.toUpperCase() || ''
+      return ['REGULAR', 'CASUAL', 'COTERMINOUS'].includes(status)
+    }
+    if (node.children) {
+      return node.children.some((child) => hasCountableEmployees(child))
+    }
+    return false
+  }
+
   return officeNode.children.filter(
     (child) =>
       child.type !== 'employee' &&
-      ['office2', 'group', 'division', 'section', 'unit'].includes(child.type),
+      ['office2', 'group', 'division', 'section', 'unit'].includes(child.type) &&
+      hasCountableEmployees(child), // Only include nodes that have countable employees
   )
 })
 
@@ -673,14 +687,38 @@ const getNodeIcon = (node) => {
 }
 
 const getStatusColor = (row) => {
-  const s = row.ipcrStatus?.toLowerCase() || ''
-  if (s.includes('approved')) return 'positive'
-  if (s.includes('draft')) return 'info'
-  if (s.includes('pending')) return 'warning'
-  if (s.includes('review')) return 'purple'
-  if (s.includes('rejected')) return 'negative'
-  if (s.includes('returned')) return 'negative'
-  return 'grey' // Grey for no status
+  const s = row.ipcrStatus?.toLowerCase().trim() || ''
+
+  switch (s) {
+    case 'draft':
+      return 'grey-6'
+
+    case 'discussed target':
+      return 'blue-6'
+
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+
+    case 'received target':
+    case 'received accomplishment':
+      return 'indigo-6'
+
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+
+    case 'calibrated/validated target':
+    case 'calibrated/validated accomplishment':
+      return 'green-7'
+
+    default:
+      return 'grey'
+  }
 }
 
 const isLeafNode = (nodeId) => orgStore.getNodeCompletion(nodeId).isLeafNode === true
@@ -1033,8 +1071,23 @@ const show_opcr_Modal = (employee) => {
   show_opcr_ModalOpen.value = true
 }
 
-const close_opcr_Modal = () => {
+const close_opcr_Modal = async () => {
+  // 👈 Make it async
   show_opcr_ModalOpen.value = false
+
+  // Refresh the organization data to reflect status changes
+  await refreshData()
+
+  // Also refresh the target periods list (optional but recommended)
+  await orgStore.fetchListTargetPeriod()
+
+  // Show a notification (optional)
+  $q.notify({
+    message: 'OPCR data refreshed successfully',
+    color: 'positive',
+    position: 'top',
+    timeout: 2000,
+  })
 }
 
 const show_qpef_Modal = (employee) => {

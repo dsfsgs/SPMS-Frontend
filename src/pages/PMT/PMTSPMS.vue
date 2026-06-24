@@ -58,7 +58,7 @@
                 <div class="row q-mb-md">
                   <q-select
                     v-model="selectedOffice"
-                    :options="filteredOfficeOptions"
+                    :options="pmtStore.filteredOffices"
                     option-label="name"
                     label="Select Office"
                     dense
@@ -70,8 +70,8 @@
                     input-debounce="300"
                     color="red-10"
                     class="full-width office-select"
-                    :loading="pmtStore.pmtIsLoading"
-                    @filter="filterOffices"
+                    :loading="pmtStore.loading"
+                    @filter="filterPMTOffices"
                     @update:model-value="onOfficeChange"
                   >
                     <template v-slot:prepend>
@@ -404,7 +404,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useOrganizationStore } from 'src/stores/office/spmsStore'
 import { useUserStore } from 'src/stores/userStore'
 import { usePMTStore } from 'src/stores/pmtStore'
@@ -412,7 +412,7 @@ import { useQuasar } from 'quasar'
 import ipcr_Report from 'src/components/IPCRReportHR.vue'
 import OPCRModal from 'src/components/OPCRModalHR.vue'
 import QPEFModal from 'src/components/QPEFModal.vue'
-import UWPModalHR from 'src/components/UWPModalHR.vue'
+import UWPModalHR from 'src/components/UWPModalPMT.vue'
 
 // ============================================================================
 // INITIALIZATION
@@ -442,7 +442,6 @@ const show_qpef_ModalOpen = ref(false)
 
 // Office dropdown — stores the full office object (NOT emit-value)
 const selectedOffice = ref(null)
-const filteredOfficeOptions = ref([])
 
 // ============================================================================
 // CONSTANTS
@@ -562,10 +561,24 @@ const firstSubLevel = computed(() => {
   const officeNode = getOfficeNode(orgStore.structure)
   if (!officeNode || !officeNode.children) return []
 
+  // Helper to check if a node has countable employees (Regular, Casual, Coterminous)
+  const hasCountableEmployees = (node) => {
+    if (!node) return false
+    if (node.type === 'employee') {
+      const status = node.employeeData?.status?.toUpperCase() || ''
+      return ['REGULAR', 'CASUAL', 'COTERMINOUS'].includes(status)
+    }
+    if (node.children) {
+      return node.children.some((child) => hasCountableEmployees(child))
+    }
+    return false
+  }
+
   return officeNode.children.filter(
     (child) =>
       child.type !== 'employee' &&
-      ['office2', 'group', 'division', 'section', 'unit'].includes(child.type),
+      ['office2', 'group', 'division', 'section', 'unit'].includes(child.type) &&
+      hasCountableEmployees(child), // Only include nodes that have countable employees
   )
 })
 
@@ -723,14 +736,38 @@ const getNodeIcon = (node) => {
 }
 
 const getStatusColor = (row) => {
-  const s = row.ipcrStatus?.toLowerCase() || ''
-  if (s.includes('approved')) return 'positive'
-  if (s.includes('draft')) return 'info'
-  if (s.includes('pending')) return 'warning'
-  if (s.includes('review')) return 'purple'
-  if (s.includes('rejected')) return 'negative'
-  if (s.includes('returned')) return 'negative'
-  return 'grey' // Grey for no status
+  const s = row.ipcrStatus?.toLowerCase().trim() || ''
+
+  switch (s) {
+    case 'draft':
+      return 'grey-6'
+
+    case 'discussed target':
+      return 'blue-6'
+
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+
+    case 'received target':
+    case 'received accomplishment':
+      return 'indigo-6'
+
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+
+    case 'calibrated/validated target':
+    case 'calibrated/validated accomplishment':
+      return 'green-7'
+
+    default:
+      return 'grey'
+  }
 }
 
 const isLeafNode = (nodeId) => orgStore.getNodeCompletion(nodeId).isLeafNode === true
@@ -1038,14 +1075,13 @@ const onOfficeChange = async (office) => {
   }
 }
 
-const filterOffices = (val, update) => {
+const filterPMTOffices = (val, update) => {
   update(() => {
     if (val) {
       pmtStore.filterPMTOffices(val)
     } else {
       pmtStore.filterPMTOffices('')
     }
-    filteredOfficeOptions.value = val ? pmtStore.filteredOffices : pmtStore.offices
   })
 }
 
@@ -1120,25 +1156,13 @@ const refreshData = async () => {
 // WATCHERS
 // ============================================================================
 
-watch(
-  () => pmtStore.offices,
-  (offices) => {
-    if (offices?.length > 0) filteredOfficeOptions.value = offices
-  },
-  { immediate: true },
-)
-
 // ============================================================================
 // LIFECYCLE
 // ============================================================================
 
 onMounted(async () => {
   await userStore.loadUserData()
-
   await pmtStore.fetchPMTOffices()
-  filteredOfficeOptions.value = pmtStore.offices || []
-  console.log(`✅ Loaded ${pmtStore.offices.length} offices from PMT store`)
-
   await orgStore.fetchListTargetPeriod()
 })
 </script>

@@ -26,7 +26,7 @@ export const useUserStore = defineStore('user', () => {
   })
 
   // FIX: Changed from office?. name to office?. Office
-  const officeName = computed(() => user.value?.office?.name || 'Unknown Office')
+  const officeName = computed(() => user.value?.office?.name || '')
 
   const groupedMfos = computed(() => {
     const grouped = {}
@@ -188,14 +188,29 @@ export const useUserStore = defineStore('user', () => {
 
   async function logout(router) {
     const token = localStorage.getItem('token')
-    if (!token) return
+
+    // Clear local data first (don't return early)
+    clearUser()
+
+    if (!token) {
+      if (router) router.push('/login')
+      return
+    }
 
     try {
-      await api.post('/user/logout', {}, { headers: { Authorization: `Bearer ${token}` } })
+      // Try to call logout API, but don't block if it fails
+      await api.post(
+        '/user/logout',
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      )
     } catch (error) {
-      console.error('Logout failed (continuing to clear local state):', error)
+      console.error('Logout API failed (continuing to clear local state):', error)
+      // Even if API fails, we already cleared user data
     } finally {
-      clearUser()
+      // Ensure navigation happens
       if (router) router.push('/login')
     }
   }

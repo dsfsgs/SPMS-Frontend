@@ -596,26 +596,26 @@ export default {
 
     // ── Status Transition Map ──────────────────────────────────────────────────
     const STATUS_TRANSITIONS = {
-      'received target': [
+      'reviewed target': [
         {
-          label: 'Reviewed Target',
-          value: 'Reviewed Target',
+          label: 'Calibrated/Validated Target',
+          value: 'Calibrated/Validated Target',
           color: 'purple-6',
-          description: 'Mark the UWP as reviewed.',
+          description: 'This will mark the IPCR/OPCR Target as calibrated/validated.',
         },
         {
           label: 'Returned Target',
           value: 'Returned Target',
           color: 'red-6',
-          description: 'Send the UWP back to the office for revision.',
+          description: 'Send the IPCR/OPCR back to the office for revision.',
         },
       ],
-      'received accomplishment': [
+      'prevalidated accomplishment': [
         {
-          label: 'Prevalidated Accomplishment',
-          value: 'Prevalidated Accomplishment',
+          label: 'Calibrated/Validated Accomplishment',
+          value: 'Calibrated/Validated Accomplishment',
           color: 'cyan-7',
-          description: 'Mark the accomplishment as prevalidated.',
+          description: 'This will mark the IPCR/OPCR Accomplishment as calibrated/validated.',
         },
         {
           label: 'Returned Accomplishment',
@@ -667,7 +667,7 @@ export default {
       const status = currentStatus.value?.toLowerCase().trim() || ''
 
       // Only show button for "received target" or "received accomplishment"
-      return status === 'received target' || status === 'received accomplishment'
+      return status === 'reviewed target' || status === 'prevalidated accomplishment'
     })
 
     // ── Available Status Options for Modal ─────────────────────────────────

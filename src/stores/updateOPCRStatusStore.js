@@ -22,7 +22,7 @@ export const useOpcrUpdateStatusStore = defineStore('opcrUpdateStatus', {
       this.lastResponse = null
 
       try {
-        const res = await api.post('/planning/opcr/update-status', payload)
+        const res = await api.post('/spms/update/opcr', payload)
         this.lastResponse = res?.data
         return res?.data
       } catch (err) {

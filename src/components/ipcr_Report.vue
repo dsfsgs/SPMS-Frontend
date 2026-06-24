@@ -2243,7 +2243,7 @@
         <q-btn
           :label="statusModalConfig.title"
           :icon="statusModalConfig.icon"
-          :color="statusModalConfig.color.includes('green') ? 'green-8' : 'purple-8'"
+          :color="getModalButtonColor(statusModalConfig.nextStatus)"
           unelevated
           :loading="monitorStore.loading"
           :disable="monitorStore.loading"
@@ -2373,6 +2373,51 @@ const isEmployeeHead = (employee) => {
   )
 }
 
+const getNewStatusColor = () => {
+  const nextStatus = statusModalConfig.value?.nextStatus || ''
+  const s = nextStatus.toLowerCase().trim()
+
+  // Match the colors from your composable
+  const colorMap = {
+    draft: 'grey-6',
+    'discussed target': 'blue-6',
+    'approved target': 'cyan-7', // Changed from green-8
+    'approved accomplishment': 'cyan-7', // Changed from purple-8
+    'received target': 'indigo-6',
+    'received accomplishment': 'indigo-6',
+    'returned target': 'red-6',
+    'returned accomplishment': 'red-6',
+    'reviewed target': 'purple-6',
+    'reviewed accomplishment': 'purple-6',
+    'calibrated/validated target': 'green-7',
+    'calibrated/validated accomplishment': 'green-7',
+  }
+
+  return colorMap[s] || 'primary'
+}
+
+const getModalButtonColor = (nextStatus) => {
+  const s = nextStatus?.toLowerCase().trim() || ''
+
+  // Map statuses to colors (matching your composable)
+  const colorMap = {
+    draft: 'grey-6',
+    'discussed target': 'blue-6',
+    'approved target': 'cyan-7',
+    'approved accomplishment': 'cyan-7',
+    'received target': 'indigo-6',
+    'received accomplishment': 'indigo-6',
+    'returned target': 'red-6',
+    'returned accomplishment': 'red-6',
+    'reviewed target': 'purple-6',
+    'reviewed accomplishment': 'purple-6',
+    'calibrated/validated target': 'green-7',
+    'calibrated/validated accomplishment': 'green-7',
+  }
+
+  return colorMap[s] || 'primary'
+}
+
 // ── Status Button Helpers ──────────────────────────────────────────────────
 const getStatusButtonLabel = (status, isHead) => {
   if (!status) return 'Update Status'
@@ -2418,19 +2463,19 @@ const getStatusButtonColor = (status, isHead) => {
       s === 'returned target' ||
       s === 'calibrated/validated target'
     ) {
-      return 'green-8'
+      return 'cyan-7' // Changed from green-8 to cyan-7
     }
     if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
-      return 'purple-8'
+      return 'cyan-7' // Changed from purple-8 to cyan-7
     }
     return 'orange'
   }
 
   if (s === 'discussed target') {
-    return 'green-8'
+    return 'cyan-7' // Changed from green-8 to cyan-7
   }
   if (s === 'assessed accomplishment') {
-    return 'purple-8'
+    return 'cyan-7' // Changed from purple-8 to cyan-7
   }
 
   return 'orange'
@@ -2530,7 +2575,8 @@ const openStatusModal = () => {
   let modalTitle = 'Approved Target'
   let modalMessage = 'Are you sure you want to approve the targets for this employee?'
   let modalIcon = 'check_circle'
-  let modalColor = '#2e7d32' // Green
+  let modalColor = '#00bcd4' // Cyan-7 hex color (for header gradient)
+  let quasarColor = 'cyan-7' // Quasar color name (for button)
 
   if (isHead) {
     // Head employee logic
@@ -2544,13 +2590,15 @@ const openStatusModal = () => {
       modalTitle = 'Approved Target'
       modalMessage = `Are you sure you want to approve the targets for this employee?`
       modalIcon = 'check_circle'
-      modalColor = '#2e7d32' // Green
+      modalColor = '#00bcd4' // Cyan-7 hex color
+      quasarColor = 'cyan-7' // Cyan-7 Quasar color
     } else if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
       nextStatus = 'Approved Accomplishment'
       modalTitle = 'Final Rating Accomplishment'
       modalMessage = `Are you sure you want to submit the final rating accomplishment for this employee?`
       modalIcon = 'star'
-      modalColor = '#6a1b9a' // Purple
+      modalColor = '#00bcd4' // Cyan-7 hex color
+      quasarColor = 'cyan-7' // Cyan-7 Quasar color
     }
   } else {
     // Non-Head employee logic
@@ -2559,13 +2607,15 @@ const openStatusModal = () => {
       modalTitle = 'Approved Target'
       modalMessage = `Are you sure you want to approve the targets for this employee?`
       modalIcon = 'check_circle'
-      modalColor = '#2e7d32' // Green
+      modalColor = '#00bcd4' // Cyan-7 hex color
+      quasarColor = 'cyan-7' // Cyan-7 Quasar color
     } else if (s === 'assessed accomplishment') {
       nextStatus = 'Approved Accomplishment'
       modalTitle = 'Final Rating Accomplishment'
       modalMessage = `Are you sure you want to submit the final rating accomplishment for this employee?`
       modalIcon = 'star'
-      modalColor = '#6a1b9a' // Purple
+      modalColor = '#00bcd4' // Cyan-7 hex color
+      quasarColor = 'cyan-7' // Cyan-7 Quasar color
     }
   }
 
@@ -2575,7 +2625,8 @@ const openStatusModal = () => {
     title: modalTitle,
     message: modalMessage,
     icon: modalIcon,
-    color: modalColor,
+    color: modalColor, // Hex color for header gradient
+    quasarColor: quasarColor, // Quasar color for button
     nextStatus: nextStatus,
   }
 }
@@ -2970,7 +3021,11 @@ const closeStatusModal = () => {
 const confirmApprove = async () => {
   const tpId = targetPeriodId.value
   if (!tpId) {
-    $q.notify({ type: 'negative', message: 'Target period ID not found.', position: 'top' })
+    $q.notify({
+      type: 'negative',
+      message: 'Target period ID not found.',
+      position: 'top',
+    })
     return
   }
 
@@ -2978,20 +3033,24 @@ const confirmApprove = async () => {
   const nextStatus = statusModalConfig.value.nextStatus || 'Discussed Target'
 
   try {
-    await monitorStore.ipcrApproveStatus({
-      targetperiodId: tpId,
-      status: nextStatus,
-    })
+    // Call the store with the target period ID and new status
+    await monitorStore.updateIPCRStatus(tpId, nextStatus)
+
+    // Emit event to update parent component
     emit('status-updated', {
       ...props.employee,
       ipcrStatus: nextStatus,
     })
+
+    // Show success notification
     $q.notify({
       type: 'positive',
       message: `Status updated to "${nextStatus}" successfully!`,
       position: 'top',
       timeout: 2000,
     })
+
+    // Close modal and emit close/approve events
     closeStatusModal()
     emit('close')
     emit('approve')

@@ -90,7 +90,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue'
+import { defineComponent, ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from 'src/stores/userStore'
 
@@ -103,10 +103,15 @@ export default defineComponent({
     const router = useRouter()
     const userStore = useUserStore()
 
+    // --- Mobile & Sidebar State ---
     const isMobile = ref(window.innerWidth < MOBILE_BREAKPOINT)
     const leftDrawerOpen = ref(!isMobile.value)
     const openGroups = ref({})
 
+    // --- Store role separately to preserve color during logout ---
+    const lastKnownRole = ref(null)
+
+    // --- Window Resize Handler ---
     const onResize = () => {
       const mobile = window.innerWidth < MOBILE_BREAKPOINT
       isMobile.value = mobile
@@ -114,21 +119,42 @@ export default defineComponent({
       else leftDrawerOpen.value = false
     }
 
+    // --- Lifecycle Hooks ---
     onMounted(() => {
       userStore.loadUserData()
       window.addEventListener('resize', onResize)
+
+      // Store initial role if available
+      if (userStore.user?.role_id) {
+        lastKnownRole.value = userStore.user.role_id
+      }
     })
 
     onUnmounted(() => {
       window.removeEventListener('resize', onResize)
     })
 
+    // --- Watch for role changes ---
+    watch(
+      () => userStore.user?.role_id,
+      (newRole) => {
+        if (newRole) {
+          lastKnownRole.value = newRole
+        }
+      },
+    )
+
+    // --- Toggle Group Function ---
     const toggleGroup = (index) => {
       openGroups.value[index] = !openGroups.value[index]
     }
 
+    // --- Role Color Class (Preserved during logout) ---
     const roleColorClass = computed(() => {
-      const role = userStore.user?.role_id
+      // Try to get role from user store first, fallback to last known role
+      const role = userStore.user?.role_id || lastKnownRole.value
+      if (!role) return ''
+
       const classes = {
         1: 'sidebar--office',
         2: 'sidebar--planning',
@@ -138,11 +164,13 @@ export default defineComponent({
         6: 'sidebar--receiving-hr',
         7: 'sidebar--receiving-planning',
       }
-      return classes[role] || 'sidebar--hr'
+      return classes[role] || ''
     })
 
+    // --- Menu Items based on role ---
     const menuItems = computed(() => {
-      const role = userStore.user?.role_id
+      const role = userStore.user?.role_id || lastKnownRole.value
+
       const items = {
         1: [
           { label: 'Dashboard', icon: 'dashboard', route: '/office/dashboard' },
@@ -167,7 +195,7 @@ export default defineComponent({
         2: [
           { label: 'Dashboard', icon: 'dashboard', route: '/planning/dashboard' },
           { label: 'SPMS', icon: 'inventory_2', route: '/planning/spms' },
-          { label: 'OPCR', icon: 'inventory', route: '/planning/opcr' },
+          { label: 'OPCR', icon: 'fact_check', route: '/planning/opcr' },
           { label: 'Account', icon: 'person', route: '/planning/account' },
         ],
         3: [
@@ -184,36 +212,63 @@ export default defineComponent({
           },
         ],
         4: [
-          { label: 'IPCR', icon: 'reviews', route: '/supervisor/ipcr' },
-          { label: 'QPEF', icon: 'reviews', route: '/supervisor/qpef' },
+          { label: 'IPCR', icon: 'grading', route: '/supervisor/ipcr' },
+          { label: 'QPEF', icon: 'task_alt', route: '/supervisor/qpef' },
         ],
         5: [{ label: 'SPMS', icon: 'inventory_2', route: '/pmt/spms' }],
         6: [
           { label: 'UWP', icon: 'checklist', route: '/receiving/uwp/' },
-          { label: 'IPCR', icon: 'group', route: '/receiving/ipcr' },
+          { label: 'IPCR', icon: 'grading', route: '/receiving/ipcr' },
         ],
-        7: [{ label: 'OPCR', icon: 'checklist', route: '/receiving/opcr/' }],
+        7: [{ label: 'OPCR', icon: 'fact_check', route: '/receiving/opcr/' }],
       }
       return items[role] || []
     })
 
+    // --- Logout Function ---
     const logout = async () => {
       try {
+        // Store the role before clearing user data to preserve color
+        if (userStore.user?.role_id) {
+          lastKnownRole.value = userStore.user.role_id
+          console.log('Role preserved for logout:', lastKnownRole.value)
+        }
+
+        // Call the store logout which handles API call and navigation
         await userStore.logout(router)
+
+        // Note: userStore.logout will navigate to /login
       } catch (error) {
         console.error('Logout failed:', error)
-        router.push('/login')
+        // Emergency fallback
+        userStore.clearUser()
+        try {
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+        } catch {
+          // Ignore storage errors
+        }
+        await router.push('/login')
       }
     }
 
+    // --- Return all reactive properties and methods ---
     return {
+      // State
       isMobile,
       leftDrawerOpen,
       openGroups,
-      toggleGroup,
+      lastKnownRole,
+
+      // Computed
       menuItems,
       roleColorClass,
+
+      // Methods
+      toggleGroup,
       logout,
+
+      // Store
       userStore,
     }
   },

@@ -80,7 +80,7 @@ export const routes = [
         component: () => import('src/pages/Office/OfficeUser.vue'),
         meta: { role: 'office-admin' },
       },
-      { path: 'unitworkplan', component: () => import('src/pages/Office/OfficeUnitWorkPlan.vue') },
+      { path: 'unitworkplan',name:'unitworkplan', component: () => import('src/pages/Office/OfficeUnitWorkPlan.vue') },
 
       // Planning Admin Routes
       {

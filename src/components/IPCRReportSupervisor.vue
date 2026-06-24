@@ -2371,17 +2371,15 @@ const currentData = computed(() => {
 
 // ── Computed: Button State ──────────────────────────────────────────────────
 const isStatusCompleted = computed(() => {
-  const currentStatus = props.employee?.ipcrStatus || ''
+  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
 
-  // These statuses should NOT have the button disabled
   const enabledStatuses = [
-    'Draft',
-    'Returned Target',
-    'Calibrated/Validated Target',
-    'Returned Accomplishment',
+    'draft',
+    'returned target',
+    'calibrated/validated target',
+    'returned accomplishment',
   ]
 
-  // Button is disabled (completed) if status is NOT in the enabled list
   return !enabledStatuses.includes(currentStatus)
 })
 

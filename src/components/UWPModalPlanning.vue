@@ -57,8 +57,6 @@
         <!-- Error State -->
         <div v-else-if="store?.hasError" class="full-height flex flex-center">
           <div class="text-center">
-            <!-- <q-icon name="error" color="negative" size="3em" />
-            <div class="q-mt-md text-negative">Error loading data</div> -->
             <div class="q-mt-sm text-caption">{{ store?.getError || 'Unknown error' }}</div>
             <q-btn color="primary" label="Retry" @click="retryFetch" class="q-mt-md" />
           </div>
@@ -74,26 +72,21 @@
                 <div class="text-subtitle2 text-weight-medium">
                   Status:
                   <q-badge
-                    :color="
-                      getStatusBadgeColor(officeData?.unitworkplan_status || targetPeriod?.status)
-                    "
-                    :label="officeData?.unitworkplan_status || targetPeriod?.status || 'N/A'"
+                    :color="getStatusBadgeColor(currentStatus)"
+                    :label="currentStatus"
                     class="q-ml-xs"
                   />
                 </div>
                 <div class="text-subtitle2">
                   Target Period: {{ targetPeriod?.semester || '' }} {{ targetPeriod?.year || '' }}
                 </div>
-                <!-- <div v-if="currentDivisionPath" class="text-caption text-grey-7">
-                  Path: {{ currentDivisionPath }}
-                </div> -->
               </div>
-              <div class="flex justify-end q-gutter-sm">
+              <!-- <div class="flex justify-end q-gutter-sm">
                 <q-btn color="orange-9" icon="edit" label="Update" @click="openStatusModal">
                   <q-tooltip>Change Status</q-tooltip>
                 </q-btn>
                 <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" />
-              </div>
+              </div> -->
             </div>
           </div>
 
@@ -106,11 +99,7 @@
                   <div class="line"></div>
                 </div>
                 <div class="city-logo">
-                  <img
-                    class="logo"
-                    alt="City of Tagum Logo"
-                    src="https://phshirt.com/wp-content/uploads/2021/11/City-of-Tagum-Logo.png"
-                  />
+                  <img class="logo" alt="City of Tagum Logo" src="/logo.png" />
                 </div>
                 <div class="header-text">
                   <div class="text-green-9 text-caption padded-text">
@@ -408,7 +397,7 @@
 
       <!-- Modal Body -->
       <q-card-section class="q-pt-lg q-pb-md q-px-xl">
-        <!-- Period Summary Card - Changed border to match orange theme -->
+        <!-- Period Summary Card -->
         <div
           class="q-pa-md rounded-borders q-mb-lg"
           style="background: #f8f9fa; border-left: 4px solid #f57c00; border-radius: 8px"
@@ -424,10 +413,8 @@
             <span class="text-body2 text-grey-7">
               Current Status:
               <q-badge
-                :color="
-                  getStatusBadgeColor(officeData?.unitworkplan_status || targetPeriod?.status)
-                "
-                :label="officeData?.unitworkplan_status || targetPeriod?.status || 'N/A'"
+                :color="getStatusBadgeColor(currentStatus)"
+                :label="currentStatus"
                 class="q-ml-sm q-pa-sm"
                 style="font-size: 0.8rem"
               />
@@ -562,19 +549,43 @@ export default {
       officeName: 'City Human Resource Management Office',
     })
 
-    // ✅ officeData is now sourced from store.data.office which preserves unitworkplan_status
     const officeData = ref(null)
 
     // ── Status helpers ──────────────────────────────────────────────────────
     const getStatusBadgeColor = (status) => {
       if (!status) return 'grey-5'
+
       const s = status.toLowerCase()
-      if (s === 'monitored') return 'green-8'
-      if (s === 'pending') return 'orange-8'
-      if (s === 'approved') return 'blue-8'
-      if (s === 'rejected') return 'red-8'
+
+      if (s === 'draft') return 'grey-6'
+
+      if (s === 'received target' || s === 'received') return 'info' // blue
+
+      if (s === 'returned target' || s === 'returned') return 'warning' // orange
+
+      if (s === 'reviewed target' || s === 'reviewed') return 'purple'
+
+      if (
+        s === 'calibrated/validated target' ||
+        s === 'calibrated target' ||
+        s === 'validated target'
+      )
+        return 'positive' // green
+
       return 'grey-7'
     }
+
+    // ── Current Status Computed ──────────────────────────────────────────
+    const currentStatus = computed(() => {
+      // First try from the unitworkplan latest record
+      const unitworkplan = store.data?.office?.unitworkplan
+      if (unitworkplan?.unitworkplan_lastest_record?.status) {
+        return unitworkplan.unitworkplan_lastest_record.status
+      }
+
+      // Fallback to targetPeriod
+      return props.targetPeriod?.status || 'N/A'
+    })
 
     // ── Status Modal ────────────────────────────────────────────────────────
     const openStatusModal = () => {
@@ -610,7 +621,7 @@ export default {
 
       try {
         const success = await monitorStore.storeStatus({
-          unitworkplan_id: unitworkplanId, // Changed from office_id to unitworkplan_id
+          unitworkplan_id: unitworkplanId,
           year: props.targetPeriod?.year || '',
           semester: props.targetPeriod?.semester || '',
           date: today,
@@ -621,12 +632,12 @@ export default {
         if (success) {
           showStatusModal.value = false
 
-          // Update local officeData to reflect new status
-          if (officeData.value) {
-            officeData.value = {
-              ...officeData.value,
-              unitworkplan_status: status,
-            }
+          // Get the current division from navigationItems
+          const currentDivision = navigationItems.value?.find(
+            (div) => div?.id === selectedDivision.value,
+          )
+          if (currentDivision) {
+            await fetchCurrentDivisionData(currentDivision)
           }
 
           $q.notify({
@@ -845,8 +856,6 @@ export default {
         }
         await store.fetchUnitWorkPlan(filters)
 
-        // ✅ FIX: store.data.office now contains unitworkplan_status because
-        // transformDataForReport preserves it. This will correctly show "Pending".
         officeData.value = store.data?.office || null
 
         if (store.data?.office?.name) {
@@ -1300,6 +1309,17 @@ export default {
       }
     }
 
+    // ── Watch for store data changes ──────────────────────────────────────
+    watch(
+      () => store.data,
+      (newData) => {
+        if (newData?.office) {
+          officeData.value = newData.office
+        }
+      },
+      { deep: true },
+    )
+
     // ── Lifecycle ───────────────────────────────────────────────────────────
     onMounted(() => {
       try {
@@ -1338,13 +1358,13 @@ export default {
       staticUserData,
       officeData,
       showStatusModal,
-      statusRemarks, // Add this if you want to expose it
-      statusLoading, // Add this if you want to expose it
+      statusRemarks,
+      statusLoading,
+      currentStatus,
       getStatusBadgeColor,
-
       openStatusModal,
       closeStatusModal,
-      updateStatus, // Replace confirmStatusUpdate with updateStatus
+      updateStatus,
       getOrganizedData,
       getEmployeesByRank,
       selectDivision,
@@ -1357,4 +1377,4 @@ export default {
 }
 </script>
 
-<style scoped src="../assets/office/UnitWorkPlanReportHR.css"></style>
+<style scoped src="../assets/office/UnitWorkPlanReportPlanning.css"></style>
