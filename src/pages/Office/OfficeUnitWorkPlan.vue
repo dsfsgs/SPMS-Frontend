@@ -690,7 +690,45 @@
                                     @update:model-value="generateSuccessIndicator(index)"
                                   />
 
-                                  <!-- Add multiple, use-chips and change value back to value && value.length > 0  -->
+                                  <!-- Indicator Category Select -->
+                                  <q-select
+                                    outlined
+                                    v-model="standard.indicatorCategory"
+                                    label="Indicator Category"
+                                    dense
+                                    class="full-width q-pt-sm"
+                                    :options="indicatorCategoryOptions"
+                                    option-value="id"
+                                    option-label="categories_name"
+                                    emit-value
+                                    map-options
+                                    clearable
+                                    @update:model-value="
+                                      (value) => {
+                                        standard.indicatorName = []
+                                        if (value) {
+                                          filterIndicatorsByCategory(value, index)
+                                        } else {
+                                          filteredIndicatorsByCategory[index] = []
+                                        }
+                                      }
+                                    "
+                                  >
+                                    <template v-slot:prepend>
+                                      <q-icon name="category" size="xs" />
+                                    </template>
+                                    <template v-slot:option="scope">
+                                      <q-item v-bind="scope.itemProps" dense>
+                                        <q-item-section>
+                                          <q-item-label>{{
+                                            scope.opt.categories_name
+                                          }}</q-item-label>
+                                        </q-item-section>
+                                      </q-item>
+                                    </template>
+                                  </q-select>
+
+                                  <!-- Add multiple and use-chips and change value to value && value.length > 0 -->
                                   <q-select
                                     outlined
                                     v-model="standard.indicatorName"
@@ -699,13 +737,17 @@
                                     class="full-width q-pt-sm"
                                     use-input
                                     input-debounce="300"
-                                    @filter="filterPerformanceIndicators"
-                                    :options="filteredVerbs"
+                                    @filter="
+                                      (val, update) =>
+                                        filterPerformanceIndicators(val, update, index)
+                                    "
+                                    :options="getFilteredIndicatorsByCategory(index)"
                                     option-value="id"
                                     option-label="name"
                                     emit-value
                                     map-options
                                     clearable
+                                    :disable="!standard.indicatorCategory"
                                     @update:model-value="
                                       async (value) => {
                                         generateSuccessIndicator(index)
@@ -725,21 +767,28 @@
                                     </template>
                                     <template v-slot:option="scope">
                                       <q-item v-bind="scope.itemProps" dense>
-                                        <q-item-section side>
+                                        <!-- <q-item-section side>
                                           <q-checkbox :model-value="scope.selected" />
-                                        </q-item-section>
+                                        </q-item-section> -->
                                         <q-item-section>
                                           <q-item-label>{{ scope.opt.name }}</q-item-label>
+                                          <!-- <q-item-label caption v-if="scope.opt.category">
+                                            Category: {{ scope.opt.category.categories_name }}
+                                          </q-item-label>
                                           <q-item-label caption v-if="scope.opt.description">
                                             {{ scope.opt.description }}
-                                          </q-item-label>
+                                          </q-item-label> -->
                                         </q-item-section>
                                       </q-item>
                                     </template>
                                     <template v-slot:no-option>
                                       <q-item>
                                         <q-item-section class="text-grey">
-                                          No performance indicators found
+                                          {{
+                                            standard.indicatorCategory
+                                              ? 'No indicators found'
+                                              : 'Select a category first'
+                                          }}
                                         </q-item-section>
                                       </q-item>
                                     </template>
@@ -1534,6 +1583,7 @@ export default {
     const showCompetencyError = ref([])
     const competencySelections = ref([{ selectedCompetency: null, selectedLevel: null }])
     const filteredCompetencyOptionsByRow = ref([])
+    const filteredIndicatorsByCategory = ref({})
 
     // Loading state while stores initialize
     const storesInitialized = ref(false)
@@ -1612,6 +1662,7 @@ export default {
       id: uuidv4(),
       expanded: true,
       outputName: '',
+      indicatorCategory: null,
       indicatorName: [],
       successIndicator: '',
       requiredOutput: '',
@@ -1724,6 +1775,24 @@ export default {
           name: cat.name,
         })) || [],
     )
+
+    const indicatorCategoryOptions = computed(() => {
+      // Get unique categories from the verbs
+      const categories = new Map()
+      const verbs = officeLibraryIndicatorStore.value?.verbs || []
+
+      verbs.forEach((verb) => {
+        if (verb.category && verb.category.id) {
+          categories.set(verb.category.id, {
+            id: verb.category.id,
+            categories_name: verb.category.categories_name || 'Uncategorized',
+            ...verb.category,
+          })
+        }
+      })
+
+      return Array.from(categories.values())
+    })
 
     const performanceIndicatorOptions = computed(
       () =>
@@ -2281,28 +2350,62 @@ export default {
         const qtyPart = getQuantityComponent()
         const outputPart = std.outputName?.trim() || ''
 
+        // FIX: Handle both array and single value cases
         let indicatorPart = ''
-        if (Array.isArray(std.indicatorName) && std.indicatorName.length > 0) {
-          const names = std.indicatorName
+        let indicatorNames = []
+
+        // Check if indicatorName is an array
+        if (Array.isArray(std.indicatorName)) {
+          indicatorNames = std.indicatorName
+        }
+        // Check if indicatorName is a single value
+        else if (std.indicatorName) {
+          indicatorNames = [std.indicatorName]
+        }
+
+        // Process the indicator names
+        if (indicatorNames.length > 0) {
+          const names = indicatorNames
             .map((idOrText) => {
-              if (typeof idOrText === 'number' || !isNaN(idOrText)) {
+              // If it's a number or numeric string, try to look up by ID
+              if (
+                typeof idOrText === 'number' ||
+                (typeof idOrText === 'string' && !isNaN(idOrText))
+              ) {
                 const verb = officeLibraryIndicatorStore.value?.verbs?.find(
                   (v) => v.id === Number(idOrText),
                 )
-                return verb?.indicator_name || verb?.name || ''
+                // Return the name or fallback to the ID
+                return verb?.indicator_name || verb?.name || verb?.label || String(idOrText)
               }
-              return idOrText
+              // If it's already a string (name), return it
+              if (typeof idOrText === 'string') {
+                // Check if it might be a name already
+                const trimmed = idOrText.trim()
+                if (trimmed) return trimmed
+              }
+              // If it's an object, try to get the name
+              if (typeof idOrText === 'object' && idOrText !== null) {
+                return idOrText.indicator_name || idOrText.name || idOrText.label || ''
+              }
+              return String(idOrText)
             })
-            .filter(Boolean)
+            .filter((name) => name && name.trim().length > 0)
 
-          if (names.length === 1) indicatorPart = names[0]
-          else if (names.length === 2) indicatorPart = names.join(' and ')
-          else indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+          // Build the indicator part based on number of names
+          if (names.length === 1) {
+            indicatorPart = names[0]
+          } else if (names.length === 2) {
+            indicatorPart = names.join(' and ')
+          } else if (names.length > 2) {
+            indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+          }
         }
 
         const effectivenessPart = getEffectivenessComponent()
         const timelinessPart = getTimelinessComponent()
 
+        // Build the success indicator
         std.successIndicator = [
           qtyPart,
           outputPart,
@@ -2315,28 +2418,51 @@ export default {
       })
     }
 
-    const filterPerformanceIndicators = (val, update) => {
+    const filterPerformanceIndicators = (val, update, index) => {
       const mapVerb = (verb) => ({
         id: verb.id,
-        label: verb.indicator_name || verb.name,
-        value: verb.id,
         name: verb.indicator_name || verb.name,
+        value: verb.id,
+        category: verb.category,
         description: verb.description || '',
       })
+
       if (typeof update === 'function') {
         update(() => {
           const needle = (val || '').toLowerCase()
-          filteredVerbs.value = (officeLibraryIndicatorStore.value?.verbs || [])
-            .map(mapVerb)
-            .filter(
-              (v) =>
-                v.label.toLowerCase().includes(needle) ||
-                v.description.toLowerCase().includes(needle),
-            )
+          const categoryId = currentEmployee.value?.performanceStandards?.[index]?.indicatorCategory
+
+          let baseList = categoryId
+            ? filteredIndicatorsByCategory.value[index] || []
+            : (officeLibraryIndicatorStore.value?.verbs || []).map(mapVerb)
+
+          filteredVerbs.value = needle
+            ? baseList.filter(
+                (v) =>
+                  v.name.toLowerCase().includes(needle) ||
+                  v.description.toLowerCase().includes(needle),
+              )
+            : baseList
         })
       } else {
         filteredVerbs.value = (officeLibraryIndicatorStore.value?.verbs || []).map(mapVerb)
       }
+    }
+
+    const filterIndicatorsByCategory = (categoryId, index) => {
+      const verbs = officeLibraryIndicatorStore.value?.verbs || []
+      filteredIndicatorsByCategory.value[index] = verbs
+        .filter((verb) => verb.category?.id === categoryId)
+        .map((verb) => ({
+          id: verb.id,
+          name: verb.indicator_name || verb.name,
+          category: verb.category,
+          description: verb.description || '',
+        }))
+    }
+
+    const getFilteredIndicatorsByCategory = (index) => {
+      return filteredIndicatorsByCategory.value[index] || []
     }
 
     const getFilteredMfoOptions = (index) => {
@@ -2502,11 +2628,17 @@ export default {
       if (fieldIndex === 1) {
         std.rows.mfo = null
         std.rows.output = null
+        std.indicatorCategory = null // ADD THIS
+        std.indicatorName = [] // ADD THIS
         filteredMfoOptions.value[standardIndex] = null
         filteredOutputOptions.value[standardIndex] = null
+        filteredIndicatorsByCategory.value[standardIndex] = [] // ADD THIS
       } else if (fieldIndex === 2) {
         std.rows.output = null
+        std.indicatorCategory = null
+        std.indicatorName = []
         filteredOutputOptions.value[standardIndex] = null
+        filteredIndicatorsByCategory.value[standardIndex] = []
       }
     }
 
@@ -3530,6 +3662,9 @@ export default {
       showCompetencyError,
       competencySelections,
       filteredCompetencyOptionsByRow,
+      indicatorCategoryOptions,
+      filterIndicatorsByCategory,
+      getFilteredIndicatorsByCategory,
       isHeadPosition,
       getEmployeeBadgeColor,
       getEmployeeName,
