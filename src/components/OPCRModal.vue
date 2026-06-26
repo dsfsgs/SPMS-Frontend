@@ -250,19 +250,19 @@
                     {{ standard.opcr?.accountable || '-' }}
                   </td>
                   <td style="padding: 4px">
-                    {{ standard.opcr?.accomplishment || '-' }}
+                    {{ standard.opcr_accomplishment?.accomplishment || '-' }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_q || '-' }}
+                    {{ standard.opcr_accomplishment?.ratings?.quantity_rating || '-' }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_e || '-' }}
+                    {{ standard.opcr_accomplishment?.ratings?.effectiveness_rating || '-' }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_t || '-' }}
+                    {{ standard.opcr_accomplishment?.ratings?.timeliness_rating || '-' }}
                   </td>
                   <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_a || '-' }}
+                    {{ standard.opcr_accomplishment?.ratings?.average_rating || '-' }}
                   </td>
                   <td style="padding: 4px">
                     <div v-html="formatProficiencyResult(standard)"></div>
@@ -282,27 +282,31 @@
               </tr>
 
               <!-- Strategic Functions (if exists) -->
-              <tr v-if="hasCategoryData('A. STRATEGIC FUNCTION')">
+              <!-- <tr v-if="hasCategoryData('A. STRATEGIC FUNCTION')"> -->
+                <tr>
                 <td style="padding: 8px"><b>Strategic Functions:</b></td>
                 <td style="padding: 8px; text-align: center">
-                  <b>{{ calculateCategoryRating('A. STRATEGIC FUNCTION') }}</b>
+                  <b>{{ opcrData.average_rating?.strategic_functions ?? '0' }}</b>
                 </td>
                 <td rowspan="5" colspan="10" style="padding: 8px; text-align: center"></td>
               </tr>
 
               <!-- Core Functions (if exists) -->
-              <tr v-if="hasCategoryData('B. CORE FUNCTION')">
+              <!-- <tr v-if="hasCategoryData('B. CORE FUNCTION')"> -->
+              <tr>
                 <td style="padding: 8px"><b>Core Functions:</b></td>
                 <td style="padding: 8px; text-align: center">
-                  <b>{{ calculateCategoryRating('B. CORE FUNCTION') }}</b>
+                  <!-- <b>{{ calculateCategoryRating('B. CORE FUNCTION') }}</b> -->
+                <b>{{ opcrData.average_rating?.core_functions ?? '0' }}</b>
                 </td>
               </tr>
 
               <!-- Support Functions (if exists) -->
-              <tr v-if="hasCategoryData('C. SUPPORT FUNCTION')">
+              <!-- <tr v-if="hasCategoryData('C. SUPPORT FUNCTION')"> -->
+                <tr>
                 <td style="padding: 8px"><b>Support Functions:</b></td>
                 <td style="padding: 8px; text-align: center">
-                  <b>{{ calculateCategoryRating('C. SUPPORT FUNCTION') }}</b>
+                  <b>{{ opcrData.average_rating?.support_functions ?? '0' }}</b>
                 </td>
               </tr>
 
@@ -310,7 +314,7 @@
               <tr>
                 <td style="padding: 8px"><b>Final Rating:</b></td>
                 <td style="padding: 8px; text-align: center">
-                  <b>{{ calculateAverageRating() }}</b>
+                  <b>{{  opcrData.average_rating?.final_rating }}</b>
                 </td>
               </tr>
 
@@ -318,7 +322,7 @@
               <tr>
                 <td style="padding: 8px"><b>Adjectival Rating:</b></td>
                 <td style="padding: 8px; text-align: center">
-                  <b>{{ getAdjectivalRating(calculateAverageRating()) }}</b>
+                  <b>{{  opcrData.average_rating?.adjectival_rating }}</b>
                 </td>
               </tr>
 
