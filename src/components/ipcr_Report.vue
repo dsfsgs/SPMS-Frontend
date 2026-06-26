@@ -307,7 +307,7 @@
                         <div style="font-size: 10px; font-weight: bold">
                           LOCAL GOVERNMENT OF TAGUM CITY
                         </div>
-                        <div style="font-size: 11px">IPCR Accomplishment</div>
+                        <div style="font-size: 11px">IPCR Target</div>
                         <div style="font-size: 11px; font-weight: bold">RECEIVED</div>
                         <div style="text-align: left; padding-left: 10px; font-size: 10px">
                           By:
@@ -679,7 +679,7 @@
                                     margin-top: 15px;
                                   "
                                 >
-                                  Target Calibrated by:
+                                  Accomplishment Validated by:
                                   <span
                                     style="
                                       border-bottom: 1px solid #000;

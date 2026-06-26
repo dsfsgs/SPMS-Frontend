@@ -35,6 +35,7 @@
               color="primary"
               icon="save"
               label="Save"
+              :loading="isSaving"
               @click="handleSave"
             />
             <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" />
@@ -821,7 +822,6 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  // Pre-selected quarter from the parent page — if provided the radios are locked
   quarter: {
     type: String,
     default: null,
@@ -839,11 +839,11 @@ const props = defineProps({
 const emit = defineEmits(['close', 'print', 'save', 'done'])
 
 // ── State ─────────────────────────────────────────────────────────────────────
-// Use the prop quarter as the initial value; user can still change it if no prop
 const selectedQuarterLocal = ref(props.quarter || null)
 const selectedRecommendation = ref(null)
 const isViewMode = ref(false)
 const currentQPEFId = ref(null)
+const isSaving = ref(false)
 
 // ── Computed ──────────────────────────────────────────────────────────────────
 const controlNo = computed(() => props.employee?.controlNo || null)
@@ -899,13 +899,6 @@ const formData = reactive({
   supervisorComments: '',
 })
 
-// ── Auto-load when quarter prop is already set on mount ───────────────────────
-onMounted(async () => {
-  if (props.quarter && controlNo.value) {
-    await handleQuarterChange(props.quarter)
-  }
-})
-
 // ── Quarter change ────────────────────────────────────────────────────────────
 const handleQuarterChange = async (quarter) => {
   if (!quarter || !controlNo.value) return
@@ -940,6 +933,7 @@ const handleQuarterChange = async (quarter) => {
 
 // ── Load existing data ────────────────────────────────────────────────────────
 const loadExistingData = (data) => {
+  // Load Job Performance
   if (data.job_performance?.items) {
     formData.jobPerformance.itemIds = []
     data.job_performance.items.forEach((item, index) => {
@@ -949,6 +943,8 @@ const loadExistingData = (data) => {
       if (item.id) formData.jobPerformance.itemIds[index] = item.id
     })
   }
+
+  // Load Competencies
   if (data.competencies_attitude?.items) {
     formData.competencies.itemIds = []
     data.competencies_attitude.items.forEach((item, index) => {
@@ -958,6 +954,8 @@ const loadExistingData = (data) => {
       if (item.id) formData.competencies.itemIds[index] = item.id
     })
   }
+
+  // Load Physical
   if (data.physical_mental?.items) {
     formData.physical.itemIds = []
     data.physical_mental.items.forEach((item, index) => {
@@ -967,17 +965,36 @@ const loadExistingData = (data) => {
       if (item.id) formData.physical.itemIds[index] = item.id
     })
   }
+
+  // Load Recommendations - FIXED: Properly handle boolean conversion
   if (data.recommendation_development) {
     const rec = data.recommendation_development
-    formData.recommendations.retention = Boolean(Number(rec.for_retention))
-    formData.recommendations.commendation = Boolean(Number(rec.for_commendation))
-    formData.recommendations.improvement = Boolean(Number(rec.for_improvement))
-    formData.recommendations.nonRenewal = Boolean(Number(rec.for_non_renewal))
+
+    // Convert string "1"/"0" or boolean to proper boolean
+    formData.recommendations.retention =
+      rec.for_retention === '1' || rec.for_retention === 1 || rec.for_retention === true
+    formData.recommendations.commendation =
+      rec.for_commendation === '1' || rec.for_commendation === 1 || rec.for_commendation === true
+    formData.recommendations.improvement =
+      rec.for_improvement === '1' || rec.for_improvement === 1 || rec.for_improvement === true
+    formData.recommendations.nonRenewal =
+      rec.for_non_renewal === '1' || rec.for_non_renewal === 1 || rec.for_non_renewal === true
+
     formData.supervisorComments = rec.recommendation || ''
-    if (formData.recommendations.retention) selectedRecommendation.value = 'retention'
-    else if (formData.recommendations.commendation) selectedRecommendation.value = 'commendation'
-    else if (formData.recommendations.improvement) selectedRecommendation.value = 'improvement'
-    else if (formData.recommendations.nonRenewal) selectedRecommendation.value = 'nonRenewal'
+
+    // Set the selected recommendation based on which one is true
+    // IMPORTANT: Only one should be true at a time
+    if (formData.recommendations.retention) {
+      selectedRecommendation.value = 'retention'
+    } else if (formData.recommendations.commendation) {
+      selectedRecommendation.value = 'commendation'
+    } else if (formData.recommendations.improvement) {
+      selectedRecommendation.value = 'improvement'
+    } else if (formData.recommendations.nonRenewal) {
+      selectedRecommendation.value = 'nonRenewal'
+    } else {
+      selectedRecommendation.value = null
+    }
   }
 }
 
@@ -1000,14 +1017,22 @@ const clearForm = () => {
   selectedRecommendation.value = null
 }
 
+// ── Recommendation change handler ──────────────────────────────────────────
 const handleRecommendationChange = (value) => {
+  // Reset all recommendations
   formData.recommendations.retention = false
   formData.recommendations.improvement = false
   formData.recommendations.commendation = false
   formData.recommendations.nonRenewal = false
-  if (value) formData.recommendations[value] = true
+
+  // Set only the selected one
+  if (value === 'retention') formData.recommendations.retention = true
+  else if (value === 'improvement') formData.recommendations.improvement = true
+  else if (value === 'commendation') formData.recommendations.commendation = true
+  else if (value === 'nonRenewal') formData.recommendations.nonRenewal = true
 }
 
+// ── Validation ──────────────────────────────────────────────────────────────
 const validateRating = (field, section) => {
   const value = section[field]
   if (value !== null && value !== '' && (value < 1 || value > 5)) {
@@ -1090,174 +1115,836 @@ const buildDocDefinition = (params) => {
     logoBase64,
   } = params
 
-  return {
-    pageSize: 'A4',
-    pageMargins: [40, 40, 40, 40],
-    content: [
+  const jp = formData.jobPerformance || {}
+  const co = formData.competencies || {}
+  const ph = formData.physical || {}
+  const rec = formData.recommendations || {}
+
+  const getDisplayStatusFn = (status) => {
+    if (!status) return 'Quarterly'
+    if (status.toUpperCase() === 'CONTRACTUAL') return 'JOB ORDER'
+    return status
+  }
+
+  const headerFn = () => ({
+    stack: [
       {
+        canvas: [{ type: 'rect', x: (612 - 540) / 2, y: 60, w: 540, h: 20, color: '#008000' }],
+      },
+      {
+        margin: [72, -55, 72, 0],
         columns: [
           {
-            width: 100,
+            width: 65,
             stack: [
-              {
-                height: 130,
-                style: 'greenLine',
-              },
+              { canvas: [{ type: 'rect', x: 0, y: 0, w: 75, h: 80, color: '#ffffff' }] },
+              ...(logoBase64
+                ? [{ image: logoBase64, width: 65, height: 60, absolutePosition: { x: 77, y: 22 } }]
+                : []),
             ],
           },
           {
-            width: 120,
-            image: logoBase64,
-
-            height: 100,
-          },
-          {
+            width: '*',
+            margin: [15, -15, 0, 0],
             stack: [
-              { text: 'REPUBLIC OF THE PHILIPPINES', style: 'headerText' },
-              { text: 'PROVINCE OF DAVAO DEL NORTE', style: 'headerText' },
-              { text: 'CITY OF TAGUM', style: 'headerTextBold' },
+              {
+                text: 'REPUBLIC OF THE PHILIPPINES',
+                fontSize: 6,
+                color: '#00703c',
+                alignment: 'left',
+                margin: [0, 20, 0, 2],
+              },
+              {
+                text: 'PROVINCE OF DAVAO DEL NORTE',
+                fontSize: 6,
+                color: '#00703c',
+                alignment: 'left',
+                margin: [0, 0, 0, 2],
+              },
+              {
+                text: 'CITY OF TAGUM',
+                fontSize: 10,
+                bold: true,
+                color: '#00703c',
+                alignment: 'left',
+              },
               {
                 text: employee?.office || 'N/A',
-                style: 'greenBanner',
+                fontSize: 8,
+                bold: true,
+                color: 'white',
+                margin: [0, 5, 0, 0],
               },
             ],
           },
         ],
-        columnGap: 20,
       },
-      { text: '', margin: [0, 20, 0, 0] },
+    ],
+  })
+
+  return {
+    pageSize: 'LEGAL',
+    pageOrientation: 'portrait',
+    pageMargins: [40, 120, 40, 40],
+    header: headerFn,
+    content: [
       {
-        text: `${getDisplayStatus(employee?.status || 'Quarterly')} PERFORMANCE EVALUATION FORM`,
-        alignment: 'center',
-        fontSize: 14,
+        text: `${getDisplayStatusFn(employee?.status || '')} PERFORMANCE EVALUATION FORM`,
+        fontSize: 10,
         bold: true,
-        margin: [0, 0, 0, 20],
+        alignment: 'center',
+        margin: [0, -25, 0, 7],
       },
       {
         columns: [
           {
-            stack: [
-              `NAME: ${employee?.name || 'N/A'}`,
-              `POSITION: ${employee?.position || 'N/A'}`,
-              `DEPARTMENT/OFFICE: ${employee?.office || 'N/A'}`,
-            ],
             width: '50%',
+            stack: [
+              {
+                text: [{ text: 'NAME: ' }, employee?.name || 'N/A'],
+                fontSize: 7,
+                margin: [0, 0, 3, 3],
+              },
+              {
+                text: [{ text: 'POSITION: ' }, employee?.position || 'N/A'],
+                fontSize: 7,
+                margin: [0, 0, 3, 3],
+              },
+              {
+                text: [{ text: 'DEPARTMENT/OFFICE: ' }, employee?.office || 'N/A'],
+                fontSize: 7,
+                margin: [0, 0, 3, 3],
+              },
+            ],
           },
           {
-            stack: [
-              `PERIOD COVERED: ${quarter || 'N/A'}`,
-              `CONTROL NO: ${employee?.controlNo || 'N/A'}`,
-              `RATING YEAR: ${year}`,
-              `IMMEDIATE SUPERVISOR: ${immediateSupervisor?.name || 'N/A'}`,
-            ],
             width: '50%',
+            stack: [
+              {
+                text: [{ text: 'PERIOD COVERED: ' }, quarter || 'N/A'],
+                fontSize: 7,
+                margin: [0, 0, 0, 3],
+              },
+              {
+                text: [{ text: 'RATING YEAR: ' }, String(year)],
+                fontSize: 7,
+                margin: [0, 0, 0, 3],
+              },
+              {
+                text: [{ text: 'IMMEDIATE SUPERVISOR: ' }, immediateSupervisor?.name || 'N/A'],
+                fontSize: 7,
+                margin: [0, 0, 0, 3],
+              },
+            ],
           },
         ],
-        margin: [0, 0, 0, 20],
-      },
-      {
-        text: 'Performance Ratings Summary',
-        fontSize: 12,
-        bold: true,
-        margin: [0, 20, 0, 10],
+        margin: [0, 0, 0, 5],
       },
       {
         table: {
-          headerRows: 1,
-          widths: ['50%', '25%', '25%'],
+          widths: ['20%', '35%', '20%', '25%'],
           body: [
+            // I. Purpose
             [
-              { text: 'Category', bold: true },
-              { text: 'Average', bold: true, alignment: 'center' },
-              { text: 'Weighted Score', bold: true, alignment: 'center' },
+              { text: 'I. Purpose', bold: true, fillColor: '#e0e0e0', fontSize: 7, colSpan: 4 },
+              {},
+              {},
+              {},
             ],
             [
-              'A. Job Performance (40%)',
-              { text: jobPerformanceAverage.toFixed(2), alignment: 'center' },
-              { text: jobPerformanceWeighted.toFixed(2), alignment: 'center' },
+              {
+                text: 'This evaluation tool aims to assess the quarterly performance of Casual, Job Order, and Honorarium-Based employees of the Local Government Unit of Tagum based on their Job Performance, Competencies and Attitude Towards Work, and Mental and Physical Condition. The evaluation seeks to ensure continuous improvement, accountability, and will serve as a reference in the renewal of contract of service.',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
+            ],
+            // II. Rating Scale
+            [
+              {
+                text: 'II. Performance Rating Scale',
+                bold: true,
+                fillColor: '#e0e0e0',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
             ],
             [
-              'B. Competencies and Attitude (50%)',
-              { text: competenciesAverage.toFixed(2), alignment: 'center' },
-              { text: competenciesWeighted.toFixed(2), alignment: 'center' },
+              { text: 'Numerical Rating', bold: true, fontSize: 7, fillColor: '#f0f0f0' },
+              { text: 'Descriptive Rating', bold: true, fontSize: 7, fillColor: '#f0f0f0' },
+              { text: 'Description', bold: true, fontSize: 7, fillColor: '#f0f0f0', colSpan: 2 },
+              {},
             ],
             [
-              'C. Physical and Mental Condition (10%)',
-              { text: physicalAverage.toFixed(2), alignment: 'center' },
-              { text: physicalWeighted.toFixed(2), alignment: 'center' },
+              { text: '5', alignment: 'center', fontSize: 7 },
+              { text: 'Outstanding', fontSize: 7 },
+              {
+                text: 'Performance consistently exceeds expectations; demonstrates exceptional initiative and quality of work.',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
             ],
             [
-              { text: 'Final Rating', bold: true },
-              { text: finalRating.toFixed(2), bold: true, alignment: 'center' },
-              { text: adjectivalRating, bold: true, alignment: 'center' },
+              { text: '4', alignment: 'center', fontSize: 7 },
+              { text: 'Very Satisfactory', fontSize: 7 },
+              {
+                text: 'Performance often exceeds expectations; work is of high quality with minimal supervision.',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+            ],
+            [
+              { text: '3', alignment: 'center', fontSize: 7 },
+              { text: 'Satisfactory', fontSize: 7 },
+              {
+                text: 'Meets standard performance expectations; reliable and consistent output.',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+            ],
+            [
+              { text: '2', alignment: 'center', fontSize: 7 },
+              { text: 'Unsatisfactory', fontSize: 7 },
+              {
+                text: 'Sometimes meet expectations but requires close supervision or improvement in some areas.',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+            ],
+            [
+              { text: '1', alignment: 'center', fontSize: 7 },
+              { text: 'Poor', fontSize: 7 },
+              {
+                text: 'Rarely meets expectations; performance needs significant improvement.',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+            ],
+            // III
+            [
+              {
+                text: 'III. Areas of Evaluation',
+                bold: true,
+                fillColor: '#e0e0e0',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
+            ],
+            // A. Job Performance
+            [
+              {
+                text: 'A. JOB PERFORMANCE (40%)',
+                bold: true,
+                fillColor: '#bdd7ee',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
+            ],
+            [
+              {
+                text: 'Indicators',
+                bold: true,
+                alignment: 'center',
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: 'Rating (1-5)',
+                bold: true,
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+                alignment: 'center',
+              },
+              {
+                text: 'Remarks/Comments',
+                bold: true,
+                alignment: 'center',
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+              },
+            ],
+            [
+              {
+                text: '1. Accomplishes assigned tasks efficiently and on time',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: jp.task1?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: jp.task1Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '2. Demonstrates quality and accuracy in work output',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: jp.task2?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: jp.task2Remarks || '', fontSize: 7 },
+            ],
+            [
+              { text: '3. Observes proper work processes and procedures', fontSize: 7, colSpan: 2 },
+              {},
+              { text: jp.task3?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: jp.task3Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '4. Shows initiative and resourcefulness in completing tasks',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: jp.task4?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: jp.task4Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: 'Subtotal (Average):',
+                bold: true,
+                fontSize: 7,
+                alignment: 'right',
+                fillColor: '#f9f9f9',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: jobPerformanceAverage.toFixed(2),
+                bold: true,
+                fontSize: 7,
+                alignment: 'center',
+                fillColor: '#f9f9f9',
+              },
+              { text: '', fillColor: '#f9f9f9' },
+            ],
+            [
+              {
+                text: 'Weighted Score (40%):',
+                bold: true,
+                fontSize: 7,
+                alignment: 'right',
+                fillColor: '#f0f0f0',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: jobPerformanceWeighted.toFixed(2),
+                bold: true,
+                fontSize: 7,
+                alignment: 'center',
+                fillColor: '#f0f0f0',
+              },
+              { text: '', fillColor: '#f0f0f0' },
+            ],
+            // B. Competencies
+            [
+              {
+                text: 'B. COMPETENCIES AND ATTITUDE TOWARDS WORK (50%)',
+                bold: true,
+                fillColor: '#bdd7ee',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
+            ],
+            [
+              {
+                text: 'Indicators',
+                bold: true,
+                alignment: 'center',
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: 'Rating (1-5)',
+                bold: true,
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+                alignment: 'center',
+              },
+              {
+                text: 'Remarks/Comments',
+                bold: true,
+                alignment: 'center',
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+              },
+            ],
+            [
+              { text: '1. Demonstrates cooperation and teamwork', fontSize: 7, colSpan: 2 },
+              {},
+              { text: co.item1?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item1Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '2. Exhibits professionalism, courtesy, and respect in dealing with co-workers and clients',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: co.item2?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item2Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '3. Demonstrates reliability, honesty, and integrity',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: co.item3?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item3Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '4. Adapts well to changing work assignments and challenges',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: co.item4?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item4Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '5. Reports accurate information and spot errors in documents and other forms of communication',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: co.item5?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item5Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: "6. Adheres to agency's internal policies, office rules and regulations",
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: co.item6?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item6Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '7. Apply and adapt record management standards which maintains and organized records',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: co.item7?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item7Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '8. Demonstrates attention to detail on documents, task and procedures',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: co.item8?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: co.item8Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: 'Subtotal (Average):',
+                bold: true,
+                fontSize: 7,
+                alignment: 'right',
+                fillColor: '#f9f9f9',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: competenciesAverage.toFixed(2),
+                bold: true,
+                fontSize: 7,
+                alignment: 'center',
+                fillColor: '#f9f9f9',
+              },
+              { text: '', fillColor: '#f9f9f9' },
+            ],
+            [
+              {
+                text: 'Weighted Score (50%):',
+                bold: true,
+                fontSize: 7,
+                alignment: 'right',
+                fillColor: '#f0f0f0',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: competenciesWeighted.toFixed(2),
+                bold: true,
+                fontSize: 7,
+                alignment: 'center',
+                fillColor: '#f0f0f0',
+              },
+              { text: '', fillColor: '#f0f0f0' },
+            ],
+            // C. Physical
+            [
+              {
+                text: 'C. PHYSICAL AND MENTAL CONDITION (10%)',
+                bold: true,
+                fillColor: '#bdd7ee',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
+            ],
+            [
+              {
+                text: 'Indicators',
+                bold: true,
+                alignment: 'center',
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: 'Rating (1-5)',
+                bold: true,
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+                alignment: 'center',
+              },
+              {
+                text: 'Remarks/Comments',
+                bold: true,
+                alignment: 'center',
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+              },
+            ],
+            [
+              {
+                text: '1. Maintains focus, alertness and manages work-related stress effectively',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: ph.item1?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: ph.item1Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: '2. Demonstrates physical ability to perform assigned tasks',
+                fontSize: 7,
+                colSpan: 2,
+              },
+              {},
+              { text: ph.item2?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: ph.item2Remarks || '', fontSize: 7 },
+            ],
+            [
+              { text: '3. Observes proper grooming and personal hygiene', fontSize: 7, colSpan: 2 },
+              {},
+              { text: ph.item3?.toString() || '', fontSize: 7, alignment: 'center' },
+              { text: ph.item3Remarks || '', fontSize: 7 },
+            ],
+            [
+              {
+                text: 'Subtotal (Average):',
+                bold: true,
+                fontSize: 7,
+                alignment: 'right',
+                fillColor: '#f9f9f9',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: physicalAverage.toFixed(2),
+                bold: true,
+                fontSize: 7,
+                alignment: 'center',
+                fillColor: '#f9f9f9',
+              },
+              { text: '', fillColor: '#f9f9f9' },
+            ],
+            [
+              {
+                text: 'Weighted Score (10%):',
+                bold: true,
+                fontSize: 7,
+                alignment: 'right',
+                fillColor: '#f0f0f0',
+                colSpan: 2,
+              },
+              {},
+              {
+                text: physicalWeighted.toFixed(2),
+                bold: true,
+                fontSize: 7,
+                alignment: 'center',
+                fillColor: '#f0f0f0',
+              },
+              { text: '', fillColor: '#f0f0f0' },
+            ],
+            // D. Recommendation - FIXED: Only one checkbox will be checked
+            [
+              {
+                text: 'D. RECOMMENDATION AND DEVELOPMENT PLAN',
+                bold: true,
+                fillColor: '#bdd7ee',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
+            ],
+            [
+              { text: '', border: [true, true, true, true] },
+              {
+                text: [
+                  { text: rec.retention ? '[X]' : '[  ]', fontSize: 8 },
+                  { text: ' For retention / contract renewal', fontSize: 7 },
+                ],
+                border: [true, true, true, true],
+              },
+              {
+                text: [
+                  { text: rec.improvement ? '[X]' : '[  ]', fontSize: 8 },
+                  { text: ' For improvement (coaching/mentoring) needed', fontSize: 7 },
+                ],
+                border: [true, true, true, true],
+                colSpan: 2,
+              },
+              {},
+            ],
+            [
+              { text: '', border: [true, true, true, true] },
+              {
+                text: [
+                  { text: rec.commendation ? '[X]' : '[  ]', fontSize: 8 },
+                  { text: ' For commendation', fontSize: 7 },
+                ],
+                border: [true, true, true, true],
+              },
+              {
+                text: [
+                  { text: rec.nonRenewal ? '[X]' : '[  ]', fontSize: 8 },
+                  {
+                    text: ' For non-renewal (due to unsatisfactory or poor performance)',
+                    fontSize: 7,
+                  },
+                ],
+                border: [true, true, true, true],
+                colSpan: 2,
+              },
+              {},
+            ],
+            [
+              {
+                text: "Supervisor's Comments / Recommendations:",
+                bold: true,
+                fillColor: '#e0e0e0',
+                fontSize: 7,
+                colSpan: 4,
+              },
+              {},
+              {},
+              {},
+            ],
+            [
+              {
+                text: formData.supervisorComments || '',
+                fontSize: 7,
+                colSpan: 4,
+                margin: [0, 30, 0, 3],
+              },
+              {},
+              {},
+              {},
+            ],
+            // Final rating summary
+            [
+              { text: '', rowSpan: 6, border: [true, true, false, true] },
+              { text: 'Performance Indicators', bold: true, fontSize: 7, fillColor: '#f0f0f0' },
+              {
+                text: 'Result',
+                bold: true,
+                fontSize: 7,
+                fillColor: '#f0f0f0',
+                alignment: 'center',
+              },
+              {
+                text: 'Received by: (HR Personnel)',
+                bold: true,
+                fontSize: 7,
+                alignment: 'center',
+                rowSpan: 6,
+                border: [false, true, true, true],
+              },
+            ],
+            [
+              {},
+              { text: 'A. Job Performance', fontSize: 7 },
+              { text: jobPerformanceWeighted.toFixed(2), fontSize: 7, alignment: 'center' },
+              {},
+            ],
+            [
+              {},
+              { text: 'B. Competencies and Attitude Towards Work', fontSize: 7 },
+              { text: competenciesWeighted.toFixed(2), fontSize: 7, alignment: 'center' },
+              {},
+            ],
+            [
+              {},
+              { text: 'C. Physical and Mental Condition', fontSize: 7 },
+              { text: physicalWeighted.toFixed(2), fontSize: 7, alignment: 'center' },
+              {},
+            ],
+            [
+              {},
+              { text: 'Final Rating', bold: true, fontSize: 7 },
+              { text: finalRating.toFixed(2), bold: true, fontSize: 7, alignment: 'center' },
+              {},
+            ],
+            [
+              {},
+              { text: 'Adjectival Rating', bold: true, fontSize: 7 },
+              { text: adjectivalRating, bold: true, fontSize: 7, alignment: 'center' },
+              {},
             ],
           ],
         },
-        margin: [0, 0, 0, 20],
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => '#333',
+          vLineColor: () => '#333',
+        },
       },
+      // Signature section
       {
-        text: `Supervisor's Comments: ${formData.supervisorComments || 'N/A'}`,
-        margin: [0, 20, 0, 0],
-      },
-      {
-        columns: [
-          {
-            stack: [
-              { text: 'Discussed with:', bold: true },
-              employee?.name || 'N/A',
-              { text: employee?.position || '', fontSize: 9 },
+        table: {
+          widths: ['33.33%', '33.33%', '33.34%'],
+          body: [
+            [
+              {
+                text: 'Discussed with:',
+                style: 'signatureHeader',
+                border: [true, false, true, true],
+              },
+              {
+                text: 'Assessed by:',
+                style: 'signatureHeader',
+                border: [false, false, true, true],
+              },
+              {
+                text: 'Final Rating by:',
+                style: 'signatureHeader',
+                border: [false, false, true, true],
+              },
             ],
-            width: '33%',
-          },
-          {
-            stack: [
-              { text: 'Assessed by:', bold: true },
-              immediateSupervisor?.name || 'N/A',
-              { text: immediateSupervisor?.position || '', fontSize: 9 },
+            [
+              {
+                text: employee?.name || 'N/A',
+                style: 'signatureName',
+                border: [true, true, true, false],
+                margin: [0, 20, 0, -10],
+              },
+              {
+                text: immediateSupervisor?.name || '___________________',
+                style: 'signatureName',
+                border: [false, true, true, false],
+                margin: [0, 20, 0, -10],
+              },
+              {
+                text: officeHead?.name || '___________________',
+                style: 'signatureName',
+                border: [false, true, true, false],
+                margin: [0, 20, 0, -10],
+              },
             ],
-            width: '33%',
-          },
-          {
-            stack: [
-              { text: 'Final Rating by:', bold: true },
-              officeHead?.name || 'N/A',
-              { text: officeHead?.position || '', fontSize: 9 },
+            [
+              {
+                text: `${employee?.position || 'Employee'}`,
+                style: 'signatureTitle',
+                border: [true, false, true, false],
+              },
+              {
+                text: immediateSupervisor?.position || 'Immediate Supervisor',
+                style: 'signatureTitle',
+                border: [true, false, true, false],
+              },
+              {
+                text: officeHead?.position || 'Department/Office Head',
+                style: 'signatureTitle',
+                border: [true, false, true, false],
+              },
             ],
-            width: '34%',
-          },
-        ],
-        margin: [0, 40, 0, 0],
+            [
+              { text: 'Date:', border: [true, false, false, true], margin: [0, -10, 0, 0] },
+              { text: 'Date:', border: [true, false, false, true], margin: [0, -10, 0, 0] },
+              { text: 'Date:', border: [true, false, true, true], margin: [0, -10, 0, 0] },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => '#333',
+          vLineColor: () => '#333',
+          paddingLeft: () => 5,
+          paddingRight: () => 5,
+          paddingTop: () => 5,
+          paddingBottom: () => 5,
+        },
+        margin: [0, 0, 0, 0],
       },
     ],
+    defaultStyle: { fontSize: 7 },
     styles: {
-      headerText: {
-        fontSize: 10,
-        color: '#00703c',
-      },
-      headerTextBold: {
-        fontSize: 14,
-        bold: true,
-        color: '#00703c',
-      },
-      greenBanner: {
-        fontSize: 12,
-        bold: true,
-        color: 'white',
-        fillColor: '#00703c',
-        padding: 5,
-      },
+      signatureHeader: { fontSize: 7, bold: true, alignment: 'left' },
+      signatureName: { fontSize: 7, bold: true, alignment: 'left', decoration: 'underline' },
+      signatureTitle: { fontSize: 7, alignment: 'left' },
     },
   }
 }
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
-const handleClose = () => emit('close')
+const handleClose = () => {
+  emit('close')
+}
+
 const handleEdit = () => {
   isViewMode.value = false
   $q.notify({ type: 'info', message: 'Edit mode enabled.', position: 'top' })
 }
 
 const handleSave = async () => {
+  if (isSaving.value) return
   if (!selectedQuarterLocal.value) {
     $q.notify({ type: 'negative', message: 'Please select a quarter', position: 'top' })
     return
@@ -1266,6 +1953,8 @@ const handleSave = async () => {
     $q.notify({ type: 'negative', message: 'Employee control number is missing', position: 'top' })
     return
   }
+
+  isSaving.value = true
 
   const buildItems = (section, keys, indicators) =>
     keys.map((key, i) => ({
@@ -1313,6 +2002,7 @@ const handleSave = async () => {
     ],
   )
 
+  // FIXED: Build recommendation payload - only one should be true
   const payload = {
     control_no: controlNo.value,
     quarterly: selectedQuarterLocal.value,
@@ -1321,10 +2011,10 @@ const handleSave = async () => {
     competencies_attitude: competenciesItems,
     physical_mental: physicalItems,
     recommendation_development: {
-      for_retention: formData.recommendations.retention,
-      for_commendation: formData.recommendations.commendation,
-      for_improvement: formData.recommendations.improvement,
-      for_non_renewal: formData.recommendations.nonRenewal,
+      for_retention: formData.recommendations.retention ? '1' : '0',
+      for_commendation: formData.recommendations.commendation ? '1' : '0',
+      for_improvement: formData.recommendations.improvement ? '1' : '0',
+      for_non_renewal: formData.recommendations.nonRenewal ? '1' : '0',
       recommendation: formData.supervisorComments || '',
     },
   }
@@ -1357,41 +2047,105 @@ const handleSave = async () => {
     $q.notify({ type: 'negative', message: errorMessage, position: 'top', timeout: 5000 })
   } finally {
     Loading.hide()
+    isSaving.value = false
   }
 }
 
 // ── Print (single employee) ───────────────────────────────────────────────────
 const handlePrint = async () => {
   try {
+    // Import pdfmake
     const pdfMake = await import('pdfmake/build/pdfmake')
     const pdfMakeInstance = pdfMake.default || pdfMake
     const vfsFonts = await import('pdfmake/build/vfs_fonts')
-    pdfMakeInstance.vfs = vfsFonts.default || vfsFonts.pdfMake?.vfs
 
-    let logoBase64 = tagumLogo
-    if (logoBase64 && !logoBase64.startsWith('data:image')) {
-      try {
-        const response = await fetch(logoBase64)
-        if (response.ok) {
-          const blob = await response.blob()
-          logoBase64 = await new Promise((resolve) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result)
-            reader.readAsDataURL(blob)
-          })
-        }
-      } catch (e) {
-        console.warn('Could not convert logo:', e)
-      }
+    // Setup fonts properly
+    if (vfsFonts && vfsFonts.pdfMake && vfsFonts.pdfMake.vfs) {
+      pdfMakeInstance.vfs = vfsFonts.pdfMake.vfs
+    } else if (vfsFonts.default && vfsFonts.default.vfs) {
+      pdfMakeInstance.vfs = vfsFonts.default.vfs
+    } else if (vfsFonts.vfs) {
+      pdfMakeInstance.vfs = vfsFonts.vfs
     }
 
+    // Load logo
+    let logoBase64 = null
+    try {
+      const logoUrl = '/logo.png'
+      const response = await fetch(logoUrl)
+      if (response.ok) {
+        const blob = await response.blob()
+        logoBase64 = await new Promise((resolve) => {
+          const reader = new FileReader()
+          reader.onloadend = () => resolve(reader.result)
+          reader.readAsDataURL(blob)
+        })
+      }
+    } catch (e) {
+      console.warn('Logo load failed:', e)
+    }
+
+    // Create a plain object copy of the form data for PDF generation
+    const formDataCopy = {
+      jobPerformance: {
+        task1: formData.jobPerformance.task1,
+        task1Remarks: formData.jobPerformance.task1Remarks || '',
+        task2: formData.jobPerformance.task2,
+        task2Remarks: formData.jobPerformance.task2Remarks || '',
+        task3: formData.jobPerformance.task3,
+        task3Remarks: formData.jobPerformance.task3Remarks || '',
+        task4: formData.jobPerformance.task4,
+        task4Remarks: formData.jobPerformance.task4Remarks || '',
+        itemIds: formData.jobPerformance.itemIds || [],
+      },
+      competencies: {
+        item1: formData.competencies.item1,
+        item1Remarks: formData.competencies.item1Remarks || '',
+        item2: formData.competencies.item2,
+        item2Remarks: formData.competencies.item2Remarks || '',
+        item3: formData.competencies.item3,
+        item3Remarks: formData.competencies.item3Remarks || '',
+        item4: formData.competencies.item4,
+        item4Remarks: formData.competencies.item4Remarks || '',
+        item5: formData.competencies.item5,
+        item5Remarks: formData.competencies.item5Remarks || '',
+        item6: formData.competencies.item6,
+        item6Remarks: formData.competencies.item6Remarks || '',
+        item7: formData.competencies.item7,
+        item7Remarks: formData.competencies.item7Remarks || '',
+        item8: formData.competencies.item8,
+        item8Remarks: formData.competencies.item8Remarks || '',
+        itemIds: formData.competencies.itemIds || [],
+      },
+      physical: {
+        item1: formData.physical.item1,
+        item1Remarks: formData.physical.item1Remarks || '',
+        item2: formData.physical.item2,
+        item2Remarks: formData.physical.item2Remarks || '',
+        item3: formData.physical.item3,
+        item3Remarks: formData.physical.item3Remarks || '',
+        itemIds: formData.physical.itemIds || [],
+      },
+      recommendations: {
+        retention: formData.recommendations.retention || false,
+        improvement: formData.recommendations.improvement || false,
+        commendation: formData.recommendations.commendation || false,
+        nonRenewal: formData.recommendations.nonRenewal || false,
+      },
+      supervisorComments: formData.supervisorComments || '',
+    }
+
+    // Determine quarter to use
+    const quarterToUse = selectedQuarterLocal.value || props.quarter || 'Q1'
+
+    // Build document definition
     const docDefinition = buildDocDefinition({
       employee: props.employee,
-      quarter: selectedQuarterLocal.value,
+      quarter: quarterToUse,
       year: currentYear.value,
       immediateSupervisor: props.immediateSupervisor,
       officeHead: props.officeHead,
-      formData,
+      formData: formDataCopy,
       jobPerformanceAverage: jobPerformanceAverage.value,
       jobPerformanceWeighted: jobPerformanceWeighted.value,
       competenciesAverage: competenciesAverage.value,
@@ -1400,15 +2154,31 @@ const handlePrint = async () => {
       physicalWeighted: physicalWeighted.value,
       finalRating: finalRating.value,
       adjectivalRating: adjectivalRating.value,
-      logoBase64,
+      logoBase64: logoBase64 || tagumLogo,
     })
 
-    pdfMakeInstance.createPdf(docDefinition).open()
+    // Create and open PDF
+    const pdfDoc = pdfMakeInstance.createPdf(docDefinition)
+    pdfDoc.open()
+
+    emit('print')
   } catch (error) {
     console.error('Error generating PDF:', error)
-    $q.notify({ type: 'negative', message: 'Failed to generate PDF', position: 'top' })
+    $q.notify({
+      type: 'negative',
+      message: 'Failed to generate PDF. Please try again.',
+      position: 'top',
+      timeout: 5000,
+    })
   }
 }
+
+// ── Lifecycle ──────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  if (props.quarter && controlNo.value) {
+    await handleQuarterChange(props.quarter)
+  }
+})
 </script>
 
 <style scoped>

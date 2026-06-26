@@ -82,7 +82,7 @@
               <q-td :props="props">
                 <q-select
                   v-model="props.row.job_title"
-                  :options="titleOptions"
+                  :options="dynamicTitleOptions"
                   option-value="value"
                   option-label="label"
                   emit-value
@@ -172,18 +172,46 @@ export default {
     }
   },
   computed: {
-    titleOptions() {
-      return [
-        { value: 'Office Head', label: 'Office Head' },
-        { value: 'Sub-Office Head', label: 'Sub-Office Head' },
-        { value: 'Group Head', label: 'Group Head' },
-        { value: 'Division Head', label: 'Division Head' },
-        { value: 'Section Head', label: 'Section Head' },
-        { value: 'Unit Head', label: 'Unit Head' },
-        { value: 'Employee', label: 'Employee' },
+    // DYNAMIC TITLE OPTIONS BASED ON SELECTED NODE TYPE
+    dynamicTitleOptions() {
+      // Define all possible titles with their hierarchy levels
+      const allTitles = [
+        { value: 'Office Head', label: 'Office Head', level: 1 },
+        { value: 'Sub-Office Head', label: 'Sub-Office Head', level: 2 },
+        { value: 'Group Head', label: 'Group Head', level: 3 },
+        { value: 'Division Head', label: 'Division Head', level: 4 },
+        { value: 'Section Head', label: 'Section Head', level: 5 },
+        { value: 'Unit Head', label: 'Unit Head', level: 6 },
+        { value: 'Employee', label: 'Employee', level: 7 },
       ]
+
+      // If no node selected, return all options
+      if (!this.selectedNode) return allTitles
+
+      // Map node type to maximum allowed level
+      const maxLevelMap = {
+        office: 1, // Only Office Head and Employee
+        office2: 2, // Up to Sub-Office Head
+        group: 3, // Up to Group Head
+        division: 4, // Up to Division Head
+        section: 5, // Up to Section Head
+        unit: 6, // Up to Unit Head
+      }
+
+      const maxLevel = maxLevelMap[this.selectedNode.type] || 7
+
+      // Filter titles based on the node's level
+      // Always include Employee (level 7) regardless of maxLevel
+      const filtered = allTitles.filter((title) => title.level <= maxLevel || title.level === 7)
+
+      console.log('Selected node type:', this.selectedNode.type)
+      console.log('Max level:', maxLevel)
+      console.log('Filtered options:', filtered)
+
+      return filtered
     },
 
+    // DYNAMIC RANK OPTIONS WITH HEAD DISABLE LOGIC
     rankOptions() {
       const baseOptions = this.libraryStore.ranks.map((rank) => ({
         value: rank.rank_name,
@@ -192,49 +220,35 @@ export default {
       }))
 
       if (this.selectedNode) {
+        // Determine which head type to add based on selected node
+        let headType = null
         switch (this.selectedNode.type) {
           case 'office':
-            baseOptions.push({
-              value: 'Office-Head',
-              label: 'Office-Head',
-              disable: (employee) => this.isHeadOptionDisabled(employee, 'Office-Head'),
-            })
+            headType = 'Office-Head'
             break
           case 'office2':
-            baseOptions.push({
-              value: 'Office2-Head',
-              label: 'Office2-Head',
-              disable: (employee) => this.isHeadOptionDisabled(employee, 'Office2-Head'),
-            })
+            headType = 'Office2-Head'
             break
           case 'group':
-            baseOptions.push({
-              value: 'Group-Head',
-              label: 'Group-Head',
-              disable: (employee) => this.isHeadOptionDisabled(employee, 'Group-Head'),
-            })
+            headType = 'Group-Head'
             break
           case 'division':
-            baseOptions.push({
-              value: 'Division-Head',
-              label: 'Division-Head',
-              disable: (employee) => this.isHeadOptionDisabled(employee, 'Division-Head'),
-            })
+            headType = 'Division-Head'
             break
           case 'section':
-            baseOptions.push({
-              value: 'Section-Head',
-              label: 'Section-Head',
-              disable: (employee) => this.isHeadOptionDisabled(employee, 'Section-Head'),
-            })
+            headType = 'Section-Head'
             break
           case 'unit':
-            baseOptions.push({
-              value: 'Unit-Head',
-              label: 'Unit-Head',
-              disable: (employee) => this.isHeadOptionDisabled(employee, 'Unit-Head'),
-            })
+            headType = 'Unit-Head'
             break
+        }
+
+        if (headType) {
+          baseOptions.push({
+            value: headType,
+            label: headType,
+            disable: (employee) => this.isHeadOptionDisabled(employee, headType),
+          })
         }
       }
 
@@ -334,14 +348,23 @@ export default {
       return null
     },
 
+    // CHECK IF HEAD OPTION SHOULD BE DISABLED (ONLY ONE HEAD PER UNIT)
     isHeadOptionDisabled(employee, headType) {
       if (!this.selectedNode) return false
 
-      return this.filteredEmployees.some((emp) => {
+      // Check if there's already a head for this organizational unit
+      const existingHead = this.filteredEmployees.find((emp) => {
+        // Skip the current employee
         if (emp.id === employee.id) return false
+
+        // Check if the employee has the same head type
         if (emp.rank !== headType) return false
+
+        // Check if they are in the same organizational unit
         return this.isSameOrganizationalUnit(emp, employee)
       })
+
+      return !!existingHead
     },
 
     openAddModal() {
@@ -825,6 +848,17 @@ export default {
     async updateEmployeeRank(employee, newRank) {
       const originalRank = employee.rank
 
+      const headPositions = [
+        'Office-Head',
+        'Office2-Head',
+        'Group-Head',
+        'Division-Head',
+        'Section-Head',
+        'Unit-Head',
+      ]
+
+      const isHeadPosition = headPositions.includes(newRank)
+
       this.$q
         .dialog({
           title: 'Confirm Rank Change',
@@ -834,16 +868,7 @@ export default {
         })
         .onOk(async () => {
           try {
-            if (
-              [
-                'Office-Head',
-                'Office2-Head',
-                'Group-Head',
-                'Division-Head',
-                'Section-Head',
-                'Unit-Head',
-              ].includes(newRank)
-            ) {
+            if (isHeadPosition) {
               const currentHead = this.filteredEmployees.find(
                 (emp) =>
                   emp.id !== employee.id &&

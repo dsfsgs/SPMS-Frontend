@@ -1141,6 +1141,7 @@ export default {
 
 .mfo-name {
   word-break: break-word;
+  font-weight: 600;
 }
 
 .output-content {

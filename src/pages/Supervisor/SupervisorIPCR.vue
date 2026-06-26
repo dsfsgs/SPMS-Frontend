@@ -60,12 +60,13 @@
 
       <!-- Action Buttons -->
       <div class="col-12 col-sm-12 col-md-2 flex items-center q-gutter-sm">
-        <!-- Create UWP Button -->
+        <!-- Create UWP Button - Show when has_target_period is false -->
         <q-btn
+          v-if="apiResponseData?.employee && !apiResponseData.employee.has_target_period"
           color="green-9"
           icon="add"
           label="Create UWP"
-          :disable="!selectedYear || !selectedSemester || !apiResponseData?.employee"
+          :disable="!selectedYear || !selectedSemester"
           :loading="creatingUwp"
           @click="handleCreateUwp"
           unelevated
@@ -74,18 +75,22 @@
           <q-tooltip v-if="!selectedYear || !selectedSemester">
             Select a year and semester first
           </q-tooltip>
-          <q-tooltip v-else-if="!apiResponseData?.employee"> No employee data available </q-tooltip>
           <q-tooltip v-else>
             Create Unit Work Plan for {{ apiResponseData.employee.name }}
           </q-tooltip>
         </q-btn>
 
-        <!-- Edit UWP Button -->
+        <!-- Edit UWP Button - Show when has_target_period is true AND status is NOT "Calibrated/Validated Target" -->
         <q-btn
+          v-if="
+            apiResponseData?.employee &&
+            apiResponseData.employee.has_target_period &&
+            !isCalibratedStatus
+          "
           color="blue-9"
           icon="edit"
           label="Edit UWP"
-          :disable="!selectedYear || !selectedSemester || !apiResponseData?.employee"
+          :disable="!selectedYear || !selectedSemester"
           :loading="editingUwp"
           @click="handleEditUwp"
           unelevated
@@ -94,11 +99,25 @@
           <q-tooltip v-if="!selectedYear || !selectedSemester">
             Select a year and semester first
           </q-tooltip>
-          <q-tooltip v-else-if="!apiResponseData?.employee"> No employee data available </q-tooltip>
           <q-tooltip v-else>
             Edit Unit Work Plan for {{ apiResponseData.employee.name }}
           </q-tooltip>
         </q-btn>
+
+        <!-- Status Badge - Show when calibrated/validated -->
+        <div
+          v-if="
+            apiResponseData?.employee &&
+            apiResponseData.employee.has_target_period &&
+            isCalibratedStatus
+          "
+          class="full-width text-center"
+        >
+          <q-badge color="green-7" text-color="white" class="q-pa-sm" style="font-size: 14px">
+            <q-icon name="check_circle" size="sm" class="q-mr-xs" />
+            {{ apiResponseData.employee.existing_target_period?.status }}
+          </q-badge>
+        </div>
       </div>
     </div>
 
@@ -441,6 +460,15 @@ export default {
 
     managerialSignatoryData() {
       return this.apiResponseData?.employee?.managerialSignatory || null
+    },
+
+    // New computed property to check if status is calibrated/validated
+    isCalibratedStatus() {
+      if (!this.apiResponseData?.employee?.existing_target_period?.status) return false
+      const status = this.apiResponseData.employee.existing_target_period.status
+        .toLowerCase()
+        .trim()
+      return status === 'calibrated/validated target' || status === 'calibrated/validated'
     },
   },
 
@@ -805,22 +833,42 @@ export default {
   },
 
   async mounted() {
+    // Load user data if not loaded
     if (!this.userStore.user) {
       await this.userStore.loadUserData()
     }
 
+    // Fetch target periods if not available
     if (!this.libStore.targetPeriods || this.libStore.targetPeriods.length === 0) {
       await this.libStore.fetchTargetPeriods()
     }
 
-    if (this.yearOptions.length > 0) {
-      this.selectedYear = this.yearOptions[0]
+    // Set default target period to the latest
+    if (this.libStore.targetPeriods && this.libStore.targetPeriods.length > 0) {
+      // Get the latest year
+      const years = [...new Set(this.libStore.targetPeriods.map((tp) => String(tp.year)))].sort(
+        (a, b) => Number(b) - Number(a),
+      )
 
-      await this.$nextTick()
+      if (years.length > 0) {
+        this.selectedYear = years[0]
 
-      if (this.semesterOptionsForYear.length > 0) {
-        this.selectedSemester = this.semesterOptionsForYear[0]
-        await this.fetchEmployeeData()
+        // Get semesters for this year
+        const semesters = this.libStore.targetPeriods
+          .filter((tp) => String(tp.year) === this.selectedYear)
+          .map((tp) => tp.semester)
+
+        // Prefer July-December if available, otherwise January-June
+        if (semesters.includes('July-December')) {
+          this.selectedSemester = 'July-December'
+        } else if (semesters.includes('January-June')) {
+          this.selectedSemester = 'January-June'
+        }
+
+        // Fetch employee data
+        if (this.selectedYear && this.selectedSemester) {
+          await this.fetchEmployeeData()
+        }
       }
     }
 

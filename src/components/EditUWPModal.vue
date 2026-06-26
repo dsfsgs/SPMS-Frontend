@@ -636,9 +636,28 @@
                                       clearable
                                       @update:model-value="
                                         async (value) => {
+                                          // Ensure value is stored as an array of IDs
+                                          if (value !== null && value !== undefined) {
+                                            // If value is an object, extract the ID
+                                            if (typeof value === 'object' && value !== null) {
+                                              const id = value.id || value.value
+                                              standard.indicatorName = id ? [Number(id)] : []
+                                            } else {
+                                              // Value should be the ID
+                                              const id = Number(value)
+                                              standard.indicatorName = !isNaN(id) ? [id] : []
+                                            }
+                                          } else {
+                                            standard.indicatorName = []
+                                          }
+
                                           generateSuccessIndicator(index)
-                                          const std = currentEmployee.performanceStandards[index]
-                                          if (std?.rows?.mfo && !isCurrentEmployeeOfficeHead) {
+                                          const std =
+                                            currentEmployee.value.performanceStandards[index]
+                                          if (
+                                            std?.rows?.mfo &&
+                                            !isCurrentEmployeeOfficeHead.value
+                                          ) {
                                             if (value) {
                                               await checkAndApplyRestriction(index)
                                             } else {
@@ -650,12 +669,15 @@
                                     >
                                       <template #prepend><q-icon name="flag" size="xs" /></template>
                                       <template #selected-item="scope">
-                                        {{ getIndicatorNameFromId(scope.opt) }}
+                                        <span>{{ getIndicatorNameFromId(scope.opt) }}</span>
                                       </template>
                                       <template #option="scope">
                                         <q-item v-bind="scope.itemProps" dense>
                                           <q-item-section>
                                             <q-item-label>{{ scope.opt.name }}</q-item-label>
+                                            <q-item-label caption v-if="scope.opt.description">
+                                              {{ scope.opt.description }}
+                                            </q-item-label>
                                           </q-item-section>
                                         </q-item>
                                       </template>
@@ -1502,6 +1524,38 @@ export default {
       return isSupportCategory(standard.rows.category)
     }
 
+    const getIndicatorDisplayName = (indicatorValue) => {
+      if (!indicatorValue) return ''
+
+      // If it's an array, get the first element
+      let value = indicatorValue
+      if (Array.isArray(value)) {
+        if (value.length === 0) return ''
+        value = value[0]
+      }
+
+      // If it's a number or numeric string, look up by ID
+      const id = Number(value)
+      if (!isNaN(id)) {
+        const verb = officeLibraryIndicatorStore.verbs?.find((v) => Number(v.id) === id)
+        if (verb) {
+          return verb.indicator_name || verb.name || String(id)
+        }
+      }
+
+      // If it's a string, return it
+      if (typeof value === 'string') {
+        return value
+      }
+
+      // If it's an object, try to get name
+      if (typeof value === 'object' && value !== null) {
+        return value.name || value.indicator_name || value.label || ''
+      }
+
+      return String(value)
+    }
+
     // ===========================================================================
     // 6. LABEL RESOLVERS
     // ===========================================================================
@@ -1820,13 +1874,39 @@ export default {
       })
     })
 
-    const getIndicatorNameFromId = (id) => {
-      if (!id) return ''
-      // If it's already a string (name), return it
-      if (typeof id === 'string' && isNaN(id)) return id
-      // Find the verb by ID
-      const verb = officeLibraryIndicatorStore.verbs?.find((v) => v.id === Number(id))
-      return verb?.indicator_name || verb?.name || String(id)
+    const getIndicatorNameFromId = (idOrText) => {
+      if (!idOrText) return ''
+
+      // If it's an array, get the first element
+      if (Array.isArray(idOrText)) {
+        idOrText = idOrText[0]
+        if (!idOrText) return ''
+      }
+
+      // If it's an object, try to extract name
+      if (typeof idOrText === 'object' && idOrText !== null) {
+        return idOrText.name || idOrText.indicator_name || idOrText.label || ''
+      }
+
+      // If it's a string that's not a number (text), return it
+      if (typeof idOrText === 'string' && isNaN(idOrText)) {
+        return idOrText
+      }
+
+      // Try to look up by ID
+      try {
+        const id = Number(idOrText)
+        if (!isNaN(id)) {
+          const verb = officeLibraryIndicatorStore.verbs?.find((v) => Number(v.id) === id)
+          if (verb) {
+            return verb.indicator_name || verb.name || String(id)
+          }
+        }
+      } catch (e) {
+        console.warn('Error looking up indicator:', e)
+      }
+
+      return String(idOrText)
     }
 
     // ===========================================================================
@@ -2405,11 +2485,11 @@ export default {
           })
         }
 
-        // Map to dropdown format
+        // Map to dropdown format - ensure value is always a number ID
         let mapped = verbs.map((verb) => ({
-          id: verb.id,
+          id: Number(verb.id),
           name: verb.indicator_name || verb.name,
-          value: verb.id,
+          value: Number(verb.id),
           category: verb.category,
           description: verb.description || '',
         }))
@@ -2428,35 +2508,54 @@ export default {
     }
 
     const filterIndicatorsByCategory = (categoryId, index) => {
+      if (!categoryId) {
+        filteredIndicatorsByCategory.value[index] = []
+        filteredVerbs.value = []
+        return
+      }
+
       const verbs = officeLibraryIndicatorStore.verbs || []
 
       // Store the filtered indicators for this standard
-      filteredIndicatorsByCategory.value[index] = verbs
+      const filtered = verbs
         .filter((verb) => {
           return verb.category && verb.category.id === categoryId
         })
         .map((verb) => ({
-          id: verb.id,
+          id: Number(verb.id),
           name: verb.indicator_name || verb.name || '',
+          value: Number(verb.id),
           category: verb.category,
           description: verb.description || '',
         }))
 
-      // Also update filteredVerbs for the dropdown
+      filteredIndicatorsByCategory.value[index] = filtered
+
+      // Update filteredVerbs for the dropdown
       const std = currentEmployee.value?.performanceStandards?.[index]
       if (std) {
-        // When category changes, update the dropdown options
-        const verbsForDropdown = officeLibraryIndicatorStore.verbs || []
-        const filtered = verbsForDropdown
-          .filter((verb) => verb.category && verb.category.id === categoryId)
-          .map((verb) => ({
-            id: verb.id,
-            name: verb.indicator_name || verb.name,
-            value: verb.id,
-            category: verb.category,
-            description: verb.description || '',
-          }))
         filteredVerbs.value = filtered
+
+        // Ensure the selected indicator is in the list
+        if (std.indicatorName && std.indicatorName.length > 0) {
+          const selectedId = Number(std.indicatorName[0])
+          if (!isNaN(selectedId)) {
+            const exists = filtered.some((v) => v.id === selectedId)
+            if (!exists) {
+              // Find the verb by ID and add it
+              const verb = verbs.find((v) => Number(v.id) === selectedId)
+              if (verb) {
+                filteredVerbs.value.push({
+                  id: Number(verb.id),
+                  name: verb.indicator_name || verb.name,
+                  value: Number(verb.id),
+                  category: verb.category,
+                  description: verb.description || '',
+                })
+              }
+            }
+          }
+        }
       }
     }
 
@@ -2516,18 +2615,20 @@ export default {
         if (Array.isArray(std.indicatorName) && std.indicatorName.length > 0) {
           const names = std.indicatorName
             .map((idOrText) => {
-              if (typeof idOrText === 'number' || !isNaN(idOrText)) {
-                const verb = officeLibraryIndicatorStore.verbs.find(
-                  (v) => v.id === Number(idOrText),
-                )
+              // If it's a number or numeric string, look up by ID
+              const id = Number(idOrText)
+              if (!isNaN(id)) {
+                const verb = officeLibraryIndicatorStore.verbs.find((v) => Number(v.id) === id)
                 return verb?.indicator_name || verb?.name || ''
               }
-              return idOrText
+              // Otherwise return the text
+              return String(idOrText)
             })
             .filter(Boolean)
           if (names.length === 1) indicatorPart = names[0]
           else if (names.length === 2) indicatorPart = names.join(' and ')
-          else indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+          else if (names.length > 2)
+            indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
         }
         const effectPart = getEffectivenessComponent(i)
         const timePart = getTimelinessComponent(i)
@@ -2910,7 +3011,7 @@ export default {
               }
 
               // ================================================================
-              // FIX: Get the indicator ID and category from the first indicator
+              // FIX: Get the indicator ID from the first indicator
               // ================================================================
               let indicatorIds = []
               let indicatorCategory = null
@@ -2920,15 +3021,23 @@ export default {
                 // Get the FIRST indicator only
                 const firstIndicator = String(ps.performance_indicator[0]).trim()
 
-                // Find the verb by name
-                const verb = verbs.find((v) => {
+                // Try to find by name first
+                let verb = verbs.find((v) => {
                   const verbName = (v.indicator_name || v.name || '').toLowerCase().trim()
                   return verbName === firstIndicator.toLowerCase()
                 })
 
+                // If not found by name, try by ID
+                if (!verb) {
+                  const id = Number(firstIndicator)
+                  if (!isNaN(id)) {
+                    verb = verbs.find((v) => Number(v.id) === id)
+                  }
+                }
+
                 if (verb) {
-                  // Store the ID
-                  indicatorIds = [verb.id]
+                  // Store the ID as a number
+                  indicatorIds = [Number(verb.id)]
                   // Get the category
                   if (verb.category) {
                     indicatorCategory = verb.category.id
@@ -3010,7 +3119,7 @@ export default {
                 expanded: true,
                 outputName: ps.output_name || '',
                 indicatorCategory: indicatorCategory,
-                indicatorName: indicatorIds, // Only the first indicator ID
+                indicatorName: indicatorIds, // This is now an array of IDs
                 successIndicator: ps.success_indicator || '',
                 requiredOutput: ps.required_output || '',
                 modeOfVerification: '',
@@ -3082,17 +3191,17 @@ export default {
             verbOptions = verbs
               .filter((verb) => verb.category && verb.category.id === std.indicatorCategory)
               .map((verb) => ({
-                id: verb.id,
+                id: Number(verb.id),
                 name: verb.indicator_name || verb.name,
-                value: verb.id,
+                value: Number(verb.id),
                 category: verb.category,
                 description: verb.description || '',
               }))
           } else {
             verbOptions = verbs.map((verb) => ({
-              id: verb.id,
+              id: Number(verb.id),
               name: verb.indicator_name || verb.name,
-              value: verb.id,
+              value: Number(verb.id),
               category: verb.category,
               description: verb.description || '',
             }))
@@ -3107,20 +3216,21 @@ export default {
             // CRITICAL: Ensure the selected indicator is in filteredVerbs
             // If the indicator ID is not in the options, add it
             if (std.indicatorName && std.indicatorName.length > 0) {
-              const selectedId = std.indicatorName[0]
-              const exists = verbOptions.some((v) => v.id === selectedId)
-
-              if (!exists && typeof selectedId === 'number') {
-                // Find the verb by ID
-                const verb = verbs.find((v) => v.id === selectedId)
-                if (verb) {
-                  filteredVerbs.value.push({
-                    id: verb.id,
-                    name: verb.indicator_name || verb.name,
-                    value: verb.id,
-                    category: verb.category,
-                    description: verb.description || '',
-                  })
+              const selectedId = Number(std.indicatorName[0])
+              if (!isNaN(selectedId)) {
+                const exists = verbOptions.some((v) => v.id === selectedId)
+                if (!exists) {
+                  // Find the verb by ID
+                  const verb = verbs.find((v) => Number(v.id) === selectedId)
+                  if (verb) {
+                    filteredVerbs.value.push({
+                      id: Number(verb.id),
+                      name: verb.indicator_name || verb.name,
+                      value: Number(verb.id),
+                      category: verb.category,
+                      description: verb.description || '',
+                    })
+                  }
                 }
               }
             }
@@ -3320,27 +3430,49 @@ export default {
           category: s.indicatorCategory,
         })),
       (categories) => {
-        categories?.forEach(({ category }) => {
+        if (!categories) return
+        categories.forEach(({ index, category }) => {
           if (category) {
             // When category changes, filter verbs by that category
             const verbs = officeLibraryIndicatorStore.verbs || []
             const filtered = verbs
               .filter((verb) => verb.category && verb.category.id === category)
               .map((verb) => ({
-                id: verb.id,
+                id: Number(verb.id),
                 name: verb.indicator_name || verb.name,
-                value: verb.id,
+                value: Number(verb.id),
                 category: verb.category,
                 description: verb.description || '',
               }))
             filteredVerbs.value = filtered
+
+            // Ensure the selected indicator is in the list
+            const std = currentEmployee.value?.performanceStandards?.[index]
+            if (std?.indicatorName?.length > 0) {
+              const selectedId = Number(std.indicatorName[0])
+              if (!isNaN(selectedId)) {
+                const exists = filtered.some((v) => v.id === selectedId)
+                if (!exists) {
+                  const verb = verbs.find((v) => Number(v.id) === selectedId)
+                  if (verb) {
+                    filteredVerbs.value.push({
+                      id: Number(verb.id),
+                      name: verb.indicator_name || verb.name,
+                      value: Number(verb.id),
+                      category: verb.category,
+                      description: verb.description || '',
+                    })
+                  }
+                }
+              }
+            }
           } else {
             // If no category selected, show all verbs
             const verbs = officeLibraryIndicatorStore.verbs || []
             filteredVerbs.value = verbs.map((verb) => ({
-              id: verb.id,
+              id: Number(verb.id),
               name: verb.indicator_name || verb.name,
-              value: verb.id,
+              value: Number(verb.id),
               category: verb.category,
               description: verb.description || '',
             }))
@@ -3506,6 +3638,7 @@ export default {
       indicatorCategoryOptions,
       filterIndicatorsByCategory,
       getFilteredIndicatorsByCategory,
+      getIndicatorDisplayName,
 
       // Computed
       breadcrumbDisplay,

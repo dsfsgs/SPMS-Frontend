@@ -15,7 +15,8 @@
               emit-value
               map-options
               @update:model-value="onSemesterChange"
-              class="col"
+              class="col-8"
+              style="min-width: 200px; flex: 3"
             >
               <template v-slot:prepend>
                 <q-icon name="calendar_view_month" size="xs" />
@@ -31,7 +32,8 @@
               emit-value
               map-options
               @update:model-value="onYearChange"
-              class="col"
+              class="col-4"
+              style="min-width: 120px; flex: 1"
             >
               <template v-slot:prepend>
                 <q-icon name="event" size="xs" />
@@ -265,7 +267,7 @@
                       color="grey"
                     />
                   </div>
-                  <div>
+                  <!-- <div>
                     <span class="text-caption"
                       >In Progress:
                       <strong class="text-info">{{ ipTasksStatus?.In_Progress ?? 0 }}</strong></span
@@ -275,7 +277,7 @@
                       :value="(ipTasksStatus?.In_Progress ?? 0) / (ipTasksStatus?.total_ip || 1)"
                       color="info"
                     />
-                  </div>
+                  </div> -->
                 </div>
               </div>
             </q-card-section>
