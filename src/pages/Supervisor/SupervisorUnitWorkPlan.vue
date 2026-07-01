@@ -2763,54 +2763,60 @@ export default {
         uwpStore.value.setUWPData(uwpData.value)
         uwpStore.value.setFormData(form.value)
 
+        // Build the employee data with performance standards
+        const employeeData = {
+          ...currentEmployee.value,
+          employeeId: currentEmployee.value.employeeId,
+          supervisory_control_no: currentEmployee.value.supervisorySignatory?.controlNo || null,
+          performanceStandards: currentEmployee.value.performanceStandards.map((std) => ({
+            ...std,
+            outputName: std.outputName || '',
+            requiredOutput: std.requiredOutput || '',
+            indicatorName: Array.isArray(std.indicatorName)
+              ? std.indicatorName
+              : std.indicatorName
+                ? [std.indicatorName]
+                : [],
+            rows: {
+              category: std.rows?.category || null,
+              mfo: std.rows?.mfo || null,
+              output: std.rows?.output || null,
+              supervisory_control_no: std.rows?.supervisory_control_no || null,
+            },
+            activeTimelinessInputs: std.activeTimelinessInputs || {
+              range: true,
+              date: false,
+              description: false,
+            },
+            timelinessInputs: std.timelinessInputs || {
+              range: true,
+              date: false,
+              description: false,
+            },
+            competencies: {
+              core: std.competencies?.core || [],
+              technical: std.competencies?.technical || [],
+              leadership: std.competencies?.leadership || [],
+            },
+            quantityRestriction: std.quantityRestriction || null,
+            targetOutputValue: std.targetOutputValue || null,
+            quantityIndicatorType: std.quantityIndicatorType || 'numeric',
+            timelinessIndicatorType: std.timelinessIndicatorType || 'beforeDeadline',
+          })),
+        }
+
+        // FIX: Use 'employees' as an array instead of 'employee'
         const submissionData = {
           uwpData: uwpData.value,
           form: {
             semester: uwpData.value.targetPeriod?.semester || '',
             year: uwpData.value.targetPeriod?.year || new Date().getFullYear(),
           },
-          employee: {
-            ...currentEmployee.value,
-            employeeId: currentEmployee.value.employeeId,
-            supervisory_control_no: currentEmployee.value.supervisorySignatory?.controlNo || null,
-            performanceStandards: currentEmployee.value.performanceStandards.map((std) => ({
-              ...std,
-              outputName: std.outputName || '',
-              requiredOutput: std.requiredOutput || '',
-              indicatorName: Array.isArray(std.indicatorName)
-                ? std.indicatorName
-                : std.indicatorName
-                  ? [std.indicatorName]
-                  : [],
-              rows: {
-                category: std.rows?.category || null,
-                mfo: std.rows?.mfo || null,
-                output: std.rows?.output || null,
-                supervisory_control_no: std.rows?.supervisory_control_no || null,
-              },
-              activeTimelinessInputs: std.activeTimelinessInputs || {
-                range: true,
-                date: false,
-                description: false,
-              },
-              timelinessInputs: std.timelinessInputs || {
-                range: true,
-                date: false,
-                description: false,
-              },
-              competencies: {
-                core: std.competencies?.core || [],
-                technical: std.competencies?.technical || [],
-                leadership: std.competencies?.leadership || [],
-              },
-              quantityRestriction: std.quantityRestriction || null,
-              targetOutputValue: std.targetOutputValue || null,
-              quantityIndicatorType: std.quantityIndicatorType || 'numeric',
-              timelinessIndicatorType: std.timelinessIndicatorType || 'beforeDeadline',
-            })),
-          },
+          employees: [employeeData], // <-- CHANGED: wrap in array
           timestamp: new Date().toISOString(),
         }
+
+        console.log('[UWP] Submitting data with employees array:', submissionData)
 
         await uwpStore.value.saveUWP(
           submissionData,
