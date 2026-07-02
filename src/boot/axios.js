@@ -5,11 +5,11 @@ import axios from 'axios'
 const api = axios.create({
   // baseURL: 'http://10.0.2.81:8000/api',
   // baseURL: 'http://192.168.8.80:8000/api',
-  baseURL: 'http://127.0.0.1:8000/api',
+  // baseURL: 'http://127.0.0.1:8000/api',
   // baseURL: ' http://10.0.1.35:3000/api',
   // baseURL: 'http://10.0.1.35:84',
   // baseURL: 'http://192.168.8.80:8000/api',
-  // baseURL: 'http://192.168.8.182:9000/api',
+  baseURL: 'http://192.168.8.182:9000/api',
 
   headers: {
     Accept: 'application/json',

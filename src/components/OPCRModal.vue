@@ -53,12 +53,10 @@
 
           <!-- Commitment Statement -->
           <div class="commitment-container q-mt-md">
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000">
+            <table class="commitment-table">
               <tbody>
                 <tr>
-                  <td
-                    style="width: 100%; padding: 8px; border: 1px solid #000; vertical-align: top"
-                  >
+                  <td class="commitment-cell">
                     I, <b>{{ opcrData.name }}</b
                     >, {{ employee?.position || 'N/A' }} of the {{ employee?.office || 'N/A' }},
                     commit to deliver and agree to be rated on the attainment of the following
@@ -67,8 +65,8 @@
                     >.
 
                     <!-- Signatory Info Bottom Right -->
-                    <div style="margin-top: 20px; text-align: right; padding-right: 200px">
-                      <div style="display: inline-block; text-align: left">
+                    <div class="commitment-signatory">
+                      <div class="commitment-signatory-block">
                         <div>{{ opcrData.name }}</div>
                         <div>{{ employee?.position || 'N/A' }}</div>
                         <div>Date: {{ currentDate }}</div>
@@ -79,47 +77,20 @@
 
                 <!-- Approval Section -->
                 <tr>
-                  <td style="width: 100%; padding: 0; border: 1px solid #000">
-                    <table style="width: 100%; border-collapse: collapse">
+                  <td class="approval-outer-cell">
+                    <table class="approval-table">
                       <tbody>
                         <tr>
-                          <th
-                            style="
-                              padding: 8px;
-                              width: 50%;
-                              border-right: 1px solid #000;
-                              text-align: left;
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            Approved by:
-                          </th>
-                          <th
-                            style="
-                              padding: 8px;
-                              width: 50%;
-                              text-align: center;
-                              border-bottom: 1px solid #000;
-                            "
-                          >
-                            Date
-                          </th>
+                          <th class="approval-head approval-head-left">Approved by:</th>
+                          <th class="approval-head approval-head-right text-center">Date</th>
                         </tr>
                         <tr>
-                          <td
-                            style="
-                              padding: 8px;
-                              border-right: 1px solid #000;
-                              text-align: center;
-                              height: 80px;
-                              vertical-align: bottom;
-                            "
-                          >
-                            <div style="font-weight: bold; font-size: 1.1em">REY T. UY</div>
-                            <hr style="margin: 5px 0; border-top: 1px solid #000" />
+                          <td class="approval-signatory">
+                            <div class="signatory-name">REY T. UY</div>
+                            <hr class="signatory-line" />
                             <div>City Mayor</div>
                           </td>
-                          <td style="text-align: center"></td>
+                          <td class="text-center"></td>
                         </tr>
                       </tbody>
                     </table>
@@ -130,96 +101,56 @@
           </div>
 
           <!-- Rating Scale Table -->
-          <div style="display: flex; justify-content: flex-end; margin-top: 20px">
-            <table
-              class="rating-scale-table"
-              style="border: 1px solid #000; border-collapse: collapse; width: auto"
-            >
+          <div class="rating-scale-wrap">
+            <table class="rating-scale-table">
               <tbody>
                 <tr>
-                  <td style="border: 1px solid #000; padding: 6px 14px; min-width: 180px">
-                    Outstanding
-                  </td>
-                  <td
-                    style="
-                      border: 1px solid #000;
-                      padding: 6px 14px;
-                      text-align: center;
-                      min-width: 50px;
-                    "
-                  >
-                    5
-                  </td>
+                  <td class="rating-scale-label">Outstanding</td>
+                  <td class="rating-scale-value">5</td>
                 </tr>
                 <tr>
-                  <td style="border: 1px solid #000; padding: 6px 14px">Very Satisfactory</td>
-                  <td style="border: 1px solid #000; padding: 6px 14px; text-align: center">4</td>
+                  <td class="rating-scale-label">Very Satisfactory</td>
+                  <td class="rating-scale-value">4</td>
                 </tr>
                 <tr>
-                  <td style="border: 1px solid #000; padding: 6px 14px">Satisfactory</td>
-                  <td style="border: 1px solid #000; padding: 6px 14px; text-align: center">3</td>
+                  <td class="rating-scale-label">Satisfactory</td>
+                  <td class="rating-scale-value">3</td>
                 </tr>
                 <tr>
-                  <td style="border: 1px solid #000; padding: 6px 14px">Unsatisfactory</td>
-                  <td style="border: 1px solid #000; padding: 6px 14px; text-align: center">2</td>
+                  <td class="rating-scale-label">Unsatisfactory</td>
+                  <td class="rating-scale-value">2</td>
                 </tr>
                 <tr>
-                  <td style="border: 1px solid #000; padding: 6px 14px">Poor</td>
-                  <td style="border: 1px solid #000; padding: 6px 14px; text-align: center">1</td>
+                  <td class="rating-scale-label">Poor</td>
+                  <td class="rating-scale-value">1</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <!-- Main OPCR Table -->
-          <table class="opcr-table q-mt-md" style="border-collapse: collapse; width: 100%">
+          <table class="opcr-table full-width q-mt-md" style="table-layout: fixed">
             <thead>
               <tr>
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
-                  MFO
-                </th>
-
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
+                <th rowspan="2" class="text-center col-mfo">MFO</th>
+                <th rowspan="2" class="text-center col-competency">
                   REQUIRED COMPETENCY &<br />PROFICIENCY LEVEL
                 </th>
-
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
-                  SUCCESS INDICATOR
-                </th>
-
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
-                  ALLOTED BUDGET
-                </th>
-
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
+                <th rowspan="2" class="text-center col-success">SUCCESS INDICATOR</th>
+                <th rowspan="2" class="text-center col-budget">ALLOTED BUDGET</th>
+                <th rowspan="2" class="text-center col-accountable">
                   DIVISION/ INDIVIDUAL ACCOUNTABLE
                 </th>
-
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
-                  ACTUAL ACCOMPLISHMENT
-                </th>
-
-                <th colspan="4" style="width: 11.11%; text-align: center; vertical-align: middle">
-                  RATING
-                </th>
-
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
-                  PROFICIENCY RESULT
-                </th>
-
-                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
-                  REMARKS
-                </th>
+                <th rowspan="2" class="text-center col-accomplishment">ACTUAL ACCOMPLISHMENT</th>
+                <th colspan="4" class="text-center">RATING</th>
+                <th rowspan="2" class="text-center col-proficiency">PROFICIENCY RESULT</th>
+                <th rowspan="2" class="text-center col-remarks">REMARKS</th>
               </tr>
-
               <tr>
-                <th style="width: 2.78%; text-align: center; vertical-align: middle">Q</th>
-
-                <th style="width: 2.78%; text-align: center; vertical-align: middle">E</th>
-
-                <th style="width: 2.78%; text-align: center; vertical-align: middle">T</th>
-
-                <th style="width: 2.78%; text-align: center; vertical-align: middle">A</th>
+                <th class="text-center col-rating">Q</th>
+                <th class="text-center col-rating">E</th>
+                <th class="text-center col-rating">T</th>
+                <th class="text-center col-rating">A</th>
               </tr>
             </thead>
 
@@ -227,143 +158,112 @@
               <!-- Render categories dynamically -->
               <template v-for="(category, index) in categories" :key="index">
                 <tr>
-                  <td colspan="12" class="section-header" style="border: 1px solid black">
+                  <td colspan="12" class="section-header">
                     {{ category }}
                   </td>
                 </tr>
 
                 <!-- Render performance standards for this category -->
                 <tr v-for="standard in getStandardsByCategory(category)" :key="standard.id">
-                  <td style="padding: 4px">
+                  <td>
                     <b>{{ standard.mfo || 'N/A' }}</b>
                   </td>
-                  <td style="padding: 4px">
-                    <div v-html="formatCompetencies(standard)"></div>
+                  <td>
+                    <div class="competency-list">
+                      <div v-html="formatCompetencies(standard)"></div>
+                    </div>
                   </td>
-                  <td style="padding: 4px">
-                    {{ standard.success_indicator || 'N/A' }}
-                  </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.budget || '-' }}
-                  </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.accountable || '-' }}
-                  </td>
-                  <td style="padding: 4px">
-                    {{ standard.opcr_accomplishment?.accomplishment || '-' }}
-                  </td>
-                  <td style="text-align: center; padding: 4px">
+                  <td>{{ standard.success_indicator || 'N/A' }}</td>
+                  <td class="text-center">{{ standard.opcr?.budget || '-' }}</td>
+                  <td class="text-center">{{ standard.opcr?.accountable || '-' }}</td>
+                  <td>{{ standard.opcr_accomplishment?.accomplishment || '-' }}</td>
+                  <td class="text-center">
                     {{ standard.opcr_accomplishment?.ratings?.quantity_rating || '-' }}
                   </td>
-                  <td style="text-align: center; padding: 4px">
+                  <td class="text-center">
                     {{ standard.opcr_accomplishment?.ratings?.effectiveness_rating || '-' }}
                   </td>
-                  <td style="text-align: center; padding: 4px">
+                  <td class="text-center">
                     {{ standard.opcr_accomplishment?.ratings?.timeliness_rating || '-' }}
                   </td>
-                  <td style="text-align: center; padding: 4px">
+                  <td class="text-center">
                     {{ standard.opcr_accomplishment?.ratings?.average_rating || '-' }}
                   </td>
-                  <td style="padding: 4px">
-                    <div v-html="formatProficiencyResult(standard)"></div>
+                  <td>
+                    <div class="competency-list">
+                      <div v-html="formatProficiencyResult(standard)"></div>
+                    </div>
                   </td>
-                  <td style="padding: 4px">
-                    {{ standard.opcr?.remarks || '' }}
-                  </td>
+                  <td>{{ standard.opcr?.remarks || '' }}</td>
                 </tr>
               </template>
 
               <!-- Average Rating Section by Category -->
               <tr>
-                <th colspan="2" style="padding: 8px">Category</th>
-                <th colspan="10" style="padding: 8px; text-align: center">
-                  COMPETENCY ASSESSMENT (Subjective)
-                </th>
+                <th colspan="2">Category</th>
+                <th colspan="10" class="text-center">COMPETENCY ASSESSMENT (Subjective)</th>
               </tr>
 
-              <!-- Strategic Functions (if exists) -->
-              <!-- <tr v-if="hasCategoryData('A. STRATEGIC FUNCTION')"> -->
-                <tr>
-                <td style="padding: 8px"><b>Strategic Functions:</b></td>
-                <td style="padding: 8px; text-align: center">
+              <tr>
+                <td><b>Strategic Functions:</b></td>
+                <td class="text-center">
                   <b>{{ opcrData.average_rating?.strategic_functions ?? '0' }}</b>
                 </td>
-                <td rowspan="5" colspan="10" style="padding: 8px; text-align: center"></td>
+                <td rowspan="5" colspan="10" class="text-center"></td>
               </tr>
 
-              <!-- Core Functions (if exists) -->
-              <!-- <tr v-if="hasCategoryData('B. CORE FUNCTION')"> -->
               <tr>
-                <td style="padding: 8px"><b>Core Functions:</b></td>
-                <td style="padding: 8px; text-align: center">
-                  <!-- <b>{{ calculateCategoryRating('B. CORE FUNCTION') }}</b> -->
-                <b>{{ opcrData.average_rating?.core_functions ?? '0' }}</b>
+                <td><b>Core Functions:</b></td>
+                <td class="text-center">
+                  <b>{{ opcrData.average_rating?.core_functions ?? '0' }}</b>
                 </td>
               </tr>
 
-              <!-- Support Functions (if exists) -->
-              <!-- <tr v-if="hasCategoryData('C. SUPPORT FUNCTION')"> -->
-                <tr>
-                <td style="padding: 8px"><b>Support Functions:</b></td>
-                <td style="padding: 8px; text-align: center">
+              <tr>
+                <td><b>Support Functions:</b></td>
+                <td class="text-center">
                   <b>{{ opcrData.average_rating?.support_functions ?? '0' }}</b>
                 </td>
               </tr>
 
               <!-- Final Rating -->
               <tr>
-                <td style="padding: 8px"><b>Final Rating:</b></td>
-                <td style="padding: 8px; text-align: center">
-                  <b>{{  opcrData.average_rating?.final_rating }}</b>
+                <td><b>Final Rating:</b></td>
+                <td class="text-center">
+                  <b>{{ opcrData.average_rating?.final_rating }}</b>
                 </td>
               </tr>
 
               <!-- Adjectival Rating -->
               <tr>
-                <td style="padding: 8px"><b>Adjectival Rating:</b></td>
-                <td style="padding: 8px; text-align: center">
-                  <b>{{  opcrData.average_rating?.adjectival_rating }}</b>
+                <td><b>Adjectival Rating:</b></td>
+                <td class="text-center">
+                  <b>{{ opcrData.average_rating?.adjectival_rating }}</b>
                 </td>
               </tr>
 
               <!-- Signatory Section -->
               <tr>
                 <td colspan="12" style="padding: 0">
-                  <table
-                    style="width: 100%; border-collapse: collapse; border-top: 1px solid black"
-                  >
+                  <table class="signatory-table">
                     <tbody>
                       <tr>
-                        <td style="padding: 6px; border-right: none; width: 50%">
+                        <td class="signatory-head">
                           <b>Assessed by:</b>
                         </td>
-                        <td style="padding: 6px; width: 50%">
+                        <td class="signatory-head">
                           <b>Final Rating by:</b>
                         </td>
                       </tr>
                       <tr>
-                        <td
-                          style="
-                            text-align: center;
-                            vertical-align: bottom;
-                            padding-top: 60px;
-                            width: 50%;
-                          "
-                        >
-                          <div style="font-weight: bold">{{ employee?.supervisor || 'N/A' }}</div>
-                          <div style="border-top: 1px solid black; margin-bottom: 3px"></div>
+                        <td class="signatory-block">
+                          <div class="signatory-name">{{ employee?.supervisor || 'N/A' }}</div>
+                          <div class="signatory-line"></div>
                           <div>Immediate Supervisor</div>
                         </td>
-                        <td
-                          style="
-                            text-align: center;
-                            vertical-align: bottom;
-                            padding-top: 60px;
-                            width: 50%;
-                          "
-                        >
-                          <div style="font-weight: bold">REY T. UY</div>
-                          <div style="border-top: 1px solid black; margin-bottom: 3px"></div>
+                        <td class="signatory-block">
+                          <div class="signatory-name">REY T. UY</div>
+                          <div class="signatory-line"></div>
                           <div>City Mayor</div>
                         </td>
                       </tr>
@@ -411,6 +311,15 @@ const initPdfMake = async () => {
     }
   }
   return pdfMake
+}
+
+// Single source of truth for PDF font sizes so every table section matches
+const PDF_FONT = {
+  header: 8,
+  sectionHeader: 8,
+  body: 8,
+  label: 8,
+  signature: 8,
 }
 
 const props = defineProps({
@@ -751,14 +660,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       {
         width: 'auto',
         stack: tagumLogoBase64
-          ? [
-              {
-                image: tagumLogoBase64,
-                width: 40,
-                alignment: 'center',
-                margin: [0, 10, 0, 10],
-              },
-            ]
+          ? [{ image: tagumLogoBase64, width: 40, alignment: 'center', margin: [0, 10, 0, 10] }]
           : [
               {
                 text: 'TAGUM LOGO',
@@ -774,19 +676,19 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
           {
             text: 'Republic of the Philippines',
             alignment: 'center',
-            fontSize: 10,
+            fontSize: PDF_FONT.body,
             margin: [0, 10, 0, 2],
           },
           {
             text: 'Province of Davao del Norte',
             alignment: 'center',
-            fontSize: 10,
+            fontSize: PDF_FONT.body,
             margin: [0, 0, 0, 2],
           },
           {
             text: 'CITY OF TAGUM',
             alignment: 'center',
-            fontSize: 10,
+            fontSize: PDF_FONT.body,
             bold: true,
             margin: [0, 0, 0, 10],
           },
@@ -795,14 +697,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       {
         width: 'auto',
         stack: rotpLogoBase64
-          ? [
-              {
-                image: rotpLogoBase64,
-                width: 40,
-                alignment: 'center',
-                margin: [0, 10, 0, 10],
-              },
-            ]
+          ? [{ image: rotpLogoBase64, width: 40, alignment: 'center', margin: [0, 10, 0, 10] }]
           : [
               {
                 text: 'ROTP LOGO',
@@ -845,7 +740,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
               { text: period, bold: true },
               { text: '.' },
             ],
-            fontSize: 9,
+            fontSize: PDF_FONT.body,
             margin: [5, 5, 5, 5],
             border: [true, true, true, false],
           },
@@ -867,27 +762,20 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       widths: ['*', '*'],
       body: [
         [
-          {
-            text: '',
-            border: [true, false, false, false],
-          },
+          { text: '', border: [true, false, false, false] },
           {
             stack: [
               {
                 text: employeeName,
                 bold: true,
-                fontSize: 9,
+                fontSize: PDF_FONT.body,
                 alignment: 'center',
                 margin: [0, 10, 0, 2],
               },
-              {
-                text: position,
-                fontSize: 8,
-                alignment: 'center',
-              },
+              { text: position, fontSize: PDF_FONT.body, alignment: 'center' },
               {
                 text: `Date: ${formatDate(new Date())}`,
-                fontSize: 8,
+                fontSize: PDF_FONT.body,
                 alignment: 'center',
               },
             ],
@@ -912,14 +800,14 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
         [
           {
             text: 'Approved by:',
-            fontSize: 9,
+            fontSize: PDF_FONT.body,
             bold: true,
             border: [true, true, true, true],
             margin: [5, 5, 5, 5],
           },
           {
             text: 'Date',
-            fontSize: 9,
+            fontSize: PDF_FONT.body,
             bold: true,
             alignment: 'left',
             border: [true, true, true, true],
@@ -932,28 +820,21 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
               {
                 text: 'REY T. UY',
                 bold: true,
-                fontSize: 9,
+                fontSize: PDF_FONT.body,
                 alignment: 'center',
                 margin: [0, 20, 0, 0],
               },
               {
                 text: '________________________________',
                 alignment: 'center',
-                fontSize: 9,
+                fontSize: PDF_FONT.body,
               },
-              {
-                text: 'City Mayor',
-                fontSize: 9,
-                alignment: 'center',
-              },
+              { text: 'City Mayor', fontSize: PDF_FONT.body, alignment: 'center' },
             ],
             border: [true, true, true, true],
             margin: [5, 5, 5, 5],
           },
-          {
-            text: '',
-            border: [true, true, true, true],
-          },
+          { text: '', border: [true, true, true, true] },
         ],
       ],
     },
@@ -967,6 +848,22 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   })
 
   // Rating Scale Table (aligned right)
+  const ratingScaleRow = (label, value) => [
+    {
+      text: label,
+      fontSize: PDF_FONT.body,
+      border: [true, true, true, true],
+      margin: [3, 3, 3, 3],
+    },
+    {
+      text: value,
+      fontSize: PDF_FONT.body,
+      alignment: 'center',
+      border: [true, true, true, true],
+      margin: [3, 3, 3, 3],
+    },
+  ]
+
   content.push({
     columns: [
       { width: '*', text: '' },
@@ -975,76 +872,11 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
         table: {
           widths: [100, 30],
           body: [
-            [
-              {
-                text: 'Outstanding',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '5',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              {
-                text: 'Very Satisfactory',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '4',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              {
-                text: 'Satisfactory',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '3',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              {
-                text: 'Unsatisfactory',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '2',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              { text: 'Poor', fontSize: 8, border: [true, true, true, true], margin: [3, 3, 3, 3] },
-              {
-                text: '1',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
+            ratingScaleRow('Outstanding', '5'),
+            ratingScaleRow('Very Satisfactory', '4'),
+            ratingScaleRow('Satisfactory', '3'),
+            ratingScaleRow('Unsatisfactory', '2'),
+            ratingScaleRow('Poor', '1'),
           ],
         },
         layout: {
@@ -1059,93 +891,30 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   })
 
   // Main OPCR Table
+  const headerCell = (text, opts = {}) => ({
+    text,
+    alignment: 'center',
+    fontSize: PDF_FONT.header,
+    bold: true,
+    fillColor: '#f2f2f2',
+    border: [true, true, true, true],
+    ...opts,
+  })
+
   const tableBody = [
-    // Header rows
     [
-      {
-        text: 'MFO',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'REQUIRED COMPETENCY &\nPROFICIENCY LEVEL',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'SUCCESS INDICATOR',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'ALLOTED BUDGET',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'DIVISION/\nINDIVIDUAL\nACCOUNTABLE',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'ACTUAL\nACCOMPLISHMENT',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'RATING',
-        colSpan: 4,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
+      headerCell('MFO', { rowSpan: 2 }),
+      headerCell('REQUIRED COMPETENCY &\nPROFICIENCY LEVEL', { rowSpan: 2 }),
+      headerCell('SUCCESS INDICATOR', { rowSpan: 2 }),
+      headerCell('ALLOTED BUDGET', { rowSpan: 2 }),
+      headerCell('DIVISION/\nINDIVIDUAL\nACCOUNTABLE', { rowSpan: 2 }),
+      headerCell('ACTUAL\nACCOMPLISHMENT', { rowSpan: 2 }),
+      headerCell('RATING', { colSpan: 4 }),
       {},
       {},
       {},
-      {
-        text: 'PROFICIENCY\nRESULT',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'REMARKS',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
+      headerCell('PROFICIENCY\nRESULT', { rowSpan: 2 }),
+      headerCell('REMARKS', { rowSpan: 2 }),
     ],
     [
       {},
@@ -1154,38 +923,10 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       {},
       {},
       {},
-      {
-        text: 'Q',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'E',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'T',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'A',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
+      headerCell('Q'),
+      headerCell('E'),
+      headerCell('T'),
+      headerCell('A'),
       {},
       {},
     ],
@@ -1193,12 +934,11 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
 
   // Add data rows for each category
   categories.value.forEach((category) => {
-    // Category header
     tableBody.push([
       {
         text: category,
         colSpan: 12,
-        fontSize: 9,
+        fontSize: PDF_FONT.sectionHeader,
         bold: true,
         fillColor: '#d9d9d9',
         border: [true, true, true, true],
@@ -1217,83 +957,29 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       {},
     ])
 
-    // Standards for this category
     const standards = getStandardsByCategory(category)
     standards.forEach((standard) => {
+      const bodyCell = (text, opts = {}) => ({
+        text,
+        fontSize: PDF_FONT.body,
+        border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
+        ...opts,
+      })
+
       tableBody.push([
-        {
-          text: standard.mfo || 'N/A',
-          fontSize: 7,
-          bold: true,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: formatCompetencies(standard),
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.success_indicator || 'N/A',
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.opcr?.budget || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.accountable || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.accomplishment || '-',
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.opcr?.rating_q || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.rating_e || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.rating_t || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.rating_a || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: formatProficiencyResult(standard),
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.opcr?.remarks || '',
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
+        bodyCell(standard.mfo || 'N/A', { bold: true }),
+        bodyCell(formatCompetencies(standard)),
+        bodyCell(standard.success_indicator || 'N/A'),
+        bodyCell(standard.opcr?.budget || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
+        bodyCell(standard.opcr?.accountable || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
+        bodyCell(standard.opcr?.accomplishment || '-'),
+        bodyCell(standard.opcr?.rating_q || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
+        bodyCell(standard.opcr?.rating_e || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
+        bodyCell(standard.opcr?.rating_t || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
+        bodyCell(standard.opcr?.rating_a || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
+        bodyCell(formatProficiencyResult(standard)),
+        bodyCell(standard.opcr?.remarks || ''),
       ])
     })
   })
@@ -1303,7 +989,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
     {
       text: 'Category',
       colSpan: 2,
-      fontSize: 8,
+      fontSize: PDF_FONT.label,
       bold: true,
       border: [true, true, true, true],
       margin: [3, 3, 3, 3],
@@ -1312,7 +998,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
     {
       text: 'COMPETENCY ASSESSMENT (Subjective)',
       colSpan: 10,
-      fontSize: 8,
+      fontSize: PDF_FONT.label,
       bold: true,
       alignment: 'center',
       border: [true, true, true, true],
@@ -1329,166 +1015,69 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
     {},
   ])
 
-  // Calculate how many category rating rows we'll have
   let categoryRatingRowCount = 0
   if (hasCategoryData('A. STRATEGIC FUNCTION')) categoryRatingRowCount++
   if (hasCategoryData('B. CORE FUNCTION')) categoryRatingRowCount++
   if (hasCategoryData('C. SUPPORT FUNCTION')) categoryRatingRowCount++
   categoryRatingRowCount += 2 // Final Rating + Adjectival Rating
 
-  // Category ratings
+  const categoryLabelRow = (label, value, opts = {}) => [
+    {
+      text: label,
+      fontSize: PDF_FONT.label,
+      bold: true,
+      border: [true, true, true, true],
+      margin: [3, 3, 3, 3],
+    },
+    {
+      text: value,
+      fontSize: PDF_FONT.label,
+      bold: true,
+      alignment: 'center',
+      border: [true, true, true, true],
+    },
+    ...(opts.blankSpan
+      ? [
+          { text: '', colSpan: 10, rowSpan: opts.blankSpan, border: [true, true, true, true] },
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+          {},
+        ]
+      : [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]),
+  ]
+
   if (hasCategoryData('A. STRATEGIC FUNCTION')) {
-    tableBody.push([
-      {
-        text: 'Strategic Functions:',
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
-      },
-      {
-        text: calculateCategoryRating('A. STRATEGIC FUNCTION'),
-        fontSize: 8,
-        bold: true,
-        alignment: 'center',
-        border: [true, true, true, true],
-      },
-      {
-        text: '',
-        colSpan: 10,
-        rowSpan: categoryRatingRowCount,
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-    ])
+    tableBody.push(
+      categoryLabelRow('Strategic Functions:', calculateCategoryRating('A. STRATEGIC FUNCTION'), {
+        blankSpan: categoryRatingRowCount,
+      }),
+    )
   }
 
   if (hasCategoryData('B. CORE FUNCTION')) {
-    tableBody.push([
-      {
-        text: 'Core Functions:',
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
-      },
-      {
-        text: calculateCategoryRating('B. CORE FUNCTION'),
-        fontSize: 8,
-        bold: true,
-        alignment: 'center',
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-    ])
+    tableBody.push(categoryLabelRow('Core Functions:', calculateCategoryRating('B. CORE FUNCTION')))
   }
 
   if (hasCategoryData('C. SUPPORT FUNCTION')) {
-    tableBody.push([
-      {
-        text: 'Support Functions:',
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
-      },
-      {
-        text: calculateCategoryRating('C. SUPPORT FUNCTION'),
-        fontSize: 8,
-        bold: true,
-        alignment: 'center',
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-    ])
+    tableBody.push(
+      categoryLabelRow('Support Functions:', calculateCategoryRating('C. SUPPORT FUNCTION')),
+    )
   }
 
-  // Final Rating
-  tableBody.push([
-    {
-      text: 'Final Rating:',
-      fontSize: 8,
-      bold: true,
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {
-      text: calculateAverageRating(),
-      fontSize: 8,
-      bold: true,
-      alignment: 'center',
-      border: [true, true, true, true],
-    },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-  ])
+  tableBody.push(categoryLabelRow('Final Rating:', calculateAverageRating()))
+  tableBody.push(
+    categoryLabelRow('Adjectival Rating:', getAdjectivalRating(calculateAverageRating())),
+  )
 
-  // Adjectival Rating
-  tableBody.push([
-    {
-      text: 'Adjectival Rating:',
-      fontSize: 8,
-      bold: true,
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {
-      text: getAdjectivalRating(calculateAverageRating()),
-      fontSize: 8,
-      bold: true,
-      alignment: 'center',
-      border: [true, true, true, true],
-    },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-  ])
-
-  // Add the main table with NO header rows repeating
   content.push({
     table: {
-      headerRows: 0, // Don't repeat any header rows
+      headerRows: 0,
       widths: ['10%', '12%', '10%', '8%', '8%', '10%', '5%', '5%', '5%', '5%', '10%', '12%'],
       body: tableBody,
     },
@@ -1502,6 +1091,26 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   })
 
   // Signature Section - Make it unbreakable
+  const signatureBlock = (name, role) => ({
+    stack: [
+      {
+        text: name,
+        bold: true,
+        fontSize: PDF_FONT.signature,
+        alignment: 'center',
+        margin: [0, 40, 0, 2],
+      },
+      {
+        text: '________________________________',
+        alignment: 'center',
+        fontSize: PDF_FONT.signature,
+      },
+      { text: role, fontSize: PDF_FONT.body, alignment: 'center' },
+    ],
+    border: [true, true, true, true],
+    margin: [5, 5, 5, 5],
+  })
+
   content.push({
     table: {
       widths: ['50%', '50%'],
@@ -1509,66 +1118,22 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
         [
           {
             text: 'Assessed by:',
-            fontSize: 9,
+            fontSize: PDF_FONT.signature,
             bold: true,
             border: [true, true, true, true],
             margin: [5, 5, 5, 5],
           },
           {
             text: 'Final Rating by:',
-            fontSize: 9,
+            fontSize: PDF_FONT.signature,
             bold: true,
             border: [true, true, true, true],
             margin: [5, 5, 5, 5],
           },
         ],
         [
-          {
-            stack: [
-              {
-                text: props.employee?.supervisor || 'N/A',
-                bold: true,
-                fontSize: 9,
-                alignment: 'center',
-                margin: [0, 40, 0, 2],
-              },
-              {
-                text: '________________________________',
-                alignment: 'center',
-                fontSize: 9,
-              },
-              {
-                text: 'Immediate Supervisor',
-                fontSize: 8,
-                alignment: 'center',
-              },
-            ],
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          {
-            stack: [
-              {
-                text: 'REY T. UY',
-                bold: true,
-                fontSize: 9,
-                alignment: 'center',
-                margin: [0, 40, 0, 2],
-              },
-              {
-                text: '________________________________',
-                alignment: 'center',
-                fontSize: 9,
-              },
-              {
-                text: 'City Mayor',
-                fontSize: 8,
-                alignment: 'center',
-              },
-            ],
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
+          signatureBlock(props.employee?.supervisor || 'N/A', 'Immediate Supervisor'),
+          signatureBlock('REY T. UY', 'City Mayor'),
         ],
       ],
     },
@@ -1579,7 +1144,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       vLineColor: () => '#000000',
     },
     margin: [0, 0, 0, 0],
-    unbreakable: true, // Prevent signature section from breaking across pages
+    unbreakable: true,
   })
 
   return {
@@ -1588,7 +1153,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
     pageMargins: [36, 36, 36, 36],
     content: content,
     defaultStyle: {
-      fontSize: 8,
+      fontSize: PDF_FONT.body,
     },
   }
 }
@@ -1651,8 +1216,13 @@ onMounted(() => {
   color: #000;
 }
 
-#opcr-preview .opcr-table {
+/* ---------- Full-width table helper (matches IPCR pattern) ---------- */
+.full-width {
   width: 100%;
+}
+
+/* ---------- Main OPCR table (class-based, one font-size everywhere) ---------- */
+#opcr-preview .opcr-table {
   border-collapse: collapse;
   margin-top: 8px;
   font-size: 9px;
@@ -1673,6 +1243,40 @@ onMounted(() => {
   text-align: center;
 }
 
+.text-center {
+  text-align: center;
+}
+
+/* Column widths, named the same way as the IPCR table's col-* classes */
+.col-mfo {
+  width: 11.11%;
+}
+.col-competency {
+  width: 11.11%;
+}
+.col-success {
+  width: 11.11%;
+}
+.col-budget {
+  width: 8%;
+}
+.col-accountable {
+  width: 8%;
+}
+.col-accomplishment {
+  width: 11.11%;
+}
+.col-rating {
+  width: 3%;
+}
+.col-proficiency {
+  width: 11.11%;
+}
+.col-remarks {
+  width: 11.11%;
+}
+
+/* Category divider row, same role as IPCR's .section-header */
 #opcr-preview .section-header {
   background-color: #d9d9d9;
   font-weight: bold;
@@ -1681,30 +1285,135 @@ onMounted(() => {
   font-size: 9px;
 }
 
+/* Competency / proficiency line lists inside a cell */
+.competency-list {
+  font-size: 9px;
+  white-space: pre-line;
+}
+
+/* ---------- Commitment statement ---------- */
 .commitment-container {
   font-size: 9px;
 }
 
-.commitment-container table,
-.commitment-container th,
-.commitment-container td {
+.commitment-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
   font-size: 9px;
+}
+
+.commitment-cell {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #000;
+  vertical-align: top;
+  font-size: 9px;
+}
+
+.commitment-signatory {
+  margin-top: 20px;
+  text-align: right;
+  padding-right: 200px;
+}
+
+.commitment-signatory-block {
+  display: inline-block;
+  text-align: left;
+  font-size: 9px;
+}
+
+.approval-outer-cell {
+  width: 100%;
+  padding: 0;
+  border: 1px solid #000;
+}
+
+.approval-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+
+.approval-head {
+  padding: 8px;
+  width: 50%;
+  text-align: left;
+  border-bottom: 1px solid #000;
+  font-size: 9px;
+}
+
+.approval-head-left {
+  border-right: 1px solid #000;
+}
+
+.approval-signatory {
+  padding: 8px;
+  border-right: 1px solid #000;
+  text-align: center;
+  height: 80px;
+  vertical-align: bottom;
+  font-size: 9px;
+}
+
+.signatory-name {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.signatory-line {
+  margin: 5px 0;
+  border-top: 1px solid #000;
+}
+
+/* ---------- Rating scale ---------- */
+.rating-scale-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
 }
 
 .rating-scale-table {
   border: 1px solid #000;
   border-collapse: collapse;
-  float: right;
-  margin-left: 16px;
-  margin-bottom: 10px;
   width: auto;
-  max-width: 180px;
   font-size: 9px;
 }
 
-.rating-scale-table td {
+.rating-scale-label {
+  border: 1px solid #000;
   padding: 6px 14px;
-  min-width: auto;
+  min-width: 180px;
+  font-size: 9px;
+}
+
+.rating-scale-value {
+  border: 1px solid #000;
+  padding: 6px 14px;
+  text-align: center;
+  min-width: 50px;
+  font-size: 9px;
+}
+
+/* ---------- Final signatory block ---------- */
+.signatory-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid #000;
+  font-size: 9px;
+}
+
+.signatory-head {
+  padding: 6px;
+  width: 50%;
+  font-size: 9px;
+}
+
+.signatory-block {
+  text-align: center;
+  vertical-align: bottom;
+  padding-top: 60px;
+  width: 50%;
   font-size: 9px;
 }
 </style>

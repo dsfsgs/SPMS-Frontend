@@ -690,27 +690,26 @@
                                     @update:model-value="generateSuccessIndicator(index)"
                                   />
 
-                                  <!-- Indicator Category Select -->
+                                  <!-- Performance Indicator Category Select -->
                                   <q-select
                                     outlined
-                                    v-model="standard.indicatorCategory"
-                                    label="Indicator Category"
+                                    v-model="standard.indicatorCategoryId"
+                                    label="Performance Indicator Category"
                                     dense
                                     class="full-width q-pt-sm"
-                                    :options="indicatorCategoryOptions"
+                                    :options="performanceIndicatorCategoryOptions"
                                     option-value="id"
                                     option-label="categories_name"
                                     emit-value
                                     map-options
                                     clearable
                                     @update:model-value="
-                                      (value) => {
-                                        standard.indicatorName = []
-                                        if (value) {
-                                          filterIndicatorsByCategory(value, index)
-                                        } else {
-                                          filteredIndicatorsByCategory[index] = []
-                                        }
+                                      () => {
+                                        standard.indicatorName = null
+                                        filterPerformanceIndicatorsByCategory(
+                                          standard.indicatorCategoryId,
+                                          index,
+                                        )
                                       }
                                     "
                                   >
@@ -726,9 +725,16 @@
                                         </q-item-section>
                                       </q-item>
                                     </template>
+                                    <template v-slot:no-option>
+                                      <q-item>
+                                        <q-item-section class="text-grey">
+                                          No categories found
+                                        </q-item-section>
+                                      </q-item>
+                                    </template>
                                   </q-select>
 
-                                  <!-- Add multiple and use-chips and change value to value && value.length > 0 -->
+                                  <!-- Performance Indicator Select (single selection, filtered by category) -->
                                   <q-select
                                     outlined
                                     v-model="standard.indicatorName"
@@ -741,13 +747,12 @@
                                       (val, update) =>
                                         filterPerformanceIndicators(val, update, index)
                                     "
-                                    :options="getFilteredIndicatorsByCategory(index)"
+                                    :options="getFilteredVerbOptions(index)"
                                     option-value="id"
                                     option-label="name"
                                     emit-value
                                     map-options
                                     clearable
-                                    :disable="!standard.indicatorCategory"
                                     @update:model-value="
                                       async (value) => {
                                         generateSuccessIndicator(index)
@@ -767,17 +772,11 @@
                                     </template>
                                     <template v-slot:option="scope">
                                       <q-item v-bind="scope.itemProps" dense>
-                                        <!-- <q-item-section side>
-                                          <q-checkbox :model-value="scope.selected" />
-                                        </q-item-section> -->
                                         <q-item-section>
                                           <q-item-label>{{ scope.opt.name }}</q-item-label>
-                                          <!-- <q-item-label caption v-if="scope.opt.category">
-                                            Category: {{ scope.opt.category.categories_name }}
-                                          </q-item-label>
                                           <q-item-label caption v-if="scope.opt.description">
                                             {{ scope.opt.description }}
-                                          </q-item-label> -->
+                                          </q-item-label>
                                         </q-item-section>
                                       </q-item>
                                     </template>
@@ -785,9 +784,9 @@
                                       <q-item>
                                         <q-item-section class="text-grey">
                                           {{
-                                            standard.indicatorCategory
-                                              ? 'No indicators found'
-                                              : 'Select a category first'
+                                            standard.indicatorCategoryId
+                                              ? 'No performance indicators found in this category'
+                                              : 'Please select a category first'
                                           }}
                                         </q-item-section>
                                       </q-item>
@@ -1564,7 +1563,7 @@ export default {
     const autoSelectionAttempts = ref(0)
     const filteredMfoOptions = ref({})
     const filteredOutputOptions = ref({})
-    const filteredVerbs = ref([])
+    const filteredVerbOptions = ref({})
     const filteredEmployees = ref([])
     const headMfoNames = ref(new Set())
     const isFetchingHeadMfos = ref(false)
@@ -1583,7 +1582,6 @@ export default {
     const showCompetencyError = ref([])
     const competencySelections = ref([{ selectedCompetency: null, selectedLevel: null }])
     const filteredCompetencyOptionsByRow = ref([])
-    const filteredIndicatorsByCategory = ref({})
 
     // Loading state while stores initialize
     const storesInitialized = ref(false)
@@ -1662,8 +1660,8 @@ export default {
       id: uuidv4(),
       expanded: true,
       outputName: '',
-      indicatorCategory: null,
-      indicatorName: [],
+      indicatorCategoryId: null,
+      indicatorName: null,
       successIndicator: '',
       requiredOutput: '',
       modeOfVerification: '',
@@ -1776,34 +1774,26 @@ export default {
         })) || [],
     )
 
-    const indicatorCategoryOptions = computed(() => {
-      // Get unique categories from the verbs
-      const categories = new Map()
-      const verbs = officeLibraryIndicatorStore.value?.verbs || []
-
-      verbs.forEach((verb) => {
-        if (verb.category && verb.category.id) {
-          categories.set(verb.category.id, {
-            id: verb.category.id,
-            categories_name: verb.category.categories_name || 'Uncategorized',
-            ...verb.category,
-          })
-        }
-      })
-
-      return Array.from(categories.values())
+    const performanceIndicatorCategoryOptions = computed(() => {
+      const categories = officeLibraryIndicatorStore.value?.categories || []
+      return categories.map((cat) => ({
+        id: cat.id,
+        categories_name: cat.categories_name || cat.name || `Category ${cat.id}`,
+      }))
     })
 
-    const performanceIndicatorOptions = computed(
-      () =>
-        officeLibraryIndicatorStore.value?.verbs?.map((verb) => ({
-          id: verb.id,
-          label: verb.indicator_name || verb.name,
-          value: verb.id,
-          name: verb.indicator_name || verb.name,
-          description: verb.description || '',
-        })) || [],
-    )
+    const performanceIndicatorOptions = computed(() => {
+      const verbs = officeLibraryIndicatorStore.value?.verbs || []
+      return verbs.map((verb) => ({
+        id: verb.id,
+        label: verb.indicator_name || verb.name,
+        value: verb.id,
+        name: verb.indicator_name || verb.name,
+        description: verb.description || '',
+        category_id: verb.category_id || null,
+        category_name: verb.category?.categories_name || null,
+      }))
+    })
 
     const competencyOptions = computed(() => {
       const { sg } = currentEmployee.value || {}
@@ -2044,7 +2034,7 @@ export default {
       if (isCurrentEmployeeOfficeHead.value || !cascadeStore.value) return
 
       const standard = currentEmployee.value.performanceStandards[standardIndex]
-      if (!standard?.rows.mfo || !standard.indicatorName?.length) return
+      if (!standard?.rows.mfo || !standard.indicatorName) return
 
       const mfoId = standard.rows.mfo
       const outputId = standard.rows.output
@@ -2261,7 +2251,7 @@ export default {
             ...currentEmployee.value,
             supervisorySignatory: resolvedSignatory,
           },
-          selectedIndicators: standard.indicatorName,
+          selectedIndicators: standard.indicatorName ? [standard.indicatorName] : [],
           quantityType: standard.quantityIndicatorType,
           verbs: officeLibraryIndicatorStore.value?.verbs || [],
           cascadeData: fetchedData,
@@ -2350,62 +2340,17 @@ export default {
         const qtyPart = getQuantityComponent()
         const outputPart = std.outputName?.trim() || ''
 
-        // FIX: Handle both array and single value cases
         let indicatorPart = ''
-        let indicatorNames = []
-
-        // Check if indicatorName is an array
-        if (Array.isArray(std.indicatorName)) {
-          indicatorNames = std.indicatorName
-        }
-        // Check if indicatorName is a single value
-        else if (std.indicatorName) {
-          indicatorNames = [std.indicatorName]
-        }
-
-        // Process the indicator names
-        if (indicatorNames.length > 0) {
-          const names = indicatorNames
-            .map((idOrText) => {
-              // If it's a number or numeric string, try to look up by ID
-              if (
-                typeof idOrText === 'number' ||
-                (typeof idOrText === 'string' && !isNaN(idOrText))
-              ) {
-                const verb = officeLibraryIndicatorStore.value?.verbs?.find(
-                  (v) => v.id === Number(idOrText),
-                )
-                // Return the name or fallback to the ID
-                return verb?.indicator_name || verb?.name || verb?.label || String(idOrText)
-              }
-              // If it's already a string (name), return it
-              if (typeof idOrText === 'string') {
-                // Check if it might be a name already
-                const trimmed = idOrText.trim()
-                if (trimmed) return trimmed
-              }
-              // If it's an object, try to get the name
-              if (typeof idOrText === 'object' && idOrText !== null) {
-                return idOrText.indicator_name || idOrText.name || idOrText.label || ''
-              }
-              return String(idOrText)
-            })
-            .filter((name) => name && name.trim().length > 0)
-
-          // Build the indicator part based on number of names
-          if (names.length === 1) {
-            indicatorPart = names[0]
-          } else if (names.length === 2) {
-            indicatorPart = names.join(' and ')
-          } else if (names.length > 2) {
-            indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
-          }
+        if (std.indicatorName) {
+          const verb = officeLibraryIndicatorStore.value?.verbs?.find(
+            (v) => v.id === Number(std.indicatorName),
+          )
+          indicatorPart = verb?.indicator_name || verb?.name || ''
         }
 
         const effectivenessPart = getEffectivenessComponent()
         const timelinessPart = getTimelinessComponent()
 
-        // Build the success indicator
         std.successIndicator = [
           qtyPart,
           outputPart,
@@ -2418,51 +2363,44 @@ export default {
       })
     }
 
-    const filterPerformanceIndicators = (val, update, index) => {
-      const mapVerb = (verb) => ({
-        id: verb.id,
-        name: verb.indicator_name || verb.name,
-        value: verb.id,
-        category: verb.category,
-        description: verb.description || '',
-      })
+    const filterPerformanceIndicators = (val, update, standardIndex) => {
+      const std = currentEmployee.value?.performanceStandards?.[standardIndex]
+      const categoryId = std?.indicatorCategoryId
 
       if (typeof update === 'function') {
         update(() => {
           const needle = (val || '').toLowerCase()
-          const categoryId = currentEmployee.value?.performanceStandards?.[index]?.indicatorCategory
+          let options = performanceIndicatorOptions.value
 
-          let baseList = categoryId
-            ? filteredIndicatorsByCategory.value[index] || []
-            : (officeLibraryIndicatorStore.value?.verbs || []).map(mapVerb)
+          if (categoryId) {
+            options = options.filter((v) => Number(v.category_id) === Number(categoryId))
+          }
 
-          filteredVerbs.value = needle
-            ? baseList.filter(
-                (v) =>
-                  v.name.toLowerCase().includes(needle) ||
-                  v.description.toLowerCase().includes(needle),
-              )
-            : baseList
+          filteredVerbOptions.value[standardIndex] = options.filter(
+            (v) =>
+              v.name.toLowerCase().includes(needle) ||
+              (v.description || '').toLowerCase().includes(needle) ||
+              (v.category_name || '').toLowerCase().includes(needle),
+          )
         })
       } else {
-        filteredVerbs.value = (officeLibraryIndicatorStore.value?.verbs || []).map(mapVerb)
+        let options = performanceIndicatorOptions.value
+        if (categoryId) {
+          options = options.filter((v) => Number(v.category_id) === Number(categoryId))
+        }
+        filteredVerbOptions.value[standardIndex] = options
       }
     }
 
-    const filterIndicatorsByCategory = (categoryId, index) => {
-      const verbs = officeLibraryIndicatorStore.value?.verbs || []
-      filteredIndicatorsByCategory.value[index] = verbs
-        .filter((verb) => verb.category?.id === categoryId)
-        .map((verb) => ({
-          id: verb.id,
-          name: verb.indicator_name || verb.name,
-          category: verb.category,
-          description: verb.description || '',
-        }))
+    const filterPerformanceIndicatorsByCategory = (categoryId, standardIndex) => {
+      const options = performanceIndicatorOptions.value.filter(
+        (v) => Number(v.category_id) === Number(categoryId),
+      )
+      filteredVerbOptions.value[standardIndex] = options
     }
 
-    const getFilteredIndicatorsByCategory = (index) => {
-      return filteredIndicatorsByCategory.value[index] || []
+    const getFilteredVerbOptions = (index) => {
+      return filteredVerbOptions.value[index] || []
     }
 
     const getFilteredMfoOptions = (index) => {
@@ -2628,17 +2566,11 @@ export default {
       if (fieldIndex === 1) {
         std.rows.mfo = null
         std.rows.output = null
-        std.indicatorCategory = null // ADD THIS
-        std.indicatorName = [] // ADD THIS
         filteredMfoOptions.value[standardIndex] = null
         filteredOutputOptions.value[standardIndex] = null
-        filteredIndicatorsByCategory.value[standardIndex] = [] // ADD THIS
       } else if (fieldIndex === 2) {
         std.rows.output = null
-        std.indicatorCategory = null
-        std.indicatorName = []
         filteredOutputOptions.value[standardIndex] = null
-        filteredIndicatorsByCategory.value[standardIndex] = []
       }
     }
 
@@ -3325,11 +3257,8 @@ export default {
                   ...std,
                   outputName: std.outputName || '',
                   requiredOutput: std.requiredOutput || '',
-                  indicatorName: Array.isArray(std.indicatorName)
-                    ? std.indicatorName
-                    : std.indicatorName
-                      ? [std.indicatorName]
-                      : [],
+                  indicatorCategoryId: std.indicatorCategoryId || null,
+                  indicatorName: std.indicatorName || null,
                   rows: {
                     category: std.rows?.category || null,
                     mfo: std.rows?.mfo || null,
@@ -3433,7 +3362,7 @@ export default {
         if (!emp) return
         for (let i = 0; i < emp.performanceStandards.length; i++) {
           const s = emp.performanceStandards[i]
-          if (s.rows?.mfo && s.indicatorName?.length && s.quantityRestriction === null) {
+          if (s.rows?.mfo && s.indicatorName && s.quantityRestriction === null) {
             await checkAndShowCascadeModal(i)
           }
         }
@@ -3509,7 +3438,7 @@ export default {
       () =>
         currentEmployee.value?.performanceStandards?.map((s) => ({
           id: s.id,
-          indicatorName: JSON.stringify(s.indicatorName),
+          indicatorName: s.indicatorName,
           mfo: s.rows?.mfo,
           output: s.rows?.output,
         })),
@@ -3524,7 +3453,7 @@ export default {
           const std = currentEmployee.value.performanceStandards[i]
           if (!std) continue
           std.quantityRestriction = null
-          if (std.rows?.mfo && std.indicatorName?.length) {
+          if (std.rows?.mfo && std.indicatorName) {
             await checkAndShowCascadeModal(i)
           }
         }
@@ -3583,7 +3512,7 @@ export default {
           debug: process.env.NODE_ENV === 'development',
         })
 
-        filterPerformanceIndicators('', null)
+        filterPerformanceIndicators('', null, 0)
         initializeUWPData()
         initializeEmployeeTabs()
 
@@ -3616,7 +3545,7 @@ export default {
       filteredEmployees,
       filteredMfoOptions,
       filteredOutputOptions,
-      filteredVerbs,
+      filteredVerbOptions,
       semesterOptions,
       yearOptions,
       breadcrumbDisplay,
@@ -3631,6 +3560,7 @@ export default {
       showHeadBanner,
       availableEmployeesForTab,
       categoryOptions,
+      performanceIndicatorCategoryOptions,
       performanceIndicatorOptions,
       competencyOptions,
       levelOptions,
@@ -3662,9 +3592,6 @@ export default {
       showCompetencyError,
       competencySelections,
       filteredCompetencyOptionsByRow,
-      indicatorCategoryOptions,
-      filterIndicatorsByCategory,
-      getFilteredIndicatorsByCategory,
       isHeadPosition,
       getEmployeeBadgeColor,
       getEmployeeName,
@@ -3680,8 +3607,10 @@ export default {
       filterMfos,
       filterOutputs,
       filterPerformanceIndicators,
+      filterPerformanceIndicatorsByCategory,
       getFilteredMfoOptions,
       getFilteredOutputOptions,
+      getFilteredVerbOptions,
       hasMinimumEffectivenessValues,
       validateStrictNumeric,
       blockInvalidChars,
