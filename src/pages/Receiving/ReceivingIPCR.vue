@@ -1,3 +1,5 @@
+<!-- src\pages\Receiving\ReceivingIPCR.vue -->
+
 <template>
   <q-page padding>
     <!-- Page Header -->

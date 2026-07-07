@@ -11,6 +11,7 @@
     >
       <q-tab name="verbs" label="Verbs Library" icon="description" />
       <q-tab name="ranks" label="Ranks Library" icon="military_tech" />
+      <q-tab name="positions" label="Position Library" icon="work" />
       <q-tab name="targetperiod" label="Target Period" icon="calendar_today" />
     </q-tabs>
 
@@ -19,55 +20,59 @@
     <!-- Tab Panels -->
     <q-tab-panels v-model="activeTab" animated>
       <!-- ========== VERBS TAB ========== -->
-      <q-tab-panel name="verbs">
+      <q-tab-panel name="verbs" class="q-pa-none">
         <div class="row justify-between items-center q-mb-md">
           <div class="col-auto">
-            <div class="text-h6 text-grey-7">Verbs for Performance Indicators</div>
+            <div class="text-h6 text-grey-8">Verbs for Performance Indicators</div>
             <div class="text-caption text-grey-6">Add action verbs categorized by type</div>
           </div>
 
-          <div class="col-auto row items-center q-col-gutter-sm">
-            <div>
-              <q-select
-                dense
-                outlined
-                color="green"
-                v-model="newVerb.categoryId"
-                :options="verbCategoryOptions"
-                label="Category"
-                style="min-width: 180px"
-                emit-value
-                map-options
-              />
-            </div>
-            <div>
-              <q-input
-                dense
-                outlined
-                color="green"
-                v-model="newVerb.name"
-                label="Add verb (e.g., facilitate)"
-                @keyup.enter="addVerb"
-                clearable
-                style="min-width: 220px"
-              />
-            </div>
-            <div class="col-auto">
-              <q-btn
-                color="green-9"
-                label="Add"
-                @click="addVerb"
-                :loading="libraryStore.loading"
-                :disable="!newVerb.name || !newVerb.categoryId"
-              />
-            </div>
+          <div class="col-auto row items-center q-gutter-sm">
+            <q-select
+              dense
+              outlined
+              color="green"
+              v-model="newVerb.categoryId"
+              :options="verbCategoryOptions"
+              label="Category"
+              style="min-width: 160px"
+              emit-value
+              map-options
+            />
+            <q-input
+              dense
+              outlined
+              color="green"
+              v-model="newVerb.name"
+              label="Add verb"
+              @keyup.enter="addVerb"
+              clearable
+              style="min-width: 200px"
+            />
+            <q-btn
+              color="green-9"
+              unelevated
+              label="Add"
+              @click="addVerb"
+              :loading="libraryStore.loading"
+              :disable="!newVerb.name || !newVerb.categoryId"
+            />
           </div>
         </div>
 
-        <q-card flat bordered class="q-pa-md">
-          <!-- Search and Filter Controls -->
-          <div class="row items-center q-col-gutter-sm q-mb-md">
-            <div class="col-12 col-md-4">
+        <q-table
+          :rows="filteredVerbs"
+          :columns="verbColumns"
+          row-key="id"
+          flat
+          bordered
+          selection="multiple"
+          v-model:selected="selectedVerbRows"
+          :pagination="{ rowsPerPage: 10 }"
+          :rows-per-page-options="[10, 20, 50, 0]"
+        >
+          <template v-slot:top>
+            <div class="row items-center full-width q-gutter-sm">
               <q-input
                 dense
                 outlined
@@ -76,154 +81,125 @@
                 placeholder="Search verbs..."
                 clearable
                 debounce="150"
+                style="min-width: 220px"
               >
                 <template v-slot:prepend>
                   <q-icon name="search" />
                 </template>
               </q-input>
-            </div>
-
-            <div class="col-12 col-md-4">
               <q-select
                 dense
                 outlined
                 color="green"
                 v-model="verbCategoryFilter"
                 :options="verbCategoryFilterOptions"
-                label="Filter by category"
+                label="Category"
                 clearable
                 emit-value
                 map-options
+                style="min-width: 180px"
               />
-            </div>
-
-            <div class="col" />
-
-            <div class="col-auto">
+              <q-space />
               <q-btn
+                v-if="selectedVerbIds.length"
                 flat
                 color="negative"
-                :disabled="!selectedVerbIds.length"
-                :label="`Delete selected (${selectedVerbIds.length})`"
                 icon="delete"
+                :label="`Delete (${selectedVerbIds.length})`"
                 @click="confirmDeleteSelected('verbs')"
               />
             </div>
-          </div>
+          </template>
 
-          <!-- Categorized Verbs Display -->
-          <div v-for="category in visibleCategories" :key="category.value" class="q-mb-lg">
-            <div class="row items-center q-mb-sm">
-              <q-icon :name="category.icon" :color="category.color" size="24px" class="q-mr-sm" />
-              <div class="text-subtitle1 text-weight-medium" :class="`text-${category.color}`">
-                {{ category.label }}
-              </div>
-              <q-space />
-              <q-badge :color="category.color" :label="getCategoryCount(category.value)" />
-            </div>
+          <template v-slot:body-cell-category="props">
+            <q-td :props="props">
+              <q-badge
+                v-if="props.row.category_id"
+                :color="getCategoryColor(props.row.category_id)"
+                :label="getCategoryLabel(props.row.category_id)"
+              />
+              <span v-else class="text-grey-6 text-caption">Uncategorized</span>
+            </q-td>
+          </template>
 
-            <q-list class="verbs-grid">
-              <q-item
-                v-for="verb in getVerbsByCategory(category.value)"
-                :key="verb.id"
-                class="item-card verb-card q-pa-sm"
-                clickable
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="text-right">
+              <q-btn
+                flat
+                dense
+                round
+                icon="edit"
+                color="primary"
+                size="sm"
+                @click="editVerb(props.row)"
               >
-                <q-item-section side class="col-auto">
-                  <q-checkbox
-                    dense
-                    v-model="selectedVerbIds"
-                    :val="verb.id"
-                    :color="category.color"
-                  />
-                </q-item-section>
+                <q-tooltip>Edit category</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                dense
+                round
+                icon="delete"
+                color="negative"
+                size="sm"
+                @click="confirmDelete('verbs', [props.row.id])"
+              >
+                <q-tooltip>Delete</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
 
-                <q-item-section class="q-pl-sm">
-                  <q-item-label class="text-body1 ellipsis">
-                    {{ verb.indicator_name }}
-                  </q-item-label>
-                </q-item-section>
-
-                <q-item-section side>
-                  <div class="row q-gutter-xs no-wrap">
-                    <q-btn
-                      flat
-                      dense
-                      round
-                      icon="edit"
-                      color="primary"
-                      size="sm"
-                      @click.stop="editVerb(verb)"
-                    >
-                      <q-tooltip>Edit category</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                      flat
-                      dense
-                      round
-                      icon="delete"
-                      color="negative"
-                      size="sm"
-                      @click.stop="confirmDelete('verbs', [verb.id])"
-                    >
-                      <q-tooltip>Delete</q-tooltip>
-                    </q-btn>
-                  </div>
-                </q-item-section>
-              </q-item>
-            </q-list>
-
-            <div
-              v-if="getVerbsByCategory(category.value).length === 0"
-              class="text-center q-pa-md text-grey-6 bg-grey-1 rounded-borders"
-            >
-              <q-icon name="inbox" size="32px" class="q-mb-xs" />
-              <div class="text-caption">No verbs in this category yet</div>
+          <template v-slot:no-data>
+            <div class="full-width text-center q-pa-lg text-grey-6">
+              <q-icon name="search_off" size="40px" class="q-mb-xs" />
+              <div>No verbs found</div>
             </div>
-          </div>
-
-          <!-- Empty State -->
-          <div
-            v-if="filteredVerbs.length === 0 && !visibleCategories.length"
-            class="text-center q-pa-xl text-grey-6"
-          >
-            <q-icon name="search_off" size="64px" class="q-mb-md" />
-            <div class="text-h6">No verbs found</div>
-            <div class="text-caption">Try adjusting your search or filter</div>
-          </div>
-        </q-card>
+          </template>
+        </q-table>
       </q-tab-panel>
 
       <!-- ========== RANKS TAB ========== -->
-      <q-tab-panel name="ranks">
+      <q-tab-panel name="ranks" class="q-pa-none">
         <div class="row justify-between items-center q-mb-md">
           <div class="col-auto">
-            <div class="text-h6 text-grey-7">Employee Ranks</div>
+            <div class="text-h6 text-grey-8">Employee Ranks</div>
             <div class="text-caption text-grey-6">Manage organizational rank classifications</div>
           </div>
 
-          <div class="col-auto row items-center q-col-gutter-sm">
-            <div>
-              <q-input
-                dense
-                outlined
-                color="green"
-                v-model="newRank"
-                label="Add rank (e.g., Office Head)"
-                @keyup.enter="addRank"
-                clearable
-              />
-            </div>
-
-            <div class="col-auto">
-              <q-btn color="green-9" label="Add" @click="addRank" :loading="libraryStore.loading" />
-            </div>
+          <div class="col-auto row items-center q-gutter-sm">
+            <q-input
+              dense
+              outlined
+              color="green"
+              v-model="newRank"
+              label="Add rank"
+              @keyup.enter="addRank"
+              clearable
+              style="min-width: 200px"
+            />
+            <q-btn
+              color="green-9"
+              unelevated
+              label="Add"
+              @click="addRank"
+              :loading="libraryStore.loading"
+            />
           </div>
         </div>
 
-        <q-card flat bordered class="q-pa-md">
-          <div class="row items-center q-col-gutter-sm">
-            <div class="col-12 col-md-4">
+        <q-table
+          :rows="filteredRanks"
+          :columns="rankColumns"
+          row-key="id"
+          flat
+          bordered
+          selection="multiple"
+          v-model:selected="selectedRankRows"
+          :pagination="{ rowsPerPage: 10 }"
+          :rows-per-page-options="[10, 20, 50, 0]"
+        >
+          <template v-slot:top>
+            <div class="row items-center full-width q-gutter-sm">
               <q-input
                 dense
                 outlined
@@ -231,132 +207,224 @@
                 v-model="rankSearch"
                 placeholder="Search ranks..."
                 clearable
-                class="q-pr-md"
                 debounce="150"
+                style="min-width: 220px"
               >
                 <template v-slot:prepend>
                   <q-icon name="search" />
                 </template>
               </q-input>
-            </div>
-
-            <div class="col" />
-
-            <div class="col-auto">
+              <q-space />
               <q-btn
+                v-if="selectedRankIds.length"
                 flat
                 color="negative"
-                :disabled="!selectedRankIds.length"
-                :label="`Delete selected (${selectedRankIds.length})`"
                 icon="delete"
+                :label="`Delete (${selectedRankIds.length})`"
                 @click="confirmDeleteSelected('ranks')"
               />
             </div>
-          </div>
+          </template>
 
-          <div class="q-mt-xl">
-            <q-list class="ranks-grid">
-              <q-item
-                v-for="rank in filteredRanks"
-                :key="rank.id"
-                class="item-card rank-card q-pa-sm"
-                clickable
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="text-right">
+              <q-btn
+                flat
+                dense
+                round
+                icon="edit"
+                color="primary"
+                size="sm"
+                @click="editRank(props.row)"
               >
-                <q-item-section side class="col-auto">
-                  <q-checkbox dense v-model="selectedRankIds" :val="rank.id" color="primary" />
-                </q-item-section>
+                <q-tooltip>Edit</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                dense
+                round
+                icon="delete"
+                color="negative"
+                size="sm"
+                @click="confirmDelete('ranks', [props.row.id])"
+              >
+                <q-tooltip>Delete</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
 
-                <q-item-section class="q-pl-sm">
-                  <q-item-label class="text-body1 ellipsis">
-                    {{ rank.rank_name }}
-                  </q-item-label>
-                </q-item-section>
-
-                <q-item-section side>
-                  <div class="row q-gutter-xs">
-                    <q-btn
-                      flat
-                      dense
-                      round
-                      icon="edit"
-                      color="primary"
-                      size="sm"
-                      @click.stop="editRank(rank)"
-                    />
-                    <q-btn
-                      flat
-                      dense
-                      round
-                      icon="delete"
-                      color="negative"
-                      size="sm"
-                      @click.stop="confirmDelete('ranks', [rank.id])"
-                    />
-                  </div>
-                </q-item-section>
-              </q-item>
-            </q-list>
-
-            <div v-if="!filteredRanks.length" class="text-center q-pa-md text-grey-6">
-              <q-icon name="search_off" size="48px" class="q-mb-sm" />
-              <div>No ranks found. Add one above or adjust your search.</div>
+          <template v-slot:no-data>
+            <div class="full-width text-center q-pa-lg text-grey-6">
+              <q-icon name="search_off" size="40px" class="q-mb-xs" />
+              <div>No ranks found</div>
             </div>
-          </div>
-        </q-card>
+          </template>
+        </q-table>
       </q-tab-panel>
 
-      <!-- ========== TARGET PERIOD TAB ========== -->
-      <q-tab-panel name="targetperiod">
+      <!-- ========== POSITIONS TAB ========== -->
+      <q-tab-panel name="positions" class="q-pa-none">
         <div class="row justify-between items-center q-mb-md">
           <div class="col-auto">
-            <div class="text-h6 text-grey-7">Target Period</div>
-            <div class="text-caption text-grey-6">Manage target period semesters and years</div>
+            <div class="text-h6 text-grey-8">Position Ranks</div>
+            <div class="text-caption text-grey-6">
+              Manage plantilla position rank classifications
+            </div>
           </div>
 
-          <div class="col-5 row items-center q-col-gutter-sm">
-            <div class="col-5">
-              <q-select
-                dense
-                outlined
-                color="green"
-                v-model="newTargetPeriod.semester"
-                :options="semesterOptions"
-                label="Select Semester"
-                clearable
-                emit-value
-                map-options
-              />
-            </div>
-
-            <div class="col-5">
-              <q-select
-                dense
-                outlined
-                color="green"
-                v-model="newTargetPeriod.year"
-                :options="yearOptions"
-                label="Select Year"
-                clearable
-                emit-value
-                map-options
-              />
-            </div>
-
-            <div class="col-auto">
-              <q-btn
-                color="green-9"
-                label="Add"
-                @click="addTargetPeriod"
-                :loading="libraryStore.loading"
-                :disabled="!newTargetPeriod.semester || !newTargetPeriod.year"
-              />
-            </div>
+          <div class="col-auto row items-center q-gutter-sm">
+            <q-input
+              dense
+              outlined
+              color="green"
+              v-model="newPosition"
+              label="Add position"
+              @keyup.enter="addPosition"
+              clearable
+              style="min-width: 200px"
+            />
+            <q-btn
+              color="green-9"
+              unelevated
+              label="Add"
+              @click="addPosition"
+              :loading="libraryStore.loading"
+            />
           </div>
         </div>
 
-        <q-card flat bordered class="q-pa-md">
-          <div class="row items-center q-col-gutter-sm">
-            <div class="col-12 col-md-4">
+        <q-table
+          :rows="filteredPositions"
+          :columns="positionColumns"
+          row-key="id"
+          flat
+          bordered
+          selection="multiple"
+          v-model:selected="selectedPositionRows"
+          :pagination="{ rowsPerPage: 10 }"
+          :rows-per-page-options="[10, 20, 50, 0]"
+        >
+          <template v-slot:top>
+            <div class="row items-center full-width q-gutter-sm">
+              <q-input
+                dense
+                outlined
+                color="green"
+                v-model="positionSearch"
+                placeholder="Search positions..."
+                clearable
+                debounce="150"
+                style="min-width: 220px"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
+              <q-space />
+              <q-btn
+                v-if="selectedPositionIds.length"
+                flat
+                color="negative"
+                icon="delete"
+                :label="`Delete (${selectedPositionIds.length})`"
+                @click="confirmDeleteSelected('positions')"
+              />
+            </div>
+          </template>
+
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="text-right">
+              <q-btn
+                flat
+                dense
+                round
+                icon="edit"
+                color="primary"
+                size="sm"
+                @click="editPosition(props.row)"
+              >
+                <q-tooltip>Edit</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                dense
+                round
+                icon="delete"
+                color="negative"
+                size="sm"
+                @click="confirmDelete('positions', [props.row.id])"
+              >
+                <q-tooltip>Delete</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+
+          <template v-slot:no-data>
+            <div class="full-width text-center q-pa-lg text-grey-6">
+              <q-icon name="search_off" size="40px" class="q-mb-xs" />
+              <div>No positions found</div>
+            </div>
+          </template>
+        </q-table>
+      </q-tab-panel>
+
+      <!-- ========== TARGET PERIOD TAB ========== -->
+      <q-tab-panel name="targetperiod" class="q-pa-none">
+        <div class="row justify-between items-center q-mb-md">
+          <div class="col-auto">
+            <div class="text-h6 text-grey-8">Target Period</div>
+            <div class="text-caption text-grey-6">Manage target period semesters and years</div>
+          </div>
+
+          <div class="col-auto row items-center q-gutter-sm">
+            <q-select
+              dense
+              outlined
+              color="green"
+              v-model="newTargetPeriod.semester"
+              :options="semesterOptions"
+              label="Semester"
+              clearable
+              emit-value
+              map-options
+              style="min-width: 170px"
+            />
+            <q-select
+              dense
+              outlined
+              color="green"
+              v-model="newTargetPeriod.year"
+              :options="yearOptions"
+              label="Year"
+              clearable
+              emit-value
+              map-options
+              style="min-width: 110px"
+            />
+            <q-btn
+              color="green-9"
+              unelevated
+              label="Add"
+              @click="addTargetPeriod"
+              :loading="libraryStore.loading"
+              :disable="!newTargetPeriod.semester || !newTargetPeriod.year"
+            />
+          </div>
+        </div>
+
+        <q-table
+          :rows="filteredTargetPeriods"
+          :columns="targetPeriodColumns"
+          row-key="id"
+          flat
+          bordered
+          selection="multiple"
+          v-model:selected="selectedTargetPeriodRows"
+          :pagination="{ rowsPerPage: 10 }"
+          :rows-per-page-options="[10, 20, 50, 0]"
+        >
+          <template v-slot:top>
+            <div class="row items-center full-width q-gutter-sm">
               <q-input
                 dense
                 outlined
@@ -364,75 +432,48 @@
                 v-model="targetperiodSearch"
                 placeholder="Search target periods..."
                 clearable
-                class="q-pr-md"
                 debounce="150"
+                style="min-width: 220px"
               >
                 <template v-slot:prepend>
                   <q-icon name="search" />
                 </template>
               </q-input>
-            </div>
-
-            <div class="col" />
-
-            <div class="col-auto">
+              <q-space />
               <q-btn
+                v-if="selectedTargetPeriodIds.length"
                 flat
                 color="negative"
-                :disabled="!selectedTargetPeriodIds.length"
-                :label="`Delete selected (${selectedTargetPeriodIds.length})`"
                 icon="delete"
+                :label="`Delete (${selectedTargetPeriodIds.length})`"
                 @click="confirmDeleteSelected('targetperiod')"
               />
             </div>
-          </div>
+          </template>
 
-          <div class="q-mt-xl">
-            <q-list class="targetperiod-grid">
-              <q-item
-                v-for="period in filteredTargetPeriods"
-                :key="`${period.id}`"
-                class="item-card targetperiod-card q-pa-sm"
-                clickable
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="text-right">
+              <q-btn
+                flat
+                dense
+                round
+                icon="delete"
+                color="negative"
+                size="sm"
+                @click="confirmDelete('targetperiod', [props.row.id])"
               >
-                <q-item-section side class="col-auto">
-                  <q-checkbox
-                    dense
-                    v-model="selectedTargetPeriodIds"
-                    :val="period.id"
-                    color="primary"
-                  />
-                </q-item-section>
+                <q-tooltip>Delete</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
 
-                <q-item-section class="q-pl-sm">
-                  <q-item-label class="text-body1">
-                    {{ period.semester }}
-                  </q-item-label>
-                  <q-item-label class="text-caption text-grey-6">
-                    Year: {{ period.year }}
-                  </q-item-label>
-                </q-item-section>
-
-                <q-item-section side>
-                  <q-btn
-                    flat
-                    dense
-                    round
-                    icon="delete"
-                    color="negative"
-                    size="sm"
-                    @click.stop="confirmDelete('targetperiod', [period.id])"
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-
-            <div v-if="!filteredTargetPeriods.length" class="text-center q-pa-md text-grey-6">
-              <q-icon name="event" size="48px" class="q-mb-sm" />
-              <div>No target periods found. Add one above or adjust your search.</div>
+          <template v-slot:no-data>
+            <div class="full-width text-center q-pa-lg text-grey-6">
+              <q-icon name="event_busy" size="40px" class="q-mb-xs" />
+              <div>No target periods found</div>
             </div>
-          </div>
-        </q-card>
+          </template>
+        </q-table>
       </q-tab-panel>
     </q-tab-panels>
 
@@ -507,18 +548,70 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- ========== EDIT POSITION DIALOG ========== -->
+    <q-dialog v-model="dialogEditPosition">
+      <q-card style="min-width: 400px">
+        <q-card-section>
+          <div class="text-h6">Edit Position</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-input
+            dense
+            outlined
+            color="green"
+            v-model="editingPosition.position_name"
+            label="Position Name"
+            autofocus
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn
+            color="green-9"
+            label="Save"
+            @click="savePositionEdit"
+            :loading="libraryStore.loading"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
+
+<style scoped>
+.q-page {
+  background: #ffffff;
+}
+
+:deep(.q-tab-panels) {
+  background: #ffffff;
+}
+
+:deep(.q-table) {
+  background: #ffffff;
+}
+
+:deep(.q-table__top) {
+  background: #ffffff;
+}
+
+:deep(.q-table thead tr) {
+  background: #ffffff;
+}
+</style>
 
 <script>
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
 import { useQuasar } from 'quasar'
 
-// Category icon and color mapping
-const CATEGORY_STYLES = {
-  Production: { icon: 'factory', color: 'blue' },
-  'Quality Control': { icon: 'verified', color: 'purple' },
-  'Decision-Making': { icon: 'psychology', color: 'orange' },
+// Category color mapping (used for the badge in the Verbs table)
+const CATEGORY_COLORS = {
+  Production: 'blue',
+  'Quality Control': 'purple',
+  'Decision-Making': 'orange',
 }
 
 export default {
@@ -535,7 +628,7 @@ export default {
       activeTab: 'verbs',
 
       // Verbs
-      selectedVerbIds: [],
+      selectedVerbRows: [],
       newVerb: {
         name: '',
         categoryId: null,
@@ -548,9 +641,26 @@ export default {
         indicator_name: '',
         categoryId: null,
       },
+      verbColumns: [
+        {
+          name: 'indicator_name',
+          label: 'Verb',
+          field: 'indicator_name',
+          align: 'left',
+          sortable: true,
+        },
+        {
+          name: 'category',
+          label: 'Category',
+          field: (row) => this.getCategoryLabel(row.category_id),
+          align: 'left',
+          sortable: true,
+        },
+        { name: 'actions', label: '', field: 'actions', align: 'right' },
+      ],
 
       // Ranks
-      selectedRankIds: [],
+      selectedRankRows: [],
       newRank: '',
       rankSearch: '',
       dialogEditRank: false,
@@ -558,9 +668,33 @@ export default {
         id: null,
         rank_name: '',
       },
+      rankColumns: [
+        { name: 'rank_name', label: 'Rank', field: 'rank_name', align: 'left', sortable: true },
+        { name: 'actions', label: '', field: 'actions', align: 'right' },
+      ],
+
+      // Positions
+      selectedPositionRows: [],
+      newPosition: '',
+      positionSearch: '',
+      dialogEditPosition: false,
+      editingPosition: {
+        id: null,
+        position_name: '',
+      },
+      positionColumns: [
+        {
+          name: 'position_name',
+          label: 'Position',
+          field: 'position_name',
+          align: 'left',
+          sortable: true,
+        },
+        { name: 'actions', label: '', field: 'actions', align: 'right' },
+      ],
 
       // Target Periods
-      selectedTargetPeriodIds: [],
+      selectedTargetPeriodRows: [],
       newTargetPeriod: {
         semester: null,
         year: null,
@@ -570,28 +704,42 @@ export default {
         { label: 'January-June', value: 'January-June' },
         { label: 'July-December', value: 'July-December' },
       ],
+      targetPeriodColumns: [
+        { name: 'semester', label: 'Semester', field: 'semester', align: 'left', sortable: true },
+        { name: 'year', label: 'Year', field: 'year', align: 'left', sortable: true },
+        { name: 'actions', label: '', field: 'actions', align: 'right' },
+      ],
     }
   },
 
   computed: {
-    // Map API categories to select options with styles
+    selectedVerbIds() {
+      return this.selectedVerbRows.map((r) => r.id)
+    },
+    selectedRankIds() {
+      return this.selectedRankRows.map((r) => r.id)
+    },
+    selectedPositionIds() {
+      return this.selectedPositionRows.map((r) => r.id)
+    },
+    selectedTargetPeriodIds() {
+      return this.selectedTargetPeriodRows.map((r) => r.id)
+    },
+
+    // Map API categories to select options
     verbCategoryOptions() {
-      return this.libraryStore.categories.map((cat) => {
-        const style = CATEGORY_STYLES[cat.categories_name] || { icon: 'label', color: 'grey' }
-        return {
-          label: cat.categories_name,
-          value: Number(cat.id), // FIX: normalize to Number
-          icon: style.icon,
-          color: style.color,
-        }
-      })
+      return this.libraryStore.categories.map((cat) => ({
+        label: cat.categories_name,
+        value: Number(cat.id), // normalize to Number
+        color: CATEGORY_COLORS[cat.categories_name] || 'grey',
+      }))
     },
 
     verbCategoryFilterOptions() {
       return [
         { label: 'All Categories', value: null },
         ...this.verbCategoryOptions,
-        { label: 'Uncategorized', value: 'uncategorized', icon: 'help_outline', color: 'grey' },
+        { label: 'Uncategorized', value: 'uncategorized' },
       ]
     },
 
@@ -606,37 +754,10 @@ export default {
       if (this.verbCategoryFilter === 'uncategorized') {
         verbs = verbs.filter((v) => !v.category_id)
       } else if (this.verbCategoryFilter !== null && this.verbCategoryFilter !== undefined) {
-        // FIX: coerce both sides to Number for safe comparison
         verbs = verbs.filter((v) => Number(v.category_id) === Number(this.verbCategoryFilter))
       }
 
       return verbs
-    },
-
-    visibleCategories() {
-      const categories = [...this.verbCategoryOptions]
-
-      const hasUncategorized = this.libraryStore.sortedVerbs.some((v) => !v.category_id)
-      if (hasUncategorized) {
-        categories.push({
-          label: 'Uncategorized',
-          value: 'uncategorized',
-          icon: 'help_outline',
-          color: 'grey',
-        })
-      }
-
-      if (this.verbCategoryFilter !== null && this.verbCategoryFilter !== undefined) {
-        return categories.filter((cat) => {
-          if (this.verbCategoryFilter === 'uncategorized') {
-            return cat.value === 'uncategorized'
-          }
-          // FIX: coerce both sides to Number
-          return Number(cat.value) === Number(this.verbCategoryFilter)
-        })
-      }
-
-      return categories
     },
 
     filteredRanks() {
@@ -644,6 +765,13 @@ export default {
       const ranks = this.libraryStore.sortedRanks
       if (!search) return ranks
       return ranks.filter((r) => (r.rank_name || '').toLowerCase().includes(search))
+    },
+
+    filteredPositions() {
+      const search = (this.positionSearch || '').toLowerCase().trim()
+      const positions = this.libraryStore.sortedPositions
+      if (!search) return positions
+      return positions.filter((p) => (p.position_name || '').toLowerCase().includes(search))
     },
 
     filteredTargetPeriods() {
@@ -674,6 +802,7 @@ export default {
           this.libraryStore.fetchCategories(),
           this.libraryStore.fetchVerbs(),
           this.libraryStore.fetchRanks(),
+          this.libraryStore.fetchPositions(),
           this.libraryStore.fetchTargetPeriods(),
         ])
       } catch {
@@ -686,18 +815,16 @@ export default {
     },
 
     // ==================== VERBS ====================
-    getVerbsByCategory(categoryValue) {
-      if (categoryValue === 'uncategorized') {
-        return this.filteredVerbs.filter((verb) => !verb.category_id)
-      }
-      // FIX: coerce both sides to Number to handle mixed string/number IDs from API
-      return this.filteredVerbs.filter(
-        (verb) => verb.category_id && Number(verb.category_id) === Number(categoryValue),
-      )
+    getCategoryLabel(categoryId) {
+      if (!categoryId) return 'Uncategorized'
+      const match = this.verbCategoryOptions.find((c) => c.value === Number(categoryId))
+      return match ? match.label : 'Uncategorized'
     },
 
-    getCategoryCount(categoryValue) {
-      return this.getVerbsByCategory(categoryValue).length
+    getCategoryColor(categoryId) {
+      if (!categoryId) return 'grey'
+      const match = this.verbCategoryOptions.find((c) => c.value === Number(categoryId))
+      return match ? match.color : 'grey'
     },
 
     async addVerb() {
@@ -752,7 +879,6 @@ export default {
       this.editingVerb = {
         id: verb.id,
         indicator_name: verb.indicator_name,
-        // FIX: normalize to Number so q-select can match the option value
         categoryId: verb.category_id ? Number(verb.category_id) : null,
       }
       this.dialogEditVerb = true
@@ -855,6 +981,79 @@ export default {
       }
     },
 
+    // ==================== POSITIONS ====================
+    async addPosition() {
+      const text = (this.newPosition || '').trim()
+      if (!text) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Please enter a position name.',
+          position: 'top',
+        })
+        return
+      }
+
+      if (this.libraryStore.positionExists(text)) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'This position already exists.',
+          position: 'top',
+        })
+        return
+      }
+
+      try {
+        await this.libraryStore.addPosition(text)
+        this.newPosition = ''
+        this.$q.notify({
+          type: 'positive',
+          message: 'Position added successfully.',
+          position: 'top',
+        })
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error.response?.data?.message || 'Failed to add position.',
+          position: 'top',
+        })
+      }
+    },
+
+    editPosition(position) {
+      this.editingPosition = { ...position }
+      this.dialogEditPosition = true
+    },
+
+    async savePositionEdit() {
+      if (!this.editingPosition.position_name.trim()) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'Position name cannot be empty.',
+          position: 'top',
+        })
+        return
+      }
+
+      try {
+        await this.libraryStore.updatePosition(
+          this.editingPosition.id,
+          this.editingPosition.position_name,
+        )
+        this.dialogEditPosition = false
+        this.$q.notify({
+          type: 'positive',
+          message: 'Position updated successfully.',
+          position: 'top',
+        })
+      } catch (error) {
+        this.$q.notify({
+          type: 'negative',
+          message: error.response?.data?.message || 'Failed to update position.',
+          position: 'top',
+        })
+      }
+    },
+
     // ==================== TARGET PERIODS ====================
     async addTargetPeriod() {
       const { semester, year } = this.newTargetPeriod
@@ -901,6 +1100,8 @@ export default {
         ids = this.selectedVerbIds
       } else if (type === 'ranks') {
         ids = this.selectedRankIds
+      } else if (type === 'positions') {
+        ids = this.selectedPositionIds
       } else if (type === 'targetperiod') {
         ids = this.selectedTargetPeriodIds
       }
@@ -926,13 +1127,16 @@ export default {
       try {
         if (type === 'verbs') {
           await this.libraryStore.deleteVerbs(ids)
-          this.selectedVerbIds = []
+          this.selectedVerbRows = []
         } else if (type === 'ranks') {
           await this.libraryStore.deleteRanks(ids)
-          this.selectedRankIds = []
+          this.selectedRankRows = []
+        } else if (type === 'positions') {
+          await this.libraryStore.deletePositions(ids)
+          this.selectedPositionRows = []
         } else if (type === 'targetperiod') {
           await this.libraryStore.deleteTargetPeriods(ids)
-          this.selectedTargetPeriodIds = []
+          this.selectedTargetPeriodRows = []
         }
         this.$q.notify({
           type: 'positive',
@@ -950,149 +1154,3 @@ export default {
   },
 }
 </script>
-
-<style scoped>
-/* VERBS GRID - 4 columns */
-.verbs-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  align-items: start;
-}
-
-/* RANKS GRID - 2 columns */
-.ranks-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  align-items: start;
-}
-
-/* TARGET PERIOD GRID - 2 columns */
-.targetperiod-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  align-items: start;
-}
-
-.item-card {
-  border: 1px solid var(--q-color-grey-3);
-  border-radius: 6px;
-  min-height: 56px;
-  align-items: center;
-  display: flex;
-  background: white;
-  transition: all 0.2s ease;
-}
-
-.item-card:hover {
-  background: var(--q-color-grey-1);
-  border-color: var(--q-color-green-5);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* ========== VERTICAL LINE SEPARATORS ========== */
-
-/* VERBS - 4 columns: Add left border except first column */
-.verb-card {
-  border-left: 2px solid var(--q-color-grey-4);
-}
-
-.verb-card:nth-child(4n + 1) {
-  border-left: 1px solid var(--q-color-grey-3);
-}
-
-/* RANKS - 2 columns: Add left border except first column */
-.rank-card {
-  border-left: 2px solid var(--q-color-grey-4);
-}
-
-.rank-card:nth-child(2n + 1) {
-  border-left: 1px solid var(--q-color-grey-3);
-}
-
-/* TARGET PERIOD - 2 columns: Add left border except first column */
-.targetperiod-card {
-  border-left: 2px solid var(--q-color-grey-4);
-}
-
-.targetperiod-card:nth-child(2n + 1) {
-  border-left: 1px solid var(--q-color-grey-3);
-}
-
-/* ========== RESPONSIVE GRID FOR VERBS ========== */
-@media (max-width: 1024px) {
-  .verbs-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .verb-card {
-    border-left: 2px solid var(--q-color-grey-4);
-  }
-
-  .verb-card:nth-child(3n + 1) {
-    border-left: 1px solid var(--q-color-grey-3);
-  }
-
-  .verb-card:nth-child(4n + 1) {
-    border-left: 2px solid var(--q-color-grey-4);
-  }
-}
-
-@media (max-width: 720px) {
-  .verbs-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .verb-card {
-    border-left: 2px solid var(--q-color-grey-4);
-  }
-
-  .verb-card:nth-child(2n + 1) {
-    border-left: 1px solid var(--q-color-grey-3);
-  }
-
-  .verb-card:nth-child(3n + 1),
-  .verb-card:nth-child(4n + 1) {
-    border-left: 2px solid var(--q-color-grey-4);
-  }
-
-  .ranks-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .rank-card {
-    border-left: 1px solid var(--q-color-grey-3);
-  }
-
-  .targetperiod-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .targetperiod-card {
-    border-left: 1px solid var(--q-color-grey-3);
-  }
-}
-
-@media (max-width: 420px) {
-  .verbs-grid {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .verb-card {
-    border-left: 1px solid var(--q-color-grey-3);
-  }
-}
-
-.q-item-label .ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rounded-borders {
-  border-radius: 8px;
-}
-</style>

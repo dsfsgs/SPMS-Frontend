@@ -89,7 +89,9 @@
                   map-options
                   dense
                   outlined
+                  :loading="libraryStore.loading"
                   @update:model-value="(val) => updateEmployeeTitle(props.row, val)"
+                  :option-disable="(opt) => (opt.disable ? opt.disable(props.row) : false)"
                 />
               </q-td>
             </template>
@@ -126,6 +128,17 @@ import { useUserStore } from 'src/stores/userStore'
 import { useEmployeeStore } from 'src/stores/office/employee_Store'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
 import { useMessage } from 'src/composables/message'
+
+// Maps each org-tree node type to the single "head" position title
+// that is valid at that level. Employee is always allowed at every level.
+const LEVEL_TITLE_MAP = {
+  office: 'Department Head',
+  office2: 'Office Head',
+  group: 'Group Head',
+  division: 'Division Head',
+  section: 'Section Head',
+  unit: 'Unit Head',
+}
 
 export default {
   components: { AddEmployeeModal },
@@ -172,43 +185,54 @@ export default {
     }
   },
   computed: {
-    // DYNAMIC TITLE OPTIONS BASED ON SELECTED NODE TYPE
+    // TITLE OPTIONS SOURCED FROM libraryStore.positions (via fetchPositions),
+    // FILTERED PER SELECTED NODE LEVEL:
+    // office -> Department Head + Employee
+    // office2 -> Office Head + Employee
+    // group -> Group Head + Employee
+    // division -> Division Head + Employee
+    // section -> Section Head + Employee
+    // unit -> Unit Head + Employee
+    // The head title is disabled (can't be selected) if another employee
+    // in the same organizational unit already holds it. Employee is never restricted.
     dynamicTitleOptions() {
-      // Define all possible titles with their hierarchy levels
-      const allTitles = [
-        { value: 'Office Head', label: 'Office Head', level: 1 },
-        { value: 'Sub-Office Head', label: 'Sub-Office Head', level: 2 },
-        { value: 'Group Head', label: 'Group Head', level: 3 },
-        { value: 'Division Head', label: 'Division Head', level: 4 },
-        { value: 'Section Head', label: 'Section Head', level: 5 },
-        { value: 'Unit Head', label: 'Unit Head', level: 6 },
-        { value: 'Employee', label: 'Employee', level: 7 },
-      ]
+      const allPositions = this.libraryStore.sortedPositions
 
-      // If no node selected, return all options
-      if (!this.selectedNode) return allTitles
+      const findPosition = (name) =>
+        allPositions.find(
+          (p) => (p.position_name || '').toLowerCase().trim() === name.toLowerCase().trim(),
+        )
 
-      // Map node type to maximum allowed level
-      const maxLevelMap = {
-        office: 1, // Only Office Head and Employee
-        office2: 2, // Up to Sub-Office Head
-        group: 3, // Up to Group Head
-        division: 4, // Up to Division Head
-        section: 5, // Up to Section Head
-        unit: 6, // Up to Unit Head
+      // No node selected yet — fall back to showing everything from the library
+      if (!this.selectedNode) {
+        return allPositions.map((position) => ({
+          value: position.position_name,
+          label: position.position_name,
+          id: position.id,
+        }))
       }
 
-      const maxLevel = maxLevelMap[this.selectedNode.type] || 7
+      const headTitle = LEVEL_TITLE_MAP[this.selectedNode.type]
+      const options = []
 
-      // Filter titles based on the node's level
-      // Always include Employee (level 7) regardless of maxLevel
-      const filtered = allTitles.filter((title) => title.level <= maxLevel || title.level === 7)
+      if (headTitle) {
+        const headPosition = findPosition(headTitle)
+        options.push({
+          value: headTitle,
+          label: headTitle,
+          id: headPosition?.id,
+          disable: (employee) => this.isHeadTitleOptionDisabled(employee, headTitle),
+        })
+      }
 
-      console.log('Selected node type:', this.selectedNode.type)
-      console.log('Max level:', maxLevel)
-      console.log('Filtered options:', filtered)
+      const employeePosition = findPosition('Employee')
+      options.push({
+        value: 'Employee',
+        label: 'Employee',
+        id: employeePosition?.id,
+      })
 
-      return filtered
+      return options
     },
 
     // DYNAMIC RANK OPTIONS WITH HEAD DISABLE LOGIC
@@ -334,6 +358,25 @@ export default {
       ]
     }
 
+    try {
+      await this.libraryStore.fetchPositions()
+    } catch (error) {
+      console.error('Failed to fetch positions:', error)
+      this.$q.notify({
+        type: 'warning',
+        message: 'Failed to load position rank options. Using default titles.',
+      })
+      this.libraryStore.positions = [
+        { id: 1, position_name: 'Department Head' },
+        { id: 2, position_name: 'Office Head' },
+        { id: 3, position_name: 'Group Head' },
+        { id: 4, position_name: 'Division Head' },
+        { id: 5, position_name: 'Section Head' },
+        { id: 6, position_name: 'Unit Head' },
+        { id: 7, position_name: 'Employee' },
+      ]
+    }
+
     await this.fetchOrganizationStructure()
   },
   methods: {
@@ -348,19 +391,28 @@ export default {
       return null
     },
 
-    // CHECK IF HEAD OPTION SHOULD BE DISABLED (ONLY ONE HEAD PER UNIT)
+    // CHECK IF RANK HEAD OPTION SHOULD BE DISABLED (ONLY ONE HEAD PER UNIT)
     isHeadOptionDisabled(employee, headType) {
       if (!this.selectedNode) return false
 
-      // Check if there's already a head for this organizational unit
       const existingHead = this.filteredEmployees.find((emp) => {
-        // Skip the current employee
         if (emp.id === employee.id) return false
-
-        // Check if the employee has the same head type
         if (emp.rank !== headType) return false
+        return this.isSameOrganizationalUnit(emp, employee)
+      })
 
-        // Check if they are in the same organizational unit
+      return !!existingHead
+    },
+
+    // CHECK IF POSITION-RANK (job_title) HEAD OPTION SHOULD BE DISABLED
+    // (ONLY ONE Department/Office/Group/Division/Section/Unit Head PER LEVEL)
+    isHeadTitleOptionDisabled(employee, headTitle) {
+      if (!this.selectedNode) return false
+
+      const existingHead = this.filteredEmployees.find((emp) => {
+        if (emp.id === employee.id) return false
+        if ((emp.job_title || '').toLowerCase().trim() !== headTitle.toLowerCase().trim())
+          return false
         return this.isSameOrganizationalUnit(emp, employee)
       })
 
@@ -420,18 +472,12 @@ export default {
       try {
         const structureResponse = await api.get('/office/structure')
 
-        console.log('API Response:', structureResponse.data)
-
         const userStore = useUserStore()
         const currentOfficeName = userStore.user?.office?.name
-
-        console.log('Looking for office:', currentOfficeName)
 
         const officeData = structureResponse.data.find(
           (office) => office.office === currentOfficeName,
         )
-
-        console.log('Office Data Found:', officeData)
 
         if (officeData) {
           await this.employeeStore.loadAllEmployees()
@@ -446,10 +492,6 @@ export default {
           await this.employeeStore.fetchEmployeesByNode(this.selectedNode)
         } else {
           console.error('No office found matching:', currentOfficeName)
-          console.error(
-            'Available offices:',
-            structureResponse.data.map((o) => o.office),
-          )
           this.$q.notify({
             type: 'warning',
             message: `No structure found for office: ${currentOfficeName}`,

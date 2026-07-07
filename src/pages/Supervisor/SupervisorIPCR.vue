@@ -60,7 +60,7 @@
 
       <!-- Action Buttons -->
       <div class="col-12 col-sm-12 col-md-2 flex items-center q-gutter-sm">
-        <!-- Create UWP Button - Show when has_target_period is false -->
+        <!-- Create UWP Button - Show when there is no existing target period at all -->
         <q-btn
           v-if="apiResponseData?.employee && !apiResponseData.employee.has_target_period"
           color="green-9"
@@ -80,12 +80,13 @@
           </q-tooltip>
         </q-btn>
 
-        <!-- Edit UWP Button - Show when has_target_period is true AND status is NOT "Calibrated/Validated Target" -->
+        <!-- Edit UWP Button - Show when a target period exists AND its status is still editable
+             (Draft / Discussed Target / Not Started / null / empty) -->
         <q-btn
           v-if="
             apiResponseData?.employee &&
             apiResponseData.employee.has_target_period &&
-            !isCalibratedStatus
+            isEditableStatus
           "
           color="blue-9"
           icon="edit"
@@ -104,12 +105,13 @@
           </q-tooltip>
         </q-btn>
 
-        <!-- Status Badge - Show when calibrated/validated -->
+        <!-- Status Badge - Show when a target period exists but its status is NOT editable
+             (i.e. it has progressed beyond Draft/Discussed Target/Not Started) -->
         <div
           v-if="
             apiResponseData?.employee &&
             apiResponseData.employee.has_target_period &&
-            isCalibratedStatus
+            !isEditableStatus
           "
           class="full-width text-center"
         >
@@ -275,6 +277,10 @@ export default {
 
       showEditModal: false,
       editEmployeeData: null,
+
+      // Statuses for which Create/Edit UWP should still be available.
+      // A null/empty status (target period exists but status not yet set) is also treated as editable.
+      editableStatuses: ['draft', 'discussed target', 'not started'],
 
       jobTitlePriority: {
         'Office Head': 1,
@@ -462,13 +468,18 @@ export default {
       return this.apiResponseData?.employee?.managerialSignatory || null
     },
 
-    // New computed property to check if status is calibrated/validated
-    isCalibratedStatus() {
-      if (!this.apiResponseData?.employee?.existing_target_period?.status) return false
-      const status = this.apiResponseData.employee.existing_target_period.status
-        .toLowerCase()
-        .trim()
-      return status === 'calibrated/validated target' || status === 'calibrated/validated'
+    // True when Create/Edit UWP should still be available for the current employee's target period:
+    // - status is null/undefined/empty (target period exists but has no status yet), OR
+    // - status is Draft, Discussed Target, or Not Started (case-insensitive)
+    // Any other status (e.g. Approved, Received, Reviewed, Calibrated/Validated, Returned, etc.)
+    // hides both buttons and shows the status badge instead.
+    isEditableStatus() {
+      const rawStatus = this.apiResponseData?.employee?.existing_target_period?.status
+      const status = (rawStatus || '').toLowerCase().trim()
+
+      if (!status) return true
+
+      return this.editableStatuses.includes(status)
     },
   },
 

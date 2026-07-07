@@ -201,6 +201,8 @@ export default defineComponent({
         3: [
           { label: 'Dashboard', icon: 'dashboard', route: '/hr/dashboard' },
           { label: 'SPMS', icon: 'inventory_2', route: '/hr/spms' },
+          { label: 'UWP', icon: 'checklist', route: '/hr/uwp/' },
+          { label: 'IPCR', icon: 'grading', route: '/hr/ipcr' },
           { label: 'Library', icon: 'library_books', route: '/hr/library' },
           {
             label: 'Account',
@@ -219,6 +221,7 @@ export default defineComponent({
         6: [
           { label: 'UWP', icon: 'checklist', route: '/receiving/uwp/' },
           { label: 'IPCR', icon: 'grading', route: '/receiving/ipcr' },
+          { label: 'QPEF', icon: 'task_alt', route: '/receiving/qpef' },
         ],
         7: [{ label: 'OPCR', icon: 'fact_check', route: '/receiving/opcr/' }],
       }

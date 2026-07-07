@@ -2364,12 +2364,12 @@ const isEmployeeHead = (employee) => {
     .trim()
 
   return (
+    jobTitle === 'department head' ||
     jobTitle === 'office head' ||
+    jobTitle === 'group head' ||
     jobTitle === 'division head' ||
     jobTitle === 'section head' ||
-    jobTitle === 'unit head' ||
-    jobTitle === 'group head' ||
-    jobTitle === 'office2 head'
+    jobTitle === 'unit head'
   )
 }
 

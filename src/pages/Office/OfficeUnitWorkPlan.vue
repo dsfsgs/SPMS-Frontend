@@ -1444,10 +1444,11 @@ export default {
     // 4. CONSTANTS
     // ===========================================================================
     const HEAD_POSITION_TITLES = [
-      'section head',
-      'division head',
-      'unit head',
+      'department head',
       'office head',
+      'division head',
+      'section head',
+      'unit head',
       'group head',
       'sub-office head',
       'section-head',
@@ -1775,10 +1776,34 @@ export default {
     )
 
     const performanceIndicatorCategoryOptions = computed(() => {
-      const categories = officeLibraryIndicatorStore.value?.categories || []
+      const store = officeLibraryIndicatorStore.value
+      if (!store) return []
+
+      // Try multiple sources
+      let categories = store.categories || store.categoryList || store.getCategories?.() || []
+
+      // If categories is empty, try to extract from verbs
+      if (categories.length === 0 && store.verbs?.length > 0) {
+        const catMap = new Map()
+        store.verbs.forEach((verb) => {
+          if (verb.category_id) {
+            const catId = verb.category_id
+            if (!catMap.has(catId)) {
+              catMap.set(catId, {
+                id: catId,
+                categories_name:
+                  verb.category?.categories_name || verb.category?.name || `Category ${catId}`,
+              })
+            }
+          }
+        })
+        categories = Array.from(catMap.values())
+      }
+
       return categories.map((cat) => ({
-        id: cat.id,
-        categories_name: cat.categories_name || cat.name || `Category ${cat.id}`,
+        id: cat.id || cat.category_id,
+        categories_name:
+          cat.categories_name || cat.name || cat.category_name || `Category ${cat.id}`,
       }))
     })
 
@@ -1861,7 +1886,7 @@ export default {
       )
         .toLowerCase()
         .trim()
-      return jobTitle === 'office head'
+      return jobTitle === 'department head'
     })
 
     const isCurrentEmployeeHead = computed(() => dominoIsHead(activeEmployeeTab.value))

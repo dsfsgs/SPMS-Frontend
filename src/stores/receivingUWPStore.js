@@ -6,6 +6,7 @@ export const useReceivingUWPStore = defineStore('receivingUWPStore', {
   state: () => ({
     loading: false,
     records: [],
+    hrRecords: [],
   }),
 
   actions: {
@@ -25,6 +26,49 @@ export const useReceivingUWPStore = defineStore('receivingUWPStore', {
       } catch (error) {
         console.error('Error fetching records:', error)
         this.records = []
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchHRRecords(year, semester) {
+      if (!year || !semester) return
+      this.loading = true
+      try {
+        const resp = await api.get(
+          `hr/spms/unit-work-plan?year=${year}&semester=${encodeURIComponent(semester)}`,
+        )
+
+        const data = resp.data?.data
+
+        // Check if data is an array or object
+        if (Array.isArray(data)) {
+          // Handle array response
+          this.hrRecords = data.map((entry) => ({
+            unitworkplan_id: entry.unitworkplan_id,
+            office: entry.office,
+            unitworkplan_status: entry.unitworkplan_status,
+          }))
+        } else if (data && typeof data === 'object') {
+          // Handle object response (offices as keys)
+          this.hrRecords = Object.keys(data).map((officeName) => {
+            const officeData = data[officeName]
+            return {
+              unitworkplan_id: officeData.id,
+              office: officeName,
+              unitworkplan_status: officeData.status,
+              // Include additional fields if needed
+              semester: officeData.semester,
+              year: officeData.year,
+              remarks: officeData.remarks,
+            }
+          })
+        } else {
+          this.hrRecords = []
+        }
+      } catch (error) {
+        console.error('Error fetching HR records:', error)
+        this.hrRecords = []
       } finally {
         this.loading = false
       }

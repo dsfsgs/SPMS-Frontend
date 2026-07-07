@@ -5,6 +5,7 @@ export const useLibraryStore = defineStore('library', {
   state: () => ({
     verbs: [],
     ranks: [],
+    positions: [],
     targetPeriods: [],
     categories: [],
     loading: false,
@@ -23,6 +24,12 @@ export const useLibraryStore = defineStore('library', {
     sortedRanks: (state) => {
       return [...state.ranks].sort((a, b) =>
         (a.rank_name || '').toLowerCase().localeCompare((b.rank_name || '').toLowerCase()),
+      )
+    },
+
+    sortedPositions: (state) => {
+      return [...state.positions].sort((a, b) =>
+        (a.position_name || '').toLowerCase().localeCompare((b.position_name || '').toLowerCase()),
       )
     },
 
@@ -360,6 +367,138 @@ export const useLibraryStore = defineStore('library', {
       )
     },
 
+    // ==================== POSITIONS ====================
+    async fetchPositions() {
+      this.loading = true
+      this.error = null
+      try {
+        const token = localStorage.getItem('token')
+        const response = await api.get('/hr/position', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+
+        if (Array.isArray(response.data)) {
+          this.positions = response.data
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          this.positions = response.data.data
+        } else {
+          this.positions = []
+        }
+
+        return this.positions
+      } catch (error) {
+        console.error('Failed to fetch positions:', error)
+        this.error = error.response?.data?.message || 'Failed to load positions'
+        this.positions = []
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async addPosition(positionName) {
+      this.loading = true
+      this.error = null
+      try {
+        const token = localStorage.getItem('token')
+        const response = await api.post(
+          '/hr/position/store',
+          { position_name: positionName.trim() },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+
+        let newPosition = null
+        if (response.data.data) {
+          newPosition = response.data.data
+        } else if (response.data.position) {
+          newPosition = response.data.position
+        } else if (response.data.id) {
+          newPosition = response.data
+        }
+
+        if (newPosition) {
+          this.positions.push(newPosition)
+        } else {
+          await this.fetchPositions()
+        }
+
+        return newPosition
+      } catch (error) {
+        console.error('Failed to add position:', error)
+        this.error = error.response?.data?.message || 'Failed to add position'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async updatePosition(positionId, positionName) {
+      this.loading = true
+      this.error = null
+      try {
+        const token = localStorage.getItem('token')
+        const response = await api.put(
+          `/hr/position/update/${positionId}`,
+          { position_name: positionName.trim() },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+
+        const index = this.positions.findIndex((p) => p.id === positionId)
+        if (index !== -1) {
+          this.positions[index] = {
+            ...this.positions[index],
+            position_name: positionName.trim(),
+          }
+        }
+
+        return response.data
+      } catch (error) {
+        console.error('Failed to update position:', error)
+        this.error = error.response?.data?.message || 'Failed to update position'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async deletePositions(positionIds) {
+      this.loading = true
+      this.error = null
+      try {
+        const token = localStorage.getItem('token')
+        const ids = Array.isArray(positionIds) ? positionIds : [positionIds]
+
+        await Promise.all(
+          ids.map((id) =>
+            api.delete(`/hr/position/delete/${id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
+          ),
+        )
+
+        const idSet = new Set(ids)
+        this.positions = this.positions.filter((p) => !idSet.has(p.id))
+
+        return true
+      } catch (error) {
+        console.error('Failed to delete positions:', error)
+        this.error = error.response?.data?.message || 'Failed to delete positions'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    positionExists(positionName) {
+      return this.positions.some(
+        (p) => (p.position_name || '').toLowerCase().trim() === positionName.toLowerCase().trim(),
+      )
+    },
+
     // ==================== TARGET PERIODS ====================
     async fetchTargetPeriods() {
       this.loading = true
@@ -468,6 +607,7 @@ export const useLibraryStore = defineStore('library', {
     clearState() {
       this.verbs = []
       this.ranks = []
+      this.positions = []
       this.targetPeriods = []
       this.categories = []
       this.error = null

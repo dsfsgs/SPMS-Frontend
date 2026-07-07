@@ -436,12 +436,12 @@ const EXCLUDED_STATUSES = ['CONTRACTUAL', 'HONORARIUM']
 const ORG_NODE_TYPES = ['office', 'office2', 'group', 'division', 'section', 'unit']
 
 const HEAD_RANKS = [
+  'department-head',
   'office-head',
+  'group-head',
   'division-head',
   'section-head',
   'unit-head',
-  'group-head',
-  'office2-head',
 ]
 
 /**
@@ -467,13 +467,13 @@ const JOB_TITLE_HIERARCHY = [
   'section head',
   'division head',
   'group head',
-  'office2 head',
   'office head',
+  'department head',
 ]
 
 const UWP_LEVEL_HEAD_JOB_TITLE = {
-  office: 'office head',
-  office2: 'office2 head',
+  office: 'department head',
+  office2: 'office head',
   group: 'group head',
   division: 'division head',
   section: 'section head',
@@ -549,7 +549,7 @@ const getJobTitle = (employee) => {
   )
 }
 
-const isOfficeHead = (employee) => getJobTitle(employee) === 'office head'
+const isDepartmentHead = (employee) => getJobTitle(employee) === 'department head'
 
 const getJobTitleLevel = (jobTitle) => {
   if (!jobTitle) return 0
@@ -772,12 +772,12 @@ const canShowQPEF = (employee) => {
   return ['CASUAL', 'CONTRACTUAL', 'HONORARIUM'].includes(s)
 }
 
-const canShowOPCR = (employee) => isOfficeHead(employee)
+const canShowOPCR = (employee) => isDepartmentHead(employee)
 
 const canShowIPCR = (employee) => {
   if (!employee?.employeeData) return false
   if (isExcludedStatus(employee.employeeData.status)) return false
-  if (isOfficeHead(employee)) return false
+  if (isDepartmentHead(employee)) return false
   return true
 }
 
@@ -1039,7 +1039,7 @@ const getParentNodeId = (nodeId, nodes = orgStore.structure, parentId = null) =>
 
 const getSupervisorySignatory = (employee) => {
   if (!employee) return null
-  if (isOfficeHead(employee)) return null
+  if (isDepartmentHead(employee)) return null
 
   const employeeJobTitleLevel = getJobTitleLevel(getJobTitle(employee))
 
@@ -1084,12 +1084,12 @@ const getSupervisorySignatory = (employee) => {
   }
 
   const allEmployees = getAllEmployeesUnderNode(orgStore.structure?.[0]?.id)
-  return allEmployees.find((emp) => isOfficeHead(emp)) || null
+  return allEmployees.find((emp) => isDepartmentHead(emp)) || null
 }
 
 const getManagerialSignatory = (allEmployees) => {
   if (!allEmployees) return null
-  return allEmployees.find((emp) => isOfficeHead(emp)) || null
+  return allEmployees.find((emp) => isDepartmentHead(emp)) || null
 }
 
 const buildSignatories = (employee) => {

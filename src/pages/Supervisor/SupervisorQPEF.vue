@@ -137,6 +137,7 @@
         :employee="qpefSelectedEmployee"
         :immediate-supervisor="store.immediateSupervisor"
         :office-head="store.departmentOfficeHead"
+        :qpef-status="qpefSelectedEmployee.qpefStatus"
         @close="closeQpefModal"
         @done="handleQpefDone"
       />
@@ -290,7 +291,15 @@ export default {
     },
 
     openQpefForEmployee(employee) {
-      this.qpefSelectedEmployee = employee || null
+      // Find the QPEF status for the selected quarter and year
+      const qpefEntry = employee.qpef?.find(
+        (q) => q.quarterly === this.selectedQuarter && String(q.year) === String(this.selectedYear),
+      )
+
+      this.qpefSelectedEmployee = {
+        ...employee,
+        qpefStatus: qpefEntry?.status || null, // Pass the status
+      }
       this.showQpefModal = true
     },
 

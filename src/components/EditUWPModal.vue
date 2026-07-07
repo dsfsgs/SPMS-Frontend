@@ -261,9 +261,7 @@
                                       </template>
                                     </q-select>
 
-                                    <!-- MFO
-                                         Non-Office-Head employees only see MFOs the Office Head
-                                         has already included in their plan (headMfoNames). -->
+                                    <!-- MFO -->
                                     <q-select
                                       v-if="!isSupportCategory(standard.rows.category)"
                                       outlined
@@ -317,10 +315,7 @@
                                       </template>
                                     </q-select>
 
-                                    <!-- Output
-                                         - Office Head + non-support → hidden
-                                         - Office Head + support     → shown, unique per standard
-                                         - All other employees       → always shown -->
+                                    <!-- Output -->
                                     <q-select
                                       v-if="shouldShowOutput(standard)"
                                       outlined
@@ -577,6 +572,52 @@
                                       class="full-width"
                                       @update:model-value="generateSuccessIndicator(index)"
                                     />
+
+                                    <!-- Performance Indicator Category Select -->
+                                    <q-select
+                                      outlined
+                                      v-model="standard.indicatorCategoryId"
+                                      label="Performance Indicator Category"
+                                      dense
+                                      class="full-width q-pt-sm"
+                                      :options="performanceIndicatorCategoryOptions"
+                                      option-value="id"
+                                      option-label="categories_name"
+                                      emit-value
+                                      map-options
+                                      clearable
+                                      @update:model-value="
+                                        () => {
+                                          standard.indicatorName = null
+                                          filterPerformanceIndicatorsByCategory(
+                                            standard.indicatorCategoryId,
+                                            index,
+                                          )
+                                        }
+                                      "
+                                    >
+                                      <template v-slot:prepend>
+                                        <q-icon name="category" size="xs" />
+                                      </template>
+                                      <template v-slot:option="scope">
+                                        <q-item v-bind="scope.itemProps" dense>
+                                          <q-item-section>
+                                            <q-item-label>{{
+                                              scope.opt.categories_name
+                                            }}</q-item-label>
+                                          </q-item-section>
+                                        </q-item>
+                                      </template>
+                                      <template v-slot:no-option>
+                                        <q-item>
+                                          <q-item-section class="text-grey">
+                                            No categories found
+                                          </q-item-section>
+                                        </q-item>
+                                      </template>
+                                    </q-select>
+
+                                    <!-- Performance Indicator Select (single selection, filtered by category) -->
                                     <q-select
                                       outlined
                                       v-model="standard.indicatorName"
@@ -585,21 +626,22 @@
                                       class="full-width q-pt-sm"
                                       use-input
                                       input-debounce="300"
-                                      @filter="filterPerformanceIndicators"
-                                      :options="filteredVerbs"
+                                      @filter="
+                                        (val, update) =>
+                                          filterPerformanceIndicators(val, update, index)
+                                      "
+                                      :options="getFilteredVerbOptions(index)"
                                       option-value="id"
                                       option-label="name"
                                       emit-value
                                       map-options
-                                      multiple
-                                      use-chips
                                       clearable
                                       @update:model-value="
                                         async (value) => {
                                           generateSuccessIndicator(index)
                                           const std = currentEmployee.performanceStandards[index]
                                           if (std?.rows?.mfo && !isCurrentEmployeeOfficeHead) {
-                                            if (value && value.length > 0) {
+                                            if (value) {
                                               await checkAndApplyRestriction(index)
                                             } else {
                                               std.quantityRestriction = null
@@ -608,26 +650,29 @@
                                         }
                                       "
                                     >
-                                      <template #prepend><q-icon name="flag" size="xs" /></template>
-                                      <template #option="scope">
+                                      <template v-slot:prepend>
+                                        <q-icon name="flag" size="xs" />
+                                      </template>
+                                      <template v-slot:option="scope">
                                         <q-item v-bind="scope.itemProps" dense>
-                                          <q-item-section side
-                                            ><q-checkbox :model-value="scope.selected"
-                                          /></q-item-section>
                                           <q-item-section>
                                             <q-item-label>{{ scope.opt.name }}</q-item-label>
-                                            <q-item-label caption v-if="scope.opt.description">{{
-                                              scope.opt.description
-                                            }}</q-item-label>
+                                            <q-item-label caption v-if="scope.opt.description">
+                                              {{ scope.opt.description }}
+                                            </q-item-label>
                                           </q-item-section>
                                         </q-item>
                                       </template>
-                                      <template #no-option>
-                                        <q-item
-                                          ><q-item-section class="text-grey"
-                                            >No performance indicators found</q-item-section
-                                          ></q-item
-                                        >
+                                      <template v-slot:no-option>
+                                        <q-item>
+                                          <q-item-section class="text-grey">
+                                            {{
+                                              standard.indicatorCategoryId
+                                                ? 'No performance indicators found in this category'
+                                                : 'Please select a category first'
+                                            }}
+                                          </q-item-section>
+                                        </q-item>
                                       </template>
                                     </q-select>
                                   </div>
@@ -1276,9 +1321,7 @@ export default {
     const quantityValue = ref(null)
     const currentQuantityRestriction = ref(null)
 
-    // Head MFO filter — names of MFOs the Office Head has set in their plan.
-    // Non-Office-Head employees may only pick from this list (per category).
-    // Populated by fetchHeadMfos() in onMounted.
+    // Head MFO filter
     const headMfoNames = ref(new Set())
     const isFetchingHeadMfos = ref(false)
 
@@ -1376,7 +1419,8 @@ export default {
       id: uuidv4(),
       expanded: true,
       outputName: '',
-      indicatorName: [],
+      indicatorName: null,
+      indicatorCategoryId: null,
       successIndicator: '',
       requiredOutput: '',
       modeOfVerification: '',
@@ -1434,10 +1478,6 @@ export default {
       )
     }
 
-    /**
-     * True ONLY when the employee being edited has job_title === 'office head' (exact match).
-     * Section heads, division heads, etc. are intentionally excluded.
-     */
     const isCurrentEmployeeOfficeHead = computed(() => {
       if (!currentEmployee.value) return false
       const jobTitle = (
@@ -1452,12 +1492,6 @@ export default {
       return jobTitle === 'office head'
     })
 
-    /**
-     * Whether the output select should be shown.
-     * - Office Head + non-support category → hidden
-     * - Office Head + support category     → shown
-     * - Everyone else                      → always shown
-     */
     const shouldShowOutput = (standard) => {
       if (!isCurrentEmployeeOfficeHead.value) return true
       return isSupportCategory(standard.rows.category)
@@ -1514,39 +1548,15 @@ export default {
     // 7. HEAD MFO FETCH
     // ===========================================================================
 
-    /**
-     * Fetches the Office Head's existing performance standards via useMFOHeadStore
-     * and builds headMfoNames — a Set of lowercased MFO name strings.
-     *
-     * Non-Office-Head employees' MFO dropdowns are restricted to this set so they
-     * can only select MFOs that the Office Head has already planned.
-     *
-     * In the Edit modal we have props.semester and props.year directly. We build
-     * the payload using the currentEmployee's data (if it's the head itself) or
-     * from the office info stored in targetPeriodDetails after fetchEmployeeData runs.
-     *
-     * Strategy:
-     *   1. If currentEmployee IS the Office Head → skip (they see all MFOs)
-     *   2. Use props.employee (passed by parent) to find the head employee info
-     *   3. Fall back to targetPeriodDetails.office + props.year as minimal payload
-     */
     const fetchHeadMfos = async () => {
-      // Office Head sees the full MFO list — no need to fetch a restriction set
       if (isCurrentEmployeeOfficeHead.value) return
 
       const semester = props.semester
       const year = props.year
       if (!semester || !year) return
 
-      // Build the payload. The API needs an employee object to scope to the right office.
-      // We use props.employee if provided (it contains the full employee record from the parent),
-      // otherwise fall back to what we know from targetPeriodDetails.
       let empData = null
 
-      // Props.employee passed by the parent component (the employee being edited)
-      // may be a non-head — but we need to pass the Office Head's info, not this employee.
-      // The parent should pass the office_id which the server uses to find the head.
-      // We'll use the office info we have and let the server resolve the head by office.
       if (props.employee) {
         const e = props.employee
         empData = {
@@ -1569,7 +1579,6 @@ export default {
       }
 
       const payload = { employee: empData }
-      console.log('[EDIT-UWP] fetchHeadMfos payload:', payload)
 
       isFetchingHeadMfos.value = true
       try {
@@ -1579,10 +1588,8 @@ export default {
         headMfoNames.value = new Set(
           standards.map((ps) => (ps.mfo || '').trim().toLowerCase()).filter(Boolean),
         )
-        console.log('[EDIT-UWP] headMfoNames loaded:', [...headMfoNames.value])
       } catch (err) {
         console.error('[EDIT-UWP] fetchHeadMfos error:', err)
-        // On failure leave headMfoNames empty — MFO list falls back to full library
         headMfoNames.value = new Set()
       } finally {
         isFetchingHeadMfos.value = false
@@ -1590,7 +1597,7 @@ export default {
     }
 
     // ===========================================================================
-    // 8. SUPERVISOR RESOLUTION (MFO+OUTPUT AWARE)
+    // 8. SUPERVISOR RESOLUTION
     // ===========================================================================
 
     const calculateSupervisorySignatory = (
@@ -1619,13 +1626,6 @@ export default {
         employee?.employeeData?.existing_target_period?.supervisory_control_no ||
         null
 
-      console.log('[EDIT-UWP] Resolving signatory:', employee?.name || employee?.label, {
-        knownControlNo,
-        rootControlNo: source.controlNo,
-        mfoValue,
-        outputName,
-      })
-
       const fromSup = (sup) => ({
         controlNo: sup.controlNo,
         name: sup.name,
@@ -1652,18 +1652,12 @@ export default {
               normalise(m.mfo) === normalise(mfoValue) &&
               normalise(m.output) === normalise(outputName),
           )
-          if (hasIt) {
-            console.log('[EDIT-UWP] ✅ Known supervisor has MFO+output:', knownSup.name)
-            return fromSup(knownSup)
-          }
-          console.log('[EDIT-UWP] Known supervisor lacks this MFO+output → Office Head')
+          if (hasIt) return fromSup(knownSup)
           return fromRoot()
         }
-        console.log('[EDIT-UWP] controlNo not in supervisories[] → Office Head')
         return fromRoot()
       }
 
-      console.log('[EDIT-UWP] No output selected → using Office Head')
       return fromRoot()
     }
 
@@ -1698,6 +1692,10 @@ export default {
       })),
     )
 
+    // ===========================================================================
+    // 9b. PERFORMANCE INDICATOR COMPUTED PROPERTIES
+    // ===========================================================================
+
     const performanceIndicatorOptions = computed(() =>
       officeLibraryIndicatorStore.verbs.map((verb) => ({
         id: verb.id,
@@ -1705,8 +1703,40 @@ export default {
         value: verb.id,
         name: verb.indicator_name || verb.name,
         description: verb.description || '',
+        category_id: verb.category_id || null,
+        category_name: verb.category?.categories_name || null,
       })),
     )
+
+    const performanceIndicatorCategoryOptions = computed(() => {
+      const store = officeLibraryIndicatorStore
+      if (!store) return []
+
+      let categories = store.categories || store.categoryList || store.getCategories?.() || []
+
+      if (categories.length === 0 && store.verbs?.length > 0) {
+        const catMap = new Map()
+        store.verbs.forEach((verb) => {
+          if (verb.category_id) {
+            const catId = verb.category_id
+            if (!catMap.has(catId)) {
+              catMap.set(catId, {
+                id: catId,
+                categories_name:
+                  verb.category?.categories_name || verb.category?.name || `Category ${catId}`,
+              })
+            }
+          }
+        })
+        categories = Array.from(catMap.values())
+      }
+
+      return categories.map((cat) => ({
+        id: cat.id || cat.category_id,
+        categories_name:
+          cat.categories_name || cat.name || cat.category_name || `Category ${cat.id}`,
+      }))
+    })
 
     const filteredCompetencyOptionsByType = computed(() => {
       const { sg } = currentEmployee.value || {}
@@ -1806,11 +1836,10 @@ export default {
     // ===========================================================================
 
     const checkAndApplyRestriction = async (standardIndex) => {
-      // Office Head is the cascade root — no restriction applies to them.
       if (isCurrentEmployeeOfficeHead.value) return null
 
       const standard = currentEmployee.value?.performanceStandards?.[standardIndex]
-      if (!standard?.rows?.mfo || !standard.indicatorName?.length) return null
+      if (!standard?.rows?.mfo || !standard.indicatorName) return null
 
       const mfoId = standard.rows.mfo
       const outputId = standard.rows.output
@@ -1888,7 +1917,6 @@ export default {
 
         if (resolvedSignatory) {
           currentEmployee.value.supervisorySignatory = resolvedSignatory
-          // Stamp supervisory_control_no on this standard's rows immediately
           if (resolvedSignatory?.controlNo) {
             standard.rows.supervisory_control_no = resolvedSignatory.controlNo
           }
@@ -1950,7 +1978,7 @@ export default {
 
         const restriction = quantityRestriction.determineRestriction({
           selectedEmployee: { ...currentEmployee.value, supervisorySignatory: resolvedSignatory },
-          selectedIndicators: standard.indicatorName,
+          selectedIndicators: standard.indicatorName ? [standard.indicatorName] : [],
           quantityType: standard.quantityIndicatorType,
           verbs: officeLibraryIndicatorStore.verbs,
           cascadeData: fetchedData,
@@ -2139,13 +2167,6 @@ export default {
       return used
     }
 
-    /**
-     * MFO option list for a given standard index.
-     *
-     * Office Head     → full list for selected category (no restriction).
-     * Everyone else   → restricted to MFOs in the Office Head's plan (headMfoNames Set).
-     *                   Falls back to full list when headMfoNames is empty.
-     */
     const getFilteredMfoOptions = (index) => {
       const standard = currentEmployee.value?.performanceStandards?.[index]
       if (!standard?.rows.category) return []
@@ -2172,7 +2193,6 @@ export default {
           description: mfo.description || '',
         }))
 
-      // Non-Office-Head employees: restrict to head's MFOs when available
       if (!isCurrentEmployeeOfficeHead.value && headMfoNames.value.size > 0) {
         list = list.filter((m) => headMfoNames.value.has((m.name || '').trim().toLowerCase()))
       }
@@ -2275,7 +2295,6 @@ export default {
             description: m.description || '',
           }))
 
-        // Non-Office-Head employees: restrict to head's MFOs when available
         if (!isCurrentEmployeeOfficeHead.value && headMfoNames.value.size > 0) {
           list = list.filter((m) => headMfoNames.value.has((m.name || '').trim().toLowerCase()))
         }
@@ -2301,21 +2320,61 @@ export default {
       })
     }
 
-    const filterPerformanceIndicators = (val, update) => {
-      const base = officeLibraryIndicatorStore.verbs.map((verb) => ({
-        id: verb.id,
-        label: verb.indicator_name || verb.name,
-        value: verb.id,
-        name: verb.indicator_name || verb.name,
-        description: verb.description || '',
-      }))
-      const needle = (val || '').toLowerCase()
-      const filtered = base.filter(
-        (v) =>
-          v.label.toLowerCase().includes(needle) || v.description.toLowerCase().includes(needle),
+    // ===========================================================================
+    // 13b. PERFORMANCE INDICATOR FILTER METHODS
+    // ===========================================================================
+
+    const filterPerformanceIndicators = (val, update, standardIndex) => {
+      const standard = currentEmployee.value?.performanceStandards?.[standardIndex]
+      const categoryId = standard?.indicatorCategoryId
+
+      if (typeof update === 'function') {
+        update(() => {
+          const needle = (val || '').toLowerCase()
+          let options = performanceIndicatorOptions.value
+
+          if (categoryId) {
+            options = options.filter((v) => Number(v.category_id) === Number(categoryId))
+          }
+
+          filteredVerbs.value = options.filter(
+            (v) =>
+              v.name.toLowerCase().includes(needle) ||
+              (v.description || '').toLowerCase().includes(needle) ||
+              (v.category_name || '').toLowerCase().includes(needle),
+          )
+        })
+      } else {
+        let options = performanceIndicatorOptions.value
+        if (categoryId) {
+          options = options.filter((v) => Number(v.category_id) === Number(categoryId))
+        }
+        filteredVerbs.value = options
+      }
+    }
+
+    const filterPerformanceIndicatorsByCategory = (categoryId) => {
+      const options = performanceIndicatorOptions.value.filter(
+        (v) => Number(v.category_id) === Number(categoryId),
       )
-      if (typeof update === 'function') update(() => (filteredVerbs.value = filtered))
-      else filteredVerbs.value = filtered
+      filteredVerbs.value = options
+    }
+
+    const getFilteredVerbOptions = (index) => {
+      if (filteredVerbs.value && filteredVerbs.value.length > 0) {
+        return filteredVerbs.value
+      }
+
+      const standard = currentEmployee.value?.performanceStandards?.[index]
+      const categoryId = standard?.indicatorCategoryId
+
+      if (categoryId) {
+        return performanceIndicatorOptions.value.filter(
+          (v) => Number(v.category_id) === Number(categoryId),
+        )
+      }
+
+      return performanceIndicatorOptions.value
     }
 
     // ===========================================================================
@@ -2367,21 +2426,11 @@ export default {
         const qtyPart = getQuantityComponent(i)
         const outputPart = std.outputName?.trim() || ''
         let indicatorPart = ''
-        if (Array.isArray(std.indicatorName) && std.indicatorName.length > 0) {
-          const names = std.indicatorName
-            .map((idOrText) => {
-              if (typeof idOrText === 'number' || !isNaN(idOrText)) {
-                const verb = officeLibraryIndicatorStore.verbs.find(
-                  (v) => v.id === Number(idOrText),
-                )
-                return verb?.indicator_name || verb?.name || ''
-              }
-              return idOrText
-            })
-            .filter(Boolean)
-          if (names.length === 1) indicatorPart = names[0]
-          else if (names.length === 2) indicatorPart = names.join(' and ')
-          else indicatorPart = `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+        if (std.indicatorName) {
+          const verb = officeLibraryIndicatorStore.verbs.find(
+            (v) => v.id === Number(std.indicatorName),
+          )
+          indicatorPart = verb?.indicator_name || verb?.name || ''
         }
         const effectPart = getEffectivenessComponent(i)
         const timePart = getTimelinessComponent(i)
@@ -2610,7 +2659,7 @@ export default {
       if (
         row.rating === '5' &&
         std?.rows?.mfo &&
-        std.indicatorName?.length &&
+        std.indicatorName &&
         !isCurrentEmployeeOfficeHead.value
       ) {
         await checkAndApplyRestriction(index)
@@ -2838,7 +2887,8 @@ export default {
                 id: `ps_${ps.id || Date.now()}`,
                 expanded: true,
                 outputName: ps.output_name || '',
-                indicatorName,
+                indicatorName: Array.isArray(indicatorName) ? indicatorName[0] : indicatorName,
+                indicatorCategoryId: null,
                 successIndicator: ps.success_indicator || '',
                 requiredOutput: ps.required_output || '',
                 modeOfVerification: '',
@@ -3002,11 +3052,7 @@ export default {
             supervisorySignatory: currentEmployee.value.supervisorySignatory,
             performanceStandards: currentEmployee.value.performanceStandards?.map((std) => ({
               ...std,
-              indicatorName: Array.isArray(std.indicatorName)
-                ? std.indicatorName
-                : std.indicatorName
-                  ? [std.indicatorName]
-                  : [],
+              indicatorName: std.indicatorName ? [std.indicatorName] : [],
               rows: {
                 category: std.rows?.category?.id ?? std.rows?.category,
                 mfo: std.rows?.mfo?.id ?? std.rows?.mfo,
@@ -3118,7 +3164,7 @@ export default {
       () =>
         currentEmployee.value?.performanceStandards?.map((s) => ({
           id: s.id,
-          indicatorName: JSON.stringify(s.indicatorName),
+          indicatorName: s.indicatorName,
           mfo: typeof s.rows?.mfo === 'object' ? s.rows?.mfo?.id : s.rows?.mfo,
           output: typeof s.rows?.output === 'object' ? s.rows?.output?.id : s.rows?.output,
         })),
@@ -3133,7 +3179,7 @@ export default {
           const std = currentEmployee.value.performanceStandards[i]
           if (!std) continue
           std.quantityRestriction = null
-          if (std.rows?.mfo && std.indicatorName?.length) await checkAndApplyRestriction(i)
+          if (std.rows?.mfo && std.indicatorName) await checkAndApplyRestriction(i)
         }
       },
       { deep: true },
@@ -3158,7 +3204,6 @@ export default {
       { deep: true },
     )
 
-    // Re-run fetchHeadMfos once currentEmployee is loaded (non-head employees only)
     watch(
       () => currentEmployee.value?.employeeId,
       (newId) => {
@@ -3179,13 +3224,7 @@ export default {
           officeLibraryIndicatorStore.fetchVerbs(),
         ])
 
-        filterPerformanceIndicators('', null)
-
         await initializeUWPData()
-
-        // Always fetch head MFOs after employee data is loaded.
-        // The watcher above handles the case when currentEmployee loads after this.
-        // This call covers the synchronous case and non-head employees.
         fetchHeadMfos()
       } catch (error) {
         console.error('[EDIT-UWP] Error loading data:', error)
@@ -3247,6 +3286,7 @@ export default {
       yearOptions,
       categoryOptions,
       performanceIndicatorOptions,
+      performanceIndicatorCategoryOptions,
       standardOutcomeColumns,
       isFormValid,
 
@@ -3274,6 +3314,8 @@ export default {
 
       // Filter methods
       filterPerformanceIndicators,
+      filterPerformanceIndicatorsByCategory,
+      getFilteredVerbOptions,
       getFilteredMfoOptions,
       getFilteredOutputOptions,
       clearDependentFields,

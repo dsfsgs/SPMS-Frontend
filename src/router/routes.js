@@ -24,6 +24,16 @@ export const routes = [
         meta: { role: 'hr-admin' },
       },
       {
+        path: 'hr/uwp',
+        component: () => import('src/pages/HR/HRUWP.vue'),
+        meta: { role: 'hr-admin' },
+      },
+      {
+        path: 'hr/ipcr',
+        component: () => import('src/pages/HR/HRIPCR.vue'),
+        meta: { role: 'hr-admin' },
+      },
+      {
         path: 'hr/library',
         component: () => import('src/pages/HR/HRLibrary.vue'),
         meta: { role: 'hr-admin' },
@@ -80,7 +90,11 @@ export const routes = [
         component: () => import('src/pages/Office/OfficeUser.vue'),
         meta: { role: 'office-admin' },
       },
-      { path: 'unitworkplan',name:'unitworkplan', component: () => import('src/pages/Office/OfficeUnitWorkPlan.vue') },
+      {
+        path: 'unitworkplan',
+        name: 'unitworkplan',
+        component: () => import('src/pages/Office/OfficeUnitWorkPlan.vue'),
+      },
 
       // Planning Admin Routes
       {
@@ -141,9 +155,9 @@ export const routes = [
         meta: { role: 'receiving-hr-staff' },
       },
       {
-        path: 'receiving/opcr',
-        component: () => import('src/pages/Receiving/ReceivingOPCR.vue'),
-        meta: { role: 'receiving-planning-staff' },
+        path: 'receiving/qpef',
+        component: () => import('src/pages/Receiving/ReceivingQPEF.vue'),
+        meta: { role: 'receiving-hr-staff' },
       },
     ],
   },

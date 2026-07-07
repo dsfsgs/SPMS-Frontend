@@ -27,17 +27,38 @@
               &nbsp;·&nbsp;{{ employee?.position || 'N/A' }} &nbsp;·&nbsp;Control No:
               {{ employee?.controlNo || 'N/A' }}
             </div>
+            <div v-if="qpefStatus" class="text-caption q-mt-xs">
+              <q-badge :color="qpefStatus === 'Received' ? 'green' : 'orange'">
+                Status: {{ qpefStatus }}
+              </q-badge>
+            </div>
           </div>
           <div class="flex justify-end q-gutter-sm">
-            <q-btn v-if="isViewMode" color="orange" icon="edit" label="Edit" @click="handleEdit" />
+            <q-btn
+              v-if="isViewMode"
+              color="orange"
+              icon="edit"
+              label="Edit"
+              @click="handleEdit"
+              :disable="qpefStatus === 'Received'"
+            >
+              <q-tooltip v-if="qpefStatus === 'Received'">
+                Cannot edit - this QPEF has been received
+              </q-tooltip>
+            </q-btn>
             <q-btn
               v-if="!isViewMode"
               color="primary"
               icon="save"
               label="Save"
               :loading="isSaving"
+              :disable="qpefStatus === 'Received'"
               @click="handleSave"
-            />
+            >
+              <q-tooltip v-if="qpefStatus === 'Received'">
+                Cannot save - this QPEF has been received
+              </q-tooltip>
+            </q-btn>
             <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" />
           </div>
         </div>
@@ -90,7 +111,7 @@
                     label="Q1"
                     dense
                     class="q-ml-sm"
-                    :disable="!!quarter"
+                    :disable="!!quarter || qpefStatus === 'Received'"
                     @update:model-value="handleQuarterChange"
                   />
                   <q-radio
@@ -99,7 +120,7 @@
                     label="Q2"
                     dense
                     class="q-ml-sm"
-                    :disable="!!quarter"
+                    :disable="!!quarter || qpefStatus === 'Received'"
                     @update:model-value="handleQuarterChange"
                   />
                   <q-radio
@@ -108,7 +129,7 @@
                     label="Q3"
                     dense
                     class="q-ml-sm"
-                    :disable="!!quarter"
+                    :disable="!!quarter || qpefStatus === 'Received'"
                     @update:model-value="handleQuarterChange"
                   />
                   <q-radio
@@ -117,7 +138,7 @@
                     label="Q4"
                     dense
                     class="q-ml-sm"
-                    :disable="!!quarter"
+                    :disable="!!quarter || qpefStatus === 'Received'"
                     @update:model-value="handleQuarterChange"
                   />
                 </div>
@@ -220,7 +241,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('task1', formData.jobPerformance)"
                       />
@@ -231,7 +252,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -244,7 +265,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('task2', formData.jobPerformance)"
                       />
@@ -255,7 +276,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -268,7 +289,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('task3', formData.jobPerformance)"
                       />
@@ -279,7 +300,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -292,7 +313,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('task4', formData.jobPerformance)"
                       />
@@ -303,7 +324,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -342,7 +363,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item1', formData.competencies)"
                       />
@@ -353,7 +374,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -369,7 +390,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item2', formData.competencies)"
                       />
@@ -380,7 +401,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -393,7 +414,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item3', formData.competencies)"
                       />
@@ -404,7 +425,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -417,7 +438,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item4', formData.competencies)"
                       />
@@ -428,7 +449,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -444,7 +465,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item5', formData.competencies)"
                       />
@@ -455,7 +476,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -470,7 +491,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item6', formData.competencies)"
                       />
@@ -481,7 +502,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -497,7 +518,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item7', formData.competencies)"
                       />
@@ -508,7 +529,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -523,7 +544,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item8', formData.competencies)"
                       />
@@ -534,7 +555,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -575,7 +596,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item1', formData.physical)"
                       />
@@ -586,7 +607,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -599,7 +620,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item2', formData.physical)"
                       />
@@ -610,7 +631,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -623,7 +644,7 @@
                         dense
                         outlined
                         class="rating-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                         :rules="[(val) => (val >= 1 && val <= 5) || 'Must be between 1-5']"
                         @blur="validateRating('item3', formData.physical)"
                       />
@@ -634,7 +655,7 @@
                         dense
                         outlined
                         class="remarks-input"
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -653,7 +674,7 @@
                     <td></td>
                   </tr>
 
-                  <!-- D. RECOMMENDATION -->
+                  <!-- D. RECOMMENDATION - WITH CONDITIONAL LOGIC -->
                   <tr>
                     <td colspan="4" class="category-header">
                       D. RECOMMENDATION AND DEVELOPMENT PLAN
@@ -667,7 +688,7 @@
                         val="retention"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
+                        :disable="isViewMode || qpefStatus === 'Received'"
                         @update:model-value="handleRecommendationChange"
                       />
                       For retention / contract renewal
@@ -678,7 +699,7 @@
                         val="improvement"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
+                        :disable="isViewMode || qpefStatus === 'Received'"
                         @update:model-value="handleRecommendationChange"
                       />
                       For improvement (coaching/mentoring) needed
@@ -692,7 +713,7 @@
                         val="commendation"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
+                        :disable="isViewMode || qpefStatus === 'Received'"
                         @update:model-value="handleRecommendationChange"
                       />
                       For commendation
@@ -703,10 +724,13 @@
                         val="nonRenewal"
                         dense
                         class="q-ml-sm"
-                        :disable="isViewMode"
+                        :disable="isNonRenewalDisabled || qpefStatus === 'Received'"
                         @update:model-value="handleRecommendationChange"
                       />
                       For non-renewal (due to unsatisfactory or poor performance)
+                      <span v-if="isNonRenewalDisabled" class="text-caption text-grey-7">
+                        (Available only for ratings 1-2)
+                      </span>
                     </td>
                   </tr>
                   <tr>
@@ -722,7 +746,7 @@
                         outlined
                         rows="4"
                         placeholder="Enter supervisor's comments and recommendations..."
-                        :readonly="isViewMode"
+                        :readonly="isViewMode || qpefStatus === 'Received'"
                       />
                     </td>
                   </tr>
@@ -834,6 +858,10 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+  qpefStatus: {
+    type: String,
+    default: null,
+  },
 })
 
 const emit = defineEmits(['close', 'print', 'save', 'done'])
@@ -848,6 +876,19 @@ const isSaving = ref(false)
 // ── Computed ──────────────────────────────────────────────────────────────────
 const controlNo = computed(() => props.employee?.controlNo || null)
 const currentYear = computed(() => props.year)
+
+// ── Conditional Logic for Non-Renewal ──────────────────────────────────────
+const isNonRenewalDisabled = computed(() => {
+  // If in view mode, we don't want to disable based on rating
+  // because the rating might have been saved with a non-renewal recommendation
+  // even if the current computed rating is higher (e.g., rating changed after save)
+  if (isViewMode.value) return false
+
+  const finalRatingValue = finalRating.value
+  // Disable non-renewal if final rating is 3 or higher
+  // Enable only when final rating is 1 or 2
+  return finalRatingValue >= 3
+})
 
 // ── Form data ─────────────────────────────────────────────────────────────────
 const formData = reactive({
@@ -966,11 +1007,10 @@ const loadExistingData = (data) => {
     })
   }
 
-  // Load Recommendations - FIXED: Properly handle boolean conversion
+  // Load Recommendations
   if (data.recommendation_development) {
     const rec = data.recommendation_development
 
-    // Convert string "1"/"0" or boolean to proper boolean
     formData.recommendations.retention =
       rec.for_retention === '1' || rec.for_retention === 1 || rec.for_retention === true
     formData.recommendations.commendation =
@@ -983,7 +1023,6 @@ const loadExistingData = (data) => {
     formData.supervisorComments = rec.recommendation || ''
 
     // Set the selected recommendation based on which one is true
-    // IMPORTANT: Only one should be true at a time
     if (formData.recommendations.retention) {
       selectedRecommendation.value = 'retention'
     } else if (formData.recommendations.commendation) {
@@ -1709,7 +1748,7 @@ const buildDocDefinition = (params) => {
               },
               { text: '', fillColor: '#f0f0f0' },
             ],
-            // D. Recommendation - FIXED: Only one checkbox will be checked
+            // D. Recommendation
             [
               {
                 text: 'D. RECOMMENDATION AND DEVELOPMENT PLAN',
@@ -1939,11 +1978,29 @@ const handleClose = () => {
 }
 
 const handleEdit = () => {
+  if (props.qpefStatus === 'Received') {
+    $q.notify({
+      type: 'negative',
+      message: 'Cannot edit - this QPEF has already been received',
+      position: 'top',
+    })
+    return
+  }
   isViewMode.value = false
   $q.notify({ type: 'info', message: 'Edit mode enabled.', position: 'top' })
 }
 
 const handleSave = async () => {
+  // Check if status is Received
+  if (props.qpefStatus === 'Received') {
+    $q.notify({
+      type: 'negative',
+      message: 'Cannot save - this QPEF has already been received',
+      position: 'top',
+    })
+    return
+  }
+
   if (isSaving.value) return
   if (!selectedQuarterLocal.value) {
     $q.notify({ type: 'negative', message: 'Please select a quarter', position: 'top' })
@@ -1951,6 +2008,16 @@ const handleSave = async () => {
   }
   if (!controlNo.value) {
     $q.notify({ type: 'negative', message: 'Employee control number is missing', position: 'top' })
+    return
+  }
+
+  // Validate that non-renewal is only selected when rating is 1-2
+  if (formData.recommendations.nonRenewal && finalRating.value >= 3) {
+    $q.notify({
+      type: 'negative',
+      message: 'Non-renewal can only be selected for ratings 1-2 (Unsatisfactory or Poor)',
+      position: 'top',
+    })
     return
   }
 
@@ -2002,7 +2069,6 @@ const handleSave = async () => {
     ],
   )
 
-  // FIXED: Build recommendation payload - only one should be true
   const payload = {
     control_no: controlNo.value,
     quarterly: selectedQuarterLocal.value,
