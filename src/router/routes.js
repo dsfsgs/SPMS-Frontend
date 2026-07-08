@@ -142,12 +142,27 @@ export const routes = [
         component: () => import('src/pages/PMT/PMTSPMS.vue'),
         meta: { role: 'pmt-admin' },
       },
+      {
+        path: 'pmt/opcr',
+        component: () => import('src/pages/PMT/PMTOPCR.vue'),
+        meta: { role: 'pmt-admin' },
+      },
+      {
+        path: 'pmt/ipcr',
+        component: () => import('src/pages/PMT/PMTIPCR.vue'),
+        meta: { role: 'pmt-admin' },
+      },
 
       // Receiving Routes
       {
+        path: 'receiving/opcr',
+        component: () => import('src/pages/Receiving/ReceivingOPCR.vue'),
+        meta: { role: ['receiving-planning-staff'] },
+      },
+      {
         path: 'receiving/uwp',
         component: () => import('src/pages/Receiving/ReceivingUWP.vue'),
-        meta: { role: ['receiving-hr-staff', 'receiving-planning-staff'] },
+        meta: { role: ['receiving-hr-staff'] },
       },
       {
         path: 'receiving/ipcr',
@@ -171,7 +186,7 @@ export function setupRouterGuard(router) {
     'supervisor-admin': '/supervisor/qpef',
     'pmt-admin': '/pmt/spms',
     'receiving-hr-staff': '/receiving/uwp',
-    'receiving-planning-staff': '/receiving/uwp',
+    'receiving-planning-staff': '/receiving/opcr',
   }
 
   router.beforeEach(async (to, from, next) => {

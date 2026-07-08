@@ -26,6 +26,7 @@ export const useReceivingIPCRStore = defineStore('receivingIPCRStore', {
     loading: false,
     records: [], // used by the existing receiving page — unchanged
     hrRecords: [], // used by the new HR page
+    pmtRecords: [],
   }),
 
   actions: {
@@ -59,6 +60,51 @@ export const useReceivingIPCRStore = defineStore('receivingIPCRStore', {
       }
     },
 
+    async fetchPMTIPCRRecords(year, semester, office) {
+      if (!year || !semester || !office) {
+        console.warn('Missing required parameters:', { year, semester, office })
+        return
+      }
+
+      this.loading = true
+      try {
+        // Ensure office is a string (name)
+        let officeParam = office
+        if (typeof office === 'object' && office !== null) {
+          officeParam = office.name || office.office_name || office.officeName || office.label
+        }
+
+        // Convert to string if needed
+        officeParam = String(officeParam)
+
+        console.log('🚀 Fetching PMT IPCR records:', {
+          year: year.toString(),
+          semester: semester.toString(),
+          office: officeParam,
+        })
+
+        const resp = await api.get('/pmt/ipcr', {
+          params: {
+            year: year.toString(),
+            semester: semester.toString(),
+            office: officeParam,
+          },
+        })
+
+        const arr = Array.isArray(resp.data?.data) ? resp.data.data : []
+        this.pmtRecords = arr.map(mapIpcrEntry)
+
+        console.log(`✅ Fetched ${this.pmtRecords.length} PMT IPCR records`)
+        return this.pmtRecords
+      } catch (error) {
+        console.error('Error fetching PMT IPCR records:', error)
+        this.pmtRecords = []
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
     async updateIPCRStatus(ipcr_id, newStatus) {
       try {
         const response = await api.post('/spms/update/ipcr', {
@@ -70,6 +116,8 @@ export const useReceivingIPCRStore = defineStore('receivingIPCRStore', {
         if (idx !== -1) this.records[idx].status = status
         const hrIdx = this.hrRecords.findIndex((r) => r.id === ipcr_id)
         if (hrIdx !== -1) this.hrRecords[hrIdx].status = status
+        const pmtIdx = this.pmtRecords.findIndex((r) => r.id === ipcr_id)
+        if (pmtIdx !== -1) this.pmtRecords[pmtIdx].status = status
         return response.data
       } catch (error) {
         console.error('Error updating IPCR status:', error)
@@ -86,6 +134,8 @@ export const useReceivingIPCRStore = defineStore('receivingIPCRStore', {
           if (idx !== -1) this.records[idx].status = newStatus
           const hrIdx = this.hrRecords.findIndex((r) => r.id === id)
           if (hrIdx !== -1) this.hrRecords[hrIdx].status = newStatus
+          const pmtIdx = this.pmtRecords.findIndex((r) => r.id === id)
+          if (pmtIdx !== -1) this.pmtRecords[pmtIdx].status = newStatus
         })
         return response.data
       } catch (error) {

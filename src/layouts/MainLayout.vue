@@ -217,7 +217,11 @@ export default defineComponent({
           { label: 'IPCR', icon: 'grading', route: '/supervisor/ipcr' },
           { label: 'QPEF', icon: 'task_alt', route: '/supervisor/qpef' },
         ],
-        5: [{ label: 'SPMS', icon: 'inventory_2', route: '/pmt/spms' }],
+        5: [
+          { label: 'SPMS', icon: 'inventory_2', route: '/pmt/spms' },
+          { label: 'OPCR', icon: 'fact_check', route: '/pmt/opcr/' },
+          { label: 'IPCR', icon: 'grading', route: '/pmt/ipcr' },
+        ],
         6: [
           { label: 'UWP', icon: 'checklist', route: '/receiving/uwp/' },
           { label: 'IPCR', icon: 'grading', route: '/receiving/ipcr' },
