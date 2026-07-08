@@ -46,6 +46,9 @@ export const useReceivingUWPStore = defineStore('receivingUWPStore', {
           // Handle array response
           this.hrRecords = data.map((entry) => ({
             unitworkplan_id: entry.unitworkplan_id,
+            // ✅ FIX: real office id, falling back to unitworkplan_id if the
+            // array-shaped response doesn't carry a nested structure.office.id
+            office_id: entry.structure?.office?.id ?? entry.office_id ?? entry.unitworkplan_id,
             office: entry.office,
             unitworkplan_status: entry.unitworkplan_status,
           }))
@@ -54,7 +57,12 @@ export const useReceivingUWPStore = defineStore('receivingUWPStore', {
           this.hrRecords = Object.keys(data).map((officeName) => {
             const officeData = data[officeName]
             return {
+              // unitworkplan_id: the UWP record's own id (e.g. 6) — used for
+              // status-update payloads, NOT for identifying the office.
               unitworkplan_id: officeData.id,
+              // ✅ FIX: office_id: the actual office entity id (e.g. 15),
+              // pulled from the nested structure.office.id field.
+              office_id: officeData.structure?.office?.id ?? officeData.id ?? null,
               office: officeName,
               unitworkplan_status: officeData.status,
               // Include additional fields if needed

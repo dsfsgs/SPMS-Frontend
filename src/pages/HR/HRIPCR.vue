@@ -187,22 +187,36 @@
 
         <template v-slot:body-cell-action="props">
           <q-td :props="props" class="text-center">
-            <!-- Only show action button for "Received Target" status -->
-            <template
-              v-if="props.row.status && props.row.status.toLowerCase().trim() === 'received target'"
-            >
+            <div class="row justify-center q-gutter-xs">
+              <!-- IPCR Button: Shows for all employees except CONTRACTUAL, HONORARIUM, and Managerial -->
               <q-btn
+                v-if="canShowIPCR(props.row)"
+                class="neu-button"
+                flat
+                round
+                color="blue"
+                icon="assignment_ind"
+                size="md"
+                @click="showIPCRModal(props.row)"
+              >
+                <q-tooltip>IPCR</q-tooltip>
+              </q-btn>
+
+              <!-- Status Update Button: Only for "Received Target" status -->
+              <q-btn
+                v-if="
+                  props.row.status && props.row.status.toLowerCase().trim() === 'received target'
+                "
                 flat
                 round
                 color="primary"
                 icon="sync_alt"
-                size="sm"
+                size="md"
                 @click="openUpdateModal(props.row)"
               >
                 <q-tooltip anchor="top middle" self="bottom middle">Update Status</q-tooltip>
               </q-btn>
-            </template>
-            <span v-else class="text-grey-4">—</span>
+            </div>
           </q-td>
         </template>
       </q-table>
@@ -420,6 +434,19 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- IPCR Modal -->
+    <q-dialog v-model="showIPCRModalOpen" full-width>
+      <ipcr_Report
+        :employee="selectedEmployee"
+        :targetPeriod="currentTargetPeriod"
+        :levels="selectedEmployee?.levels"
+        :supervisorySignatory="selectedEmployee?.supervisorySignatory"
+        :managerialSignatory="selectedEmployee?.managerialSignatory"
+        @close="closeIPCRModal"
+        @status-updated="handleStatusUpdated"
+      />
+    </q-dialog>
   </q-page>
 </template>
 
@@ -429,6 +456,8 @@ import { useQuasar } from 'quasar'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
 import { useReceivingIPCRStore } from 'src/stores/receivingIPCRStore'
 import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
+
+import ipcr_Report from 'src/components/IPCRReportHR.vue'
 
 const $q = useQuasar()
 const libStore = useLibraryStore()
@@ -443,16 +472,21 @@ const searchQuery = ref('')
 const initialized = ref(false)
 const showUpdateModal = ref(false)
 const showBulkUpdateModal = ref(false)
+const showIPCRModalOpen = ref(false)
 const updatingStatus = ref(false)
 const selectedRecord = ref(null)
+const selectedEmployee = ref(null)
 const newStatus = ref(null)
 const bulkNewStatus = ref(null)
 const selectedRows = ref([])
 const officeSearch = ref('')
 const filteredOfficeOptions = ref([])
+const currentTargetPeriod = ref(null)
+
+// ─── Constants ──────────────────────────────────────────────────────────────────
+const EXCLUDED_STATUSES = ['CONTRACTUAL', 'HONORARIUM']
 
 // ─── Status Transition Map ────────────────────────────────────────────────────
-// Only for "Received Target" status
 const STATUS_TRANSITIONS = {
   'received target': [
     {
@@ -470,7 +504,6 @@ const STATUS_TRANSITIONS = {
   ],
 }
 
-// All distinct status values that appear in the records — used for the status filter dropdown
 const STATUS_FILTER_OPTIONS = [
   { label: 'Draft', value: 'draft' },
   { label: 'Discussed Target', value: 'discussed target' },
@@ -488,6 +521,20 @@ const STATUS_FILTER_OPTIONS = [
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const isExcludedStatus = (status) => !!status && EXCLUDED_STATUSES.includes(status.toUpperCase())
+
+const isManagerialRank = (rank) => {
+  if (!rank) return false
+  const rankLower = rank.toLowerCase()
+  return rankLower === 'managerial' || rankLower.includes('managerial')
+}
+
+const canShowIPCR = (employee) => {
+  if (!employee?.emp_status) return false
+  if (isExcludedStatus(employee.emp_status)) return false
+  return !isManagerialRank(employee.rank)
+}
+
 const getStatusOptions = (status) => {
   if (!status) return []
   const key = status.toLowerCase().trim()
@@ -527,12 +574,56 @@ const statusColor = (status) => {
 
 // ─── Table columns ─────────────────────────────────────────────────────────────
 const columns = [
-  { name: 'control_no', label: 'CONTROL NO', align: 'center', field: 'control_no' },
-  { name: 'office', label: 'OFFICE', align: 'left', field: 'office', sortable: true },
-  { name: 'name', label: 'NAME', align: 'left', field: 'name', sortable: true },
-  { name: 'position', label: 'POSITION', align: 'left', field: 'position', sortable: true },
-  { name: 'status', label: 'STATUS', align: 'center', field: 'status' },
-  { name: 'action', label: 'ACTION', align: 'center' },
+  {
+    name: 'control_no',
+    label: 'CONTROL NO',
+    align: 'center',
+    field: 'control_no',
+    style: 'width: 12%',
+    headerStyle: 'width: 12%',
+  },
+  {
+    name: 'office',
+    label: 'OFFICE',
+    align: 'left',
+    field: 'office',
+    sortable: true,
+    style: 'width: 25%',
+    headerStyle: 'width: 25%',
+  },
+  {
+    name: 'name',
+    label: 'NAME',
+    align: 'left',
+    field: 'name',
+    sortable: true,
+    style: 'width: 20%',
+    headerStyle: 'width: 20%',
+  },
+  {
+    name: 'position',
+    label: 'POSITION',
+    align: 'left',
+    field: 'position',
+    sortable: true,
+    style: 'width: 18%',
+    headerStyle: 'width: 18%',
+  },
+  {
+    name: 'status',
+    label: 'STATUS',
+    align: 'center',
+    field: 'status',
+    style: 'width: 15%',
+    headerStyle: 'width: 15%',
+  },
+  {
+    name: 'action',
+    label: 'ACTION',
+    align: 'center',
+    style: 'width: 10%',
+    headerStyle: 'width: 10%',
+  },
 ]
 
 // ─── Computed ─────────────────────────────────────────────────────────────────
@@ -557,7 +648,6 @@ const semesterOptions = computed(() => {
 const officeOptions = computed(() => accountManageStore.offices || [])
 const uniqueOfficeCount = computed(() => new Set(selectedRows.value.map((r) => r.office)).size)
 
-// Only show status values that actually appear in the loaded records
 const statusFilterOptions = computed(() => {
   const presentStatuses = new Set(
     (ipcrStore.hrRecords || []).map((r) => (r.status || '').toLowerCase().trim()),
@@ -565,7 +655,6 @@ const statusFilterOptions = computed(() => {
   return STATUS_FILTER_OPTIONS.filter((o) => presentStatuses.has(o.value))
 })
 
-// Determine if selected rows share a single common status
 const commonStatus = computed(() => {
   if (!selectedRows.value.length) return null
   const statuses = [
@@ -579,13 +668,11 @@ const hasMixedStatuses = computed(() => {
   return commonStatus.value === null
 })
 
-// Transitions available for bulk — mirrors individual logic, driven by commonStatus
 const bulkTransitionOptions = computed(() => {
   if (!commonStatus.value) return []
   return STATUS_TRANSITIONS[commonStatus.value] || []
 })
 
-// Options for the individual update modal
 const availableStatusOptions = computed(() => getStatusOptions(selectedRecord.value?.status))
 
 const filteredRows = computed(() => {
@@ -650,7 +737,6 @@ const openBulkUpdateModal = () => {
     })
     return
   }
-  // Pre-select first option if only one is available
   bulkNewStatus.value =
     bulkTransitionOptions.value.length === 1 ? bulkTransitionOptions.value[0].value : null
   showBulkUpdateModal.value = true
@@ -717,6 +803,65 @@ const handleBulkUpdateStatus = async () => {
   }
 }
 
+// ─── IPCR Modal Methods ──────────────────────────────────────────────────────
+const showIPCRModal = (employee) => {
+  // Map the employee data to the format expected by IPCRReportHR
+  selectedEmployee.value = {
+    id: employee.id,
+    label: employee.name,
+    name: employee.name,
+    position: employee.position,
+    rank: employee.rank,
+    ControlNo: employee.control_no || employee.ControlNo,
+    ipcrStatus: employee.status || employee.ipcrStatus || 'Draft',
+    employeeData: {
+      status: employee.emp_status,
+      office: employee.office,
+      ControlNo: employee.control_no || employee.ControlNo,
+      rank: employee.rank,
+    },
+    levels: {
+      office: employee.office,
+    },
+    supervisorySignatory: null,
+    managerialSignatory: null,
+  }
+
+  // Set current target period as an OBJECT with year and semester
+  currentTargetPeriod.value = {
+    year: selectedYear.value,
+    semester: selectedSemester.value,
+    id: employee.target_period_id || null,
+  }
+
+  showIPCRModalOpen.value = true
+}
+
+const closeIPCRModal = () => {
+  showIPCRModalOpen.value = false
+  selectedEmployee.value = null
+}
+
+const handleStatusUpdated = async () => {
+  console.log('🔄 Status updated, refreshing data...')
+
+  // Refresh the data
+  if (selectedYear.value && selectedSemester.value && selectedOffice.value) {
+    await ipcrStore.fetchHRIPCRRecords(
+      selectedYear.value,
+      selectedSemester.value,
+      selectedOffice.value,
+    )
+  }
+
+  $q.notify({
+    message: 'Employee status updated successfully',
+    color: 'positive',
+    position: 'top',
+    timeout: 2000,
+  })
+}
+
 // ─── Watchers ─────────────────────────────────────────────────────────────────
 watch([selectedYear, selectedSemester, selectedOffice], ([y, s, o]) => {
   if (y && s && o) {
@@ -743,7 +888,6 @@ watch(selectedSemester, () => {
   }
 })
 
-// Clear selection when status filter changes — avoids stale cross-status selections
 watch(selectedStatus, () => {
   clearSelection()
 })
@@ -831,5 +975,29 @@ onMounted(async () => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+/* Neumorphic round button (action icons) */
+.neu-button {
+  border-radius: 50%;
+  background: #f7fafc;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.15),
+    -3px -3px 6px rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.neu-button:hover {
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.2),
+    -2px -2px 4px rgba(255, 255, 255, 0.9);
+  transform: translateY(1px);
+}
+
+.neu-button:active {
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.2),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.9);
+  transform: translateY(2px);
 }
 </style>

@@ -464,12 +464,12 @@ const EMPLOYMENT_STATUS_ORDER = [
 ]
 
 const HEAD_RANKS = [
+  'department-head',
   'office-head',
+  'group-head',
   'division-head',
   'section-head',
   'unit-head',
-  'group-head',
-  'office2-head',
 ]
 
 const columns = ref([
@@ -552,7 +552,7 @@ const firstSubLevel = computed(() => {
   const getOfficeNode = (nodes) => {
     if (!nodes) return null
     for (const node of nodes) {
-      if (node.type === 'office') return node
+      if (node.type === 'office') return node // Department Head
       const found = getOfficeNode(node.children)
       if (found) return found
     }
@@ -579,7 +579,7 @@ const firstSubLevel = computed(() => {
     (child) =>
       child.type !== 'employee' &&
       ['office2', 'group', 'division', 'section', 'unit'].includes(child.type) &&
-      hasCountableEmployees(child), // Only include nodes that have countable employees
+      hasCountableEmployees(child),
   )
 })
 

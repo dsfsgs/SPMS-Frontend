@@ -574,6 +574,7 @@
                                     />
 
                                     <!-- Performance Indicator Category Select -->
+
                                     <q-select
                                       outlined
                                       v-model="standard.indicatorCategoryId"
@@ -637,17 +638,7 @@
                                       map-options
                                       clearable
                                       @update:model-value="
-                                        async (value) => {
-                                          generateSuccessIndicator(index)
-                                          const std = currentEmployee.performanceStandards[index]
-                                          if (std?.rows?.mfo && !isCurrentEmployeeOfficeHead) {
-                                            if (value) {
-                                              await checkAndApplyRestriction(index)
-                                            } else {
-                                              std.quantityRestriction = null
-                                            }
-                                          }
-                                        }
+                                        (value) => handleIndicatorSelect(value, index)
                                       "
                                     >
                                       <template v-slot:prepend>
@@ -659,6 +650,9 @@
                                             <q-item-label>{{ scope.opt.name }}</q-item-label>
                                             <q-item-label caption v-if="scope.opt.description">
                                               {{ scope.opt.description }}
+                                            </q-item-label>
+                                            <q-item-label caption v-if="scope.opt.category_name">
+                                              Category: {{ scope.opt.category_name }}
                                             </q-item-label>
                                           </q-item-section>
                                         </q-item>
@@ -1302,6 +1296,7 @@ export default {
     const filteredMfoOptions = ref({})
     const filteredOutputOptions = ref({})
     const filteredVerbs = ref([])
+    const filteredVerbsByIndex = ref({})
     const targetPeriodDetails = ref({
       semester: '',
       year: '',
@@ -2337,30 +2332,50 @@ export default {
             options = options.filter((v) => Number(v.category_id) === Number(categoryId))
           }
 
-          filteredVerbs.value = options.filter(
+          const filtered = options.filter(
             (v) =>
               v.name.toLowerCase().includes(needle) ||
               (v.description || '').toLowerCase().includes(needle) ||
               (v.category_name || '').toLowerCase().includes(needle),
           )
+
+          // Store filtered options for this index
+          filteredVerbsByIndex.value[standardIndex] = filtered
+          filteredVerbs.value = filtered
         })
       } else {
         let options = performanceIndicatorOptions.value
         if (categoryId) {
           options = options.filter((v) => Number(v.category_id) === Number(categoryId))
         }
+        filteredVerbsByIndex.value[standardIndex] = options
         filteredVerbs.value = options
       }
     }
 
-    const filterPerformanceIndicatorsByCategory = (categoryId) => {
+    const filterPerformanceIndicatorsByCategory = (categoryId, index) => {
+      if (!categoryId) {
+        filteredVerbsByIndex.value[index] = []
+        filteredVerbs.value = []
+        return
+      }
+
       const options = performanceIndicatorOptions.value.filter(
         (v) => Number(v.category_id) === Number(categoryId),
       )
-      filteredVerbs.value = options
+
+      // Store filtered options per standard index
+      filteredVerbsByIndex.value[index] = options
+      filteredVerbs.value = options // For backward compatibility
     }
 
     const getFilteredVerbOptions = (index) => {
+      // Check if we have filtered options for this specific index
+      if (filteredVerbsByIndex.value[index] && filteredVerbsByIndex.value[index].length > 0) {
+        return filteredVerbsByIndex.value[index]
+      }
+
+      // Fallback to global filtered verbs
       if (filteredVerbs.value && filteredVerbs.value.length > 0) {
         return filteredVerbs.value
       }
@@ -2375,6 +2390,36 @@ export default {
       }
 
       return performanceIndicatorOptions.value
+    }
+
+    const handleIndicatorSelect = async (value, index) => {
+      const standard = currentEmployee.value?.performanceStandards?.[index]
+      if (!standard) return
+
+      // Find the selected indicator
+      const selectedVerb = performanceIndicatorOptions.value.find((v) => v.id === Number(value))
+
+      if (selectedVerb) {
+        // Auto-populate the category
+        standard.indicatorCategoryId = selectedVerb.category_id
+
+        // Also update the filtered verbs to show only indicators from this category
+        filterPerformanceIndicatorsByCategory(selectedVerb.category_id, index)
+      } else {
+        standard.indicatorCategoryId = null
+        filteredVerbsByIndex.value[index] = []
+      }
+
+      generateSuccessIndicator(index)
+
+      const std = currentEmployee.value?.performanceStandards?.[index]
+      if (std?.rows?.mfo && !isCurrentEmployeeOfficeHead.value) {
+        if (value) {
+          await checkAndApplyRestriction(index)
+        } else {
+          std.quantityRestriction = null
+        }
+      }
     }
 
     // ===========================================================================
@@ -2849,10 +2894,63 @@ export default {
                 }
               }
 
+              // ============================================================
+              // FIX: Populate performance indicator and its category
+              // ============================================================
               const indicatorName = uwpStore.resolvePerformanceIndicators(
                 ps.performance_indicator,
                 officeLibraryIndicatorStore.verbs || [],
               )
+
+              // Get the indicator ID and category
+              let indicatorId = null
+              let indicatorCategoryId = null
+
+              if (Array.isArray(indicatorName) && indicatorName.length > 0) {
+                // If it's an array, take the first one
+                const firstIndicator = indicatorName[0]
+
+                // Try to find the indicator in the library
+                const foundIndicator = officeLibraryIndicatorStore.verbs?.find((v) => {
+                  // Try matching by ID
+                  if (v.id === Number(firstIndicator)) return true
+                  // Try matching by name
+                  if (
+                    v.indicator_name &&
+                    v.indicator_name.toLowerCase() === String(firstIndicator).toLowerCase()
+                  )
+                    return true
+                  return false
+                })
+
+                if (foundIndicator) {
+                  indicatorId = foundIndicator.id
+                  indicatorCategoryId = foundIndicator.category_id
+                } else {
+                  // If not found, use the value as is
+                  indicatorId = firstIndicator
+                }
+              } else if (indicatorName) {
+                // Single indicator
+                const foundIndicator = officeLibraryIndicatorStore.verbs?.find((v) => {
+                  // Try matching by ID
+                  if (v.id === Number(indicatorName)) return true
+                  // Try matching by name
+                  if (
+                    v.indicator_name &&
+                    v.indicator_name.toLowerCase() === String(indicatorName).toLowerCase()
+                  )
+                    return true
+                  return false
+                })
+
+                if (foundIndicator) {
+                  indicatorId = foundIndicator.id
+                  indicatorCategoryId = foundIndicator.category_id
+                } else {
+                  indicatorId = indicatorName
+                }
+              }
 
               const mapComp = (comp) => ({
                 code: comp.code,
@@ -2887,8 +2985,8 @@ export default {
                 id: `ps_${ps.id || Date.now()}`,
                 expanded: true,
                 outputName: ps.output_name || '',
-                indicatorName: Array.isArray(indicatorName) ? indicatorName[0] : indicatorName,
-                indicatorCategoryId: null,
+                indicatorName: indicatorId,
+                indicatorCategoryId: indicatorCategoryId, // <- This now gets populated
                 successIndicator: ps.success_indicator || '',
                 requiredOutput: ps.required_output || '',
                 modeOfVerification: '',
@@ -3213,6 +3311,33 @@ export default {
       },
     )
 
+    // Add this watch after your other watches
+    watch(
+      () => currentEmployee.value?.performanceStandards,
+      (standards) => {
+        if (!standards) return
+
+        standards.forEach((standard, index) => {
+          // If there's an indicator but no category, try to find it
+          if (standard.indicatorName && !standard.indicatorCategoryId) {
+            const foundIndicator = officeLibraryIndicatorStore.verbs?.find(
+              (v) =>
+                v.id === Number(standard.indicatorName) ||
+                v.indicator_name === standard.indicatorName,
+            )
+            if (foundIndicator) {
+              standard.indicatorCategoryId = foundIndicator.category_id
+            }
+          }
+
+          // Initialize filtered verbs for this index
+          if (standard.indicatorCategoryId) {
+            filterPerformanceIndicatorsByCategory(standard.indicatorCategoryId, index)
+          }
+        })
+      },
+      { deep: true, immediate: true },
+    )
     // ===========================================================================
     // 22. LIFECYCLE HOOKS
     // ===========================================================================
@@ -3289,6 +3414,9 @@ export default {
       performanceIndicatorCategoryOptions,
       standardOutcomeColumns,
       isFormValid,
+
+      filteredVerbsByIndex,
+      handleIndicatorSelect,
 
       // Constants
       quantityIndicator,
