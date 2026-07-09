@@ -21,7 +21,7 @@
           <div class="node-label">
             <q-icon :name="node.icon" class="node-icon" />
             {{ node.label }}
-            <span class="employee-count">{{ node.count || 0 }}</span>
+            <span class="employee-count">{{ node.count || '0' }}</span>
           </div>
         </template>
       </q-tree>
@@ -30,22 +30,44 @@
     <!-- Employee List Panel -->
     <div class="employee-list-panel">
       <div class="employee-list-container">
-        <div class="table-title-container">
+        <div class="table-header">
           <h3>{{ selectedNodeTitle || 'Select an office, division, or section' }}</h3>
-          <button v-if="selectedNode" class="add-employee-btn" @click="openAddModal">
-            <q-icon name="add" />
-            Select Employees
-          </button>
+
+          <div class="table-toolbar" v-if="selectedNode">
+            <div class="search-input-wrapper">
+              <q-icon name="search" class="search-icon" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="search-input"
+                placeholder="Search by name, position, rank, or status..."
+                aria-label="Search employees"
+              />
+              <q-icon
+                v-if="searchQuery"
+                name="close"
+                class="search-clear-icon"
+                @click="searchQuery = ''"
+              />
+            </div>
+
+            <button class="add-employee-btn" @click="openAddModal">
+              <q-icon name="add" />
+              Select Employees
+            </button>
+          </div>
         </div>
 
         <div class="employee-table">
           <q-table
             v-if="selectedNode && !loading && !employeeStore.loading"
-            :rows="filteredEmployees"
+            :rows="sortedFilteredEmployees"
             :columns="columns"
+            :filter="searchQuery"
             row-key="id"
             flat
             bordered
+            wrap-cells
             :loading="employeeStore.loading"
             :pagination="{ rowsPerPage: 10 }"
             :rows-per-page-options="[10, 20, 50]"
@@ -58,7 +80,9 @@
             </template>
 
             <template v-slot:no-data>
-              <div class="empty-row">No employees found</div>
+              <div class="empty-row">
+                {{ searchQuery ? 'No employees match your search' : 'No employees found' }}
+              </div>
             </template>
 
             <template v-slot:body-cell-rank="props">
@@ -93,6 +117,17 @@
                   @update:model-value="(val) => updateEmployeeTitle(props.row, val)"
                   :option-disable="(opt) => (opt.disable ? opt.disable(props.row) : false)"
                 />
+              </q-td>
+            </template>
+
+            <template v-slot:body-cell-status="props">
+              <q-td :props="props">
+                <span
+                  class="status-badge"
+                  :class="getStatusClass(props.row.status || props.row.Status)"
+                >
+                  {{ props.row.status || props.row.Status || '—' }}
+                </span>
               </q-td>
             </template>
 
@@ -140,6 +175,37 @@ const LEVEL_TITLE_MAP = {
   unit: 'Unit Head',
 }
 
+// Display order for job_title (position rank): heads first, in organizational
+// hierarchy order, then Employee last.
+const JOB_TITLE_ORDER = {
+  'Department Head': 0,
+  'Office Head': 1,
+  'Group Head': 2,
+  'Division Head': 3,
+  'Section Head': 4,
+  'Unit Head': 5,
+  Employee: 6,
+}
+
+// Display order for employment status.
+const STATUS_ORDER = {
+  Regular: 0,
+  Casual: 1,
+  Coterminous: 2,
+  Contractual: 3,
+  Honorarium: 4,
+}
+
+const getJobTitleRank = (jobTitle) => {
+  const key = (jobTitle || '').trim()
+  return Object.prototype.hasOwnProperty.call(JOB_TITLE_ORDER, key) ? JOB_TITLE_ORDER[key] : 99
+}
+
+const getStatusRank = (status) => {
+  const key = (status || '').trim()
+  return Object.prototype.hasOwnProperty.call(STATUS_ORDER, key) ? STATUS_ORDER[key] : 99
+}
+
 export default {
   components: { AddEmployeeModal },
   setup() {
@@ -156,6 +222,7 @@ export default {
       loading: false,
       treeNodes: [],
       expandedNodes: [],
+      searchQuery: '',
       columns: [
         {
           name: 'name',
@@ -178,6 +245,13 @@ export default {
           label: 'Position Rank',
           align: 'left',
           field: (row) => row.job_title,
+          sortable: true,
+        },
+        {
+          name: 'status',
+          label: 'Status',
+          align: 'left',
+          field: (row) => row.status || row.Status || '',
           sortable: true,
         },
         { name: 'actions', label: 'Actions', align: 'center', sortable: false },
@@ -331,6 +405,21 @@ export default {
       })
     },
 
+    // Position-rank hierarchy first (head down to Employee), then employment
+    // status (Regular > Casual > Coterminous > Contractual > Honorarium),
+    // then alphabetically by name as a tiebreaker.
+    sortedFilteredEmployees() {
+      return [...this.filteredEmployees].sort((a, b) => {
+        const jobDiff = getJobTitleRank(a.job_title) - getJobTitleRank(b.job_title)
+        if (jobDiff !== 0) return jobDiff
+
+        const statusDiff = getStatusRank(a.status ?? a.Status) - getStatusRank(b.status ?? b.Status)
+        if (statusDiff !== 0) return statusDiff
+
+        return (a.name || '').localeCompare(b.name || '')
+      })
+    },
+
     selectedNodeTitle() {
       return this.selectedNode?.label || this.selectedNode?.name || ''
     },
@@ -419,6 +508,19 @@ export default {
       return !!existingHead
     },
 
+    // MAPS EMPLOYMENT STATUS TO A CSS CLASS FOR THE STATUS BADGE
+    getStatusClass(status) {
+      const key = (status || '').trim().toLowerCase()
+      const map = {
+        regular: 'status-regular',
+        casual: 'status-casual',
+        coterminous: 'status-coterminous',
+        contractual: 'status-contractual',
+        honorarium: 'status-honorarium',
+      }
+      return map[key] || 'status-default'
+    },
+
     openAddModal() {
       this.showAddModal = true
       this.employeeStore.fetchUnassignedEmployees()
@@ -431,6 +533,7 @@ export default {
     async selectNode(nodeId) {
       this.selectedNode = this.findNodeById(this.treeNodes, nodeId)
       this.employeeStore.currentNode = this.selectedNode
+      this.searchQuery = ''
       try {
         await this.employeeStore.fetchEmployeesByNode(this.selectedNode)
       } catch (error) {

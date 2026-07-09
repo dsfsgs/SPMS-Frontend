@@ -299,7 +299,7 @@ export const useUserManageStore = defineStore('userManage', {
 
     async deleteUser(userId) {
       try {
-        await api.delete(`/user_assign/${userId}`)
+        await api.delete(`/user/delete/${userId}`)
         await this.fetchUserAccounts()
         Notify.create({
           message: 'User deleted successfully.',
