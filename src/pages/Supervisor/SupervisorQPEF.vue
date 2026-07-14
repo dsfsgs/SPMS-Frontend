@@ -90,13 +90,14 @@
       <!-- QPEF Status column -->
       <template v-slot:body-cell-qpefStatus="props">
         <q-td :props="props" class="text-center">
-          <q-icon
-            v-if="hasQpefForQuarter(props.row)"
-            name="check_circle"
-            color="green"
-            size="24px"
-          />
-          <q-icon v-else name="cancel" color="red" size="24px" />
+          <template v-if="hasQpefForQuarter(props.row)">
+            <span :style="{ color: getQpefStatusColor(getQpefStatus(props.row)) }">
+              {{ getQpefStatus(props.row) || 'Submitted' }}
+            </span>
+          </template>
+          <template v-else>
+            <span style="color: #9e9e9e">No QPEF</span>
+          </template>
         </q-td>
       </template>
 
@@ -162,7 +163,7 @@ export default {
 
       searchQuery: '',
       selectedYear: null,
-      selectedQuarter: 'Q1', // Default to Q1
+      selectedQuarter: 'Q1',
       printingAll: false,
 
       showQpefModal: false,
@@ -206,14 +207,14 @@ export default {
         },
         {
           name: 'qpefStatus',
-          label: 'QPEF',
+          label: 'QPEF STATUS',
           align: 'center',
           field: 'qpefStatus',
           sortable: true,
           sort: (a, b, rowA, rowB) => {
-            const hasA = this.hasQpefForQuarter(rowA) ? 1 : 0
-            const hasB = this.hasQpefForQuarter(rowB) ? 1 : 0
-            return hasA - hasB
+            const statusA = this.getQpefStatus(rowA) || ''
+            const statusB = this.getQpefStatus(rowB) || ''
+            return statusA.localeCompare(statusB)
           },
         },
         {
@@ -258,47 +259,67 @@ export default {
       }
     },
 
-    // Watch for quarter changes to trigger table refresh
     selectedQuarter() {
-      // Just trigger reactivity - the table will automatically update
-      // because the computed properties depend on selectedQuarter
       this.$forceUpdate()
     },
   },
 
   methods: {
-    hasQpefForQuarter(employee) {
-      if (!employee || !employee.qpef || !this.selectedQuarter) {
-        return false
+    /**
+     * Get the QPEF status for the current employee/quarter/year
+     */
+    getQpefStatus(employee) {
+      if (!employee || !employee.qpef || !this.selectedQuarter || !this.selectedYear) {
+        return null
       }
 
-      // Check if there's any QPEF entry for the selected quarter and year
-      return employee.qpef.some(
-        (qpef) =>
-          qpef.quarterly === this.selectedQuarter &&
-          String(qpef.year) === String(this.selectedYear),
+      const qpefEntry = employee.qpef.find(
+        (q) => q.quarterly === this.selectedQuarter && String(q.year) === String(this.selectedYear),
       )
+
+      return qpefEntry?.status || null
+    },
+
+    /**
+     * Check if employee has a QPEF for the selected quarter/year
+     */
+    hasQpefForQuarter(employee) {
+      return this.getQpefStatus(employee) !== null
+    },
+
+    /**
+     * Get color for QPEF status - Gray for Pending, Green for Submitted/Received
+     */
+    getQpefStatusColor(status) {
+      if (!status) return '#9e9e9e' // gray
+
+      const s = status.toLowerCase().trim()
+
+      // Pending = gray
+      if (s === 'pending' || s === 'draft') {
+        return '#9e9e9e' // gray
+      }
+
+      // All other statuses (Submitted, Received, Approved, etc.) = green
+      return '#2e7d32' // green
     },
 
     onYearChange() {
       // Triggered when year changes
-      // Table will update automatically due to watch
     },
 
     onQuarterChange() {
       // Triggered when quarter changes
-      // Table will update automatically
     },
 
     openQpefForEmployee(employee) {
-      // Find the QPEF status for the selected quarter and year
       const qpefEntry = employee.qpef?.find(
         (q) => q.quarterly === this.selectedQuarter && String(q.year) === String(this.selectedYear),
       )
 
       this.qpefSelectedEmployee = {
         ...employee,
-        qpefStatus: qpefEntry?.status || null, // Pass the status
+        qpefStatus: qpefEntry?.status || null,
       }
       this.showQpefModal = true
     },
@@ -306,7 +327,6 @@ export default {
     closeQpefModal() {
       this.showQpefModal = false
       this.qpefSelectedEmployee = null
-      // Refresh data to show updated QPEF status
       if (this.selectedYear) {
         this.store.fetchEmployees(this.selectedYear)
       }

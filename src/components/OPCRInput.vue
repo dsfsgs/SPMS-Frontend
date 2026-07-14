@@ -40,10 +40,9 @@
               <thead class="bg-grey-9 text-white">
                 <tr>
                   <th class="text-left" style="width: 20%">MFO/Function</th>
-                  <th class="text-left" style="width: 15%">Success Indicator</th>
-                  <th class="text-left" style="width: 15%">Alloted Budget</th>
-                  <th class="text-left" style="width: 20%">Division/Individual Accountable</th>
-                  <th class="text-left" style="width: 30%">Actual Accomplishment</th>
+                  <th class="text-left" style="width: 25%">Success Indicator</th>
+                  <th class="text-left" style="width: 25%">Alloted Budget</th>
+                  <th class="text-left" style="width: 30%">Division/Individual Accountable</th>
                 </tr>
               </thead>
               <tbody>
@@ -59,32 +58,28 @@
                   </td>
 
                   <!-- Success Indicator -->
-                  <td style="width: 15%; word-wrap: break-word; white-space: normal">
+                  <td style="width: 25%; word-wrap: break-word; white-space: normal">
                     <div class="text-body2">
                       {{ standard.success_indicator || 'N/A' }}
                     </div>
                   </td>
 
                   <!-- Alloted Budget -->
-                  <td style="width: 15%">
+                  <td style="width: 25%">
                     <q-input
                       dense
                       outlined
                       v-model="standard.opcr.budget"
-                      placeholder="e.g., ₱50,000 or N/A"
+                      placeholder="e.g., 50,000 or N/A"
                       type="text"
                       :error="errors[`budget_${standard.id}`]"
                       error-message="Required"
                       @blur="validateField(`budget_${standard.id}`, standard.opcr.budget)"
-                    >
-                      <template v-slot:prepend>
-                        <q-icon name="attach_money" size="xs" color="green-9" />
-                      </template>
-                    </q-input>
+                    />
                   </td>
 
                   <!-- Division/Individual Accountable -->
-                  <td style="width: 20%">
+                  <td style="width: 30%">
                     <q-input
                       dense
                       outlined
@@ -96,26 +91,6 @@
                     >
                       <template v-slot:prepend>
                         <q-icon name="people" size="xs" />
-                      </template>
-                    </q-input>
-                  </td>
-
-                  <!-- Actual Accomplishment (OPTIONAL) -->
-                  <td style="width: 30%">
-                    <q-input
-                      dense
-                      outlined
-                      v-model="standard.opcr.accomplishment"
-                      placeholder="Enter accomplishment (optional)"
-                      type="textarea"
-                      rows="2"
-                      :error="errors[`accomplishment_${standard.id}`]"
-                      @blur="
-                        validateField(`accomplishment_${standard.id}`, standard.opcr.accomplishment)
-                      "
-                    >
-                      <template v-slot:prepend>
-                        <q-icon name="description" size="xs" />
                       </template>
                     </q-input>
                   </td>
@@ -294,7 +269,6 @@ export default {
             opcr: standard.opcr || {
               budget: '',
               accountable: '',
-              accomplishment: '',
               rating_q: null,
               rating_e: null,
               rating_t: null,
@@ -316,18 +290,14 @@ export default {
       }
     }
 
-    // accomplishment is optional
+    // Validate field - only budget and accountable are required
     const validateField = (fieldName, value) => {
-      if (typeof fieldName === 'string' && fieldName.startsWith('accomplishment_')) {
-        errors.value[fieldName] = false
-        return true
-      }
       const isValid = !!value && value.toString().trim() !== ''
       errors.value[fieldName] = !isValid
       return isValid
     }
 
-    // accomplishment removed from required fields
+    // Validate form - only budget and accountable are required
     const validateForm = () => {
       let isValid = true
       const newErrors = {}
@@ -351,7 +321,7 @@ export default {
       if (!validateForm()) {
         $q.notify({
           type: 'warning',
-          message: 'Please fill all required fields',
+          message: 'Please fill all required fields (Budget and Accountable)',
           position: 'top',
           timeout: 2500,
         })
@@ -366,12 +336,11 @@ export default {
       confirmDialogOpen.value = false
       saving.value = true
 
-      // This is the array expected inside "data"
+      // Build the data array - removed accomplishment
       const items = performanceStandards.value.map((standard) => ({
         performance_standard_id: standard.id,
-        budget: standard.opcr.budget, // can be string, backend can cast if needed
+        budget: standard.opcr.budget,
         accountable: standard.opcr.accountable,
-        accomplishment: standard.opcr.accomplishment || '', // optional
         rating_q: standard.opcr.rating_q || null,
         rating_e: standard.opcr.rating_e || null,
         rating_t: standard.opcr.rating_t || null,
@@ -380,7 +349,6 @@ export default {
         remarks: standard.opcr.remarks || '',
       }))
 
-      // ✅ FIX: wrap in { semester, year, data }
       const requestBody = {
         semester: props.targetPeriod.semester,
         year: props.targetPeriod.year,

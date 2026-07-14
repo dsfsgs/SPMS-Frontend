@@ -40,10 +40,9 @@
             <thead>
               <tr>
                 <th class="text-center" style="width: 20%">MFO/Output</th>
-                <th class="text-center" style="width: 25%">Success Indicator</th>
-                <th class="text-center" style="width: 15%">Alloted Budget</th>
-                <th class="text-center" style="width: 20%">Division/Individual Accountable</th>
-                <th class="text-center" style="width: 20%">Actual Accomplishment</th>
+                <th class="text-center" style="width: 30%">Success Indicator</th>
+                <th class="text-center" style="width: 20%">Alloted Budget</th>
+                <th class="text-center" style="width: 30%">Division/Individual Accountable</th>
               </tr>
             </thead>
             <tbody>
@@ -60,11 +59,7 @@
                     :class="{ 'shake-animation': errors[`strategic_budget_${idx}`] }"
                     :error="errors[`strategic_budget_${idx}`]"
                     error-message="Field is required"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="money" size="xs" />
-                    </template>
-                  </q-input>
+                  />
                 </td>
                 <td class="text-center">
                   <q-input
@@ -82,22 +77,6 @@
                     </template>
                   </q-input>
                 </td>
-                <td class="text-center">
-                  <q-input
-                    dense
-                    outlined
-                    v-model="item.accomplishment"
-                    placeholder="Enter actual accomplishment"
-                    class="full-width modern-input"
-                    :class="{ 'shake-animation': errors[`strategic_accomplishment_${idx}`] }"
-                    :error="errors[`strategic_accomplishment_${idx}`]"
-                    error-message="Field is required"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="description" size="xs" />
-                    </template>
-                  </q-input>
-                </td>
               </tr>
             </tbody>
           </table>
@@ -112,10 +91,9 @@
             <thead>
               <tr>
                 <th class="text-center" style="width: 20%">MFO/Output</th>
-                <th class="text-center" style="width: 25%">Success Indicator</th>
-                <th class="text-center" style="width: 15%">Alloted Budget</th>
-                <th class="text-center" style="width: 20%">Division/Individual Accountable</th>
-                <th class="text-center" style="width: 20%">Actual Accomplishment</th>
+                <th class="text-center" style="width: 30%">Success Indicator</th>
+                <th class="text-center" style="width: 20%">Alloted Budget</th>
+                <th class="text-center" style="width: 30%">Division/Individual Accountable</th>
               </tr>
             </thead>
             <tbody>
@@ -132,11 +110,7 @@
                     :class="{ 'shake-animation': errors[`core_budget_${idx}`] }"
                     :error="errors[`core_budget_${idx}`]"
                     error-message="Field is required"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="money" size="xs" />
-                    </template>
-                  </q-input>
+                  />
                 </td>
                 <td class="text-center">
                   <q-input
@@ -154,22 +128,6 @@
                     </template>
                   </q-input>
                 </td>
-                <td class="text-center">
-                  <q-input
-                    dense
-                    outlined
-                    v-model="item.accomplishment"
-                    placeholder="Enter actual accomplishment"
-                    class="full-width modern-input"
-                    :class="{ 'shake-animation': errors[`core_accomplishment_${idx}`] }"
-                    :error="errors[`core_accomplishment_${idx}`]"
-                    error-message="Field is required"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="description" size="xs" />
-                    </template>
-                  </q-input>
-                </td>
               </tr>
             </tbody>
           </table>
@@ -184,10 +142,9 @@
             <thead>
               <tr>
                 <th class="text-center" style="width: 20%">Output</th>
-                <th class="text-center" style="width: 25%">Success Indicator</th>
-                <th class="text-center" style="width: 15%">Alloted Budget</th>
-                <th class="text-center" style="width: 20%">Division/Individual Accountable</th>
-                <th class="text-center" style="width: 20%">Actual Accomplishment</th>
+                <th class="text-center" style="width: 30%">Success Indicator</th>
+                <th class="text-center" style="width: 20%">Alloted Budget</th>
+                <th class="text-center" style="width: 30%">Division/Individual Accountable</th>
               </tr>
             </thead>
             <tbody>
@@ -204,11 +161,7 @@
                     :class="{ 'shake-animation': errors[`support_budget_${idx}`] }"
                     :error="errors[`support_budget_${idx}`]"
                     error-message="Field is required"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="money" size="xs" />
-                    </template>
-                  </q-input>
+                  />
                 </td>
                 <td class="text-center">
                   <q-input
@@ -223,22 +176,6 @@
                   >
                     <template v-slot:prepend>
                       <q-icon name="people" size="xs" />
-                    </template>
-                  </q-input>
-                </td>
-                <td class="text-center">
-                  <q-input
-                    dense
-                    outlined
-                    v-model="item.accomplishment"
-                    placeholder="Enter actual accomplishment"
-                    class="full-width modern-input"
-                    :class="{ 'shake-animation': errors[`support_accomplishment_${idx}`] }"
-                    :error="errors[`support_accomplishment_${idx}`]"
-                    error-message="Field is required"
-                  >
-                    <template v-slot:prepend>
-                      <q-icon name="description" size="xs" />
                     </template>
                   </q-input>
                 </td>
@@ -350,7 +287,6 @@ export default {
         ...item,
         budget: item.opcr?.budget || '',
         accountable: item.opcr?.accountable || '',
-        accomplishment: item.opcr?.accomplishment || '',
         competency: item.opcr?.competency || [],
         rating_q: item.opcr?.rating_q || 0,
         rating_e: item.opcr?.rating_e || 0,
@@ -365,7 +301,6 @@ export default {
         ...item,
         budget: item.opcr?.budget || '',
         accountable: item.opcr?.accountable || '',
-        accomplishment: item.opcr?.accomplishment || '',
         competency: item.opcr?.competency || [],
         rating_q: item.opcr?.rating_q || 0,
         rating_e: item.opcr?.rating_e || 0,
@@ -380,7 +315,6 @@ export default {
         ...item,
         budget: item.opcr?.budget || '',
         accountable: item.opcr?.accountable || '',
-        accomplishment: item.opcr?.accomplishment || '',
         competency: item.opcr?.competency || [],
         rating_q: item.opcr?.rating_q || 0,
         rating_e: item.opcr?.rating_e || 0,
@@ -406,10 +340,6 @@ export default {
           errors.value[`strategic_accountable_${idx}`] = true
           isValid = false
         }
-        if (!item.accomplishment) {
-          errors.value[`strategic_accomplishment_${idx}`] = true
-          isValid = false
-        }
       })
 
       // Validate core
@@ -422,10 +352,6 @@ export default {
           errors.value[`core_accountable_${idx}`] = true
           isValid = false
         }
-        if (!item.accomplishment) {
-          errors.value[`core_accomplishment_${idx}`] = true
-          isValid = false
-        }
       })
 
       // Validate support
@@ -436,10 +362,6 @@ export default {
         }
         if (!item.accountable) {
           errors.value[`support_accountable_${idx}`] = true
-          isValid = false
-        }
-        if (!item.accomplishment) {
-          errors.value[`support_accomplishment_${idx}`] = true
           isValid = false
         }
       })
@@ -479,7 +401,6 @@ export default {
           id: item.id, // performance_standard_id
           budget: item.budget,
           accountable: item.accountable,
-          accomplishment: item.accomplishment,
           competency: item.competency || [],
           rating_q: item.rating_q || 0,
           rating_e: item.rating_e || 0,

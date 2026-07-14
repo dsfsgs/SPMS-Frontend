@@ -246,15 +246,11 @@
                               >
                                 <div style="font-size: 11px">
                                   <strong
-                                    ><u>{{
-                                      supervisorySignatory?.name || managerialSignatory?.name
-                                    }}</u></strong
+                                    ><u>{{ ipcrReviewerSignatory?.name || '' }}</u></strong
                                   >
                                 </div>
                                 <div style="font-size: 11px">
-                                  {{
-                                    supervisorySignatory?.position || managerialSignatory?.position
-                                  }}
+                                  {{ ipcrReviewerSignatory?.position || '' }}
                                 </div>
                                 <div style="font-size: 11px">
                                   Date:<u> {{ formatDate(new Date()) }}</u>
@@ -270,11 +266,13 @@
                               >
                                 <div style="font-size: 11px">
                                   <strong
-                                    ><u>{{ managerialSignatory?.name }}</u></strong
+                                    ><u>{{ ipcrApproverSignatory?.name || '' }}</u></strong
                                   >
                                 </div>
                                 <div style="font-size: 11px">
-                                  {{ managerialSignatory?.position }}
+                                  {{
+                                    ipcrApproverSignatory?.position || managerialSignatory?.position
+                                  }}
                                 </div>
                                 <div style="font-size: 11px">
                                   Date:<u> {{ formatDate(new Date()) }}</u>
@@ -805,17 +803,12 @@
                                         min-height: 25px;
                                         margin-top: 35px;
                                       "
-                                      >{{
-                                        supervisorySignatory?.name || managerialSignatory?.name
-                                      }}</strong
+                                      >{{ ipcrAssessorSignatory?.name || '' }}</strong
                                     >
                                     <div
                                       style="margin-top: 5px; font-size: 11px; padding-bottom: 5px"
                                     >
-                                      {{
-                                        supervisorySignatory?.position ||
-                                        managerialSignatory?.position
-                                      }}
+                                      {{ ipcrAssessorSignatory?.position || '' }}
                                     </div>
                                   </td>
                                   <td
@@ -851,11 +844,11 @@
                                           border-bottom: 1px solid #000;
                                           padding-bottom: 2px;
                                         "
-                                        >{{ managerialSignatory?.name }}</strong
+                                        >{{ ipcrFinalRatingSignatory?.name || '' }}</strong
                                       >
                                     </div>
                                     <div style="margin-top: 5px; font-size: 11px">
-                                      {{ managerialSignatory?.position }}
+                                      {{ ipcrFinalRatingSignatory?.position || '' }}
                                     </div>
                                   </td>
                                   <td
@@ -1336,12 +1329,10 @@
                                   padding-top: 5px;
                                 "
                               >
-                                {{ supervisorySignatory?.name || managerialSignatory?.name }}
+                                {{ psDiscussantSignatory?.name || '' }}
                               </div>
                               <div style="font-size: 11px; margin-top: 5px">
-                                {{
-                                  supervisorySignatory?.position || managerialSignatory?.position
-                                }}
+                                {{ psDiscussantSignatory?.position || '' }}
                               </div>
                               <div style="font-size: 11px; font-style: italic">
                                 Office Head/Rater
@@ -1367,10 +1358,10 @@
                                   padding-top: 5px;
                                 "
                               >
-                                {{ managerialSignatory?.name }}
+                                {{ psApproverSignatory?.name || '' }}
                               </div>
                               <div style="font-size: 11px; margin-top: 5px">
-                                {{ managerialSignatory?.position }}
+                                {{ psApproverSignatory?.position || managerialSignatory?.position }}
                               </div>
                               <div style="font-size: 11px; font-style: italic">
                                 Office Head/Rater
@@ -1714,11 +1705,11 @@
                                         width: 90%;
                                         max-width: 250px;
                                       "
-                                      >{{ managerialSignatory?.name }}</strong
+                                      >{{ mpoConfirmedSignatory?.name || '' }}</strong
                                     >
                                   </div>
                                   <div style="margin-top: 5px; font-size: 11px">
-                                    {{ managerialSignatory?.position }}
+                                    {{ mpoConfirmedSignatory?.position || '' }}
                                   </div>
                                 </td>
                                 <td
@@ -2158,6 +2149,216 @@
                         </tr>
                       </tbody>
                     </table>
+
+                    <!-- Signature Table - SMPR -->
+                    <div style="display: flex; padding-bottom: 30px; justify-content: center">
+                      <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd">
+                        <tbody>
+                          <tr>
+                            <!-- First Signatory (Employee/Ratee) -->
+                            <td
+                              style="
+                                width: 25%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                position: relative;
+                              "
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Above entries are true & correct:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0; text-align: center">
+                                  <div style="margin: 0 auto; width: 90%; max-width: 200px">
+                                    <strong>{{ employee?.label || employee?.name }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- First Date -->
+                            <td
+                              style="
+                                width: 8.33%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                text-align: center;
+                              "
+                              rowspan="2"
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Date:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0">
+                                  <div
+                                    style="
+                                      border-bottom: 1px solid #000;
+                                      padding-bottom: 2px;
+                                      width: 90%;
+                                      margin: 0 auto;
+                                    "
+                                  >
+                                    {{ formatDate(new Date()) }}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Second Signatory (Supervisor - Confirmed by) -->
+                            <td
+                              style="
+                                width: 25%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Confirmed:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0; text-align: center">
+                                  <div style="margin: 0 auto; width: 90%; max-width: 200px">
+                                    <strong>{{ mpoConfirmedSignatory?.name || '' }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Second Date -->
+                            <td
+                              style="
+                                width: 8.33%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                text-align: center;
+                              "
+                              rowspan="2"
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Date:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0">
+                                  <div
+                                    style="
+                                      border-bottom: 1px solid #000;
+                                      padding-bottom: 2px;
+                                      width: 90%;
+                                      margin: 0 auto;
+                                    "
+                                  >
+                                    {{ formatDate(new Date()) }}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Third Signatory (Department Head - Approved for Final Rating) -->
+                            <td
+                              style="
+                                width: 25%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Approved for Final Rating:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0; text-align: center">
+                                  <div style="margin: 0 auto; width: 90%; max-width: 200px">
+                                    <strong>{{
+                                      mpoApprovedFinalRatingSignatory?.name || ''
+                                    }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Third Date -->
+                            <td
+                              style="
+                                width: 8.33%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                text-align: center;
+                              "
+                              rowspan="2"
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Date:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0">
+                                  <div
+                                    style="
+                                      border-bottom: 1px solid #000;
+                                      padding-bottom: 2px;
+                                      width: 90%;
+                                      margin: 0 auto;
+                                    "
+                                  >
+                                    {{ formatDate(new Date()) }}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+
+                          <!-- Row for position labels -->
+                          <tr>
+                            <!-- Employee Position -->
+                            <td
+                              style="
+                                text-align: center;
+                                font-size: 11px;
+                                padding: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              {{ employee?.position }}
+                            </td>
+
+                            <!-- Supervisor Position -->
+                            <td
+                              style="
+                                text-align: center;
+                                font-size: 11px;
+                                padding: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              {{ mpoConfirmedSignatory?.position || '' }}
+                            </td>
+
+                            <!-- Department Head Position -->
+                            <td
+                              style="
+                                text-align: center;
+                                font-size: 11px;
+                                padding: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              {{ mpoApprovedFinalRatingSignatory?.position || '' }}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2314,6 +2515,75 @@ const showStatusModal = ref(false)
 const attendanceModalRef = ref(null)
 const existingAttendanceData = ref({})
 
+// ── Signatory Helpers ──────────────────────────────────────────────────────
+
+/**
+ * Get signatory from the employee data based on the signatory type
+ */
+const getSignatory = (signatoryType) => {
+  if (!props.employee?.signatories) return null
+
+  const signatoryMap = {
+    // IPCR Signatories
+    ipcrReviewedBy: 'ipcr_reviewed_by_control_no',
+    ipcrApprovedBy: 'ipcr_approved_by_control_no',
+    ipcrAssessedBy: 'ipcr_assessed_by_control_no',
+    ipcrFinalRatingBy: 'ipcr_final_rating_by_control_no',
+
+    // Performance Standard Signatories
+    psDiscussedBy: 'performance_standard_discussed_by_control_no',
+    psApprovedBy: 'performance_standard_approved_by_control_no',
+
+    // Monthly Performance Output Signatories
+    mpoConfirmedBy: 'por_confirmed_control_no',
+    mpoApprovedFinalRatingBy: 'por_approved_final_rating_control_no',
+  }
+
+  const key = signatoryMap[signatoryType]
+  if (!key) return null
+
+  const signatory = props.employee.signatories[key]
+  if (!signatory) return null
+
+  return {
+    name: signatory.name || signatory.ControlNo || '_______________________',
+    position: signatory.job_title || signatory.rank || 'Office Head/Rater',
+  }
+}
+
+// ── Computed: Signatories ──────────────────────────────────────────────────
+
+// IPCR Signatories
+const ipcrReviewerSignatory = computed(
+  () => getSignatory('ipcrReviewedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+const ipcrApproverSignatory = computed(
+  () => getSignatory('ipcrApprovedBy') || props.managerialSignatory,
+)
+const ipcrAssessorSignatory = computed(
+  () => getSignatory('ipcrAssessedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+const ipcrFinalRatingSignatory = computed(
+  () => getSignatory('ipcrFinalRatingBy') || props.managerialSignatory,
+)
+
+// Performance Standard Signatories
+const psDiscussantSignatory = computed(
+  () => getSignatory('psDiscussedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+const psApproverSignatory = computed(
+  () => getSignatory('psApprovedBy') || props.managerialSignatory,
+)
+
+// Monthly Performance Output Signatories
+const mpoConfirmedSignatory = computed(
+  () => getSignatory('mpoConfirmedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+
+const mpoApprovedFinalRatingSignatory = computed(
+  () => getSignatory('mpoApprovedFinalRatingBy') || props.managerialSignatory,
+)
+
 // ── Composables ──────────────────────────────────────────────────────────────
 const { getStatusColor, getStatusTextColor, getStatusIcon } = useIPCRStatus()
 
@@ -2377,29 +2647,6 @@ const getNewStatusColor = () => {
   const nextStatus = statusModalConfig.value?.nextStatus || ''
   const s = nextStatus.toLowerCase().trim()
 
-  // Match the colors from your composable
-  const colorMap = {
-    draft: 'grey-6',
-    'discussed target': 'blue-6',
-    'approved target': 'cyan-7', // Changed from green-8
-    'approved accomplishment': 'cyan-7', // Changed from purple-8
-    'received target': 'indigo-6',
-    'received accomplishment': 'indigo-6',
-    'returned target': 'red-6',
-    'returned accomplishment': 'red-6',
-    'reviewed target': 'purple-6',
-    'reviewed accomplishment': 'purple-6',
-    'calibrated/validated target': 'green-7',
-    'calibrated/validated accomplishment': 'green-7',
-  }
-
-  return colorMap[s] || 'primary'
-}
-
-const getModalButtonColor = (nextStatus) => {
-  const s = nextStatus?.toLowerCase().trim() || ''
-
-  // Map statuses to colors (matching your composable)
   const colorMap = {
     draft: 'grey-6',
     'discussed target': 'blue-6',
@@ -2418,13 +2665,30 @@ const getModalButtonColor = (nextStatus) => {
   return colorMap[s] || 'primary'
 }
 
+const getModalButtonColor = (nextStatus) => {
+  const s = nextStatus?.toLowerCase().trim() || ''
+  const colorMap = {
+    draft: 'grey-6',
+    'discussed target': 'blue-6',
+    'approved target': 'cyan-7',
+    'approved accomplishment': 'cyan-7',
+    'received target': 'indigo-6',
+    'received accomplishment': 'indigo-6',
+    'returned target': 'red-6',
+    'returned accomplishment': 'red-6',
+    'reviewed target': 'purple-6',
+    'reviewed accomplishment': 'purple-6',
+    'calibrated/validated target': 'green-7',
+    'calibrated/validated accomplishment': 'green-7',
+  }
+  return colorMap[s] || 'primary'
+}
+
 // ── Status Button Helpers ──────────────────────────────────────────────────
 const getStatusButtonLabel = (status, isHead) => {
   if (!status) return 'Update Status'
-
   const s = status.toLowerCase().trim()
 
-  // For Head employees: show based on status type
   if (isHead) {
     if (
       s === 'draft' ||
@@ -2440,20 +2704,17 @@ const getStatusButtonLabel = (status, isHead) => {
     return 'Update Status'
   }
 
-  // For Non-Head employees: only show for specific statuses
   if (s === 'discussed target') {
     return 'Approved Target'
   }
   if (s === 'assessed accomplishment') {
     return 'Final Rating Accomplishment'
   }
-
   return 'Update Status'
 }
 
 const getStatusButtonColor = (status, isHead) => {
   if (!status) return 'orange'
-
   const s = status.toLowerCase().trim()
 
   if (isHead) {
@@ -2463,27 +2724,25 @@ const getStatusButtonColor = (status, isHead) => {
       s === 'returned target' ||
       s === 'calibrated/validated target'
     ) {
-      return 'cyan-7' // Changed from green-8 to cyan-7
+      return 'cyan-7'
     }
     if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
-      return 'cyan-7' // Changed from purple-8 to cyan-7
+      return 'cyan-7'
     }
     return 'orange'
   }
 
   if (s === 'discussed target') {
-    return 'cyan-7' // Changed from green-8 to cyan-7
+    return 'cyan-7'
   }
   if (s === 'assessed accomplishment') {
-    return 'cyan-7' // Changed from purple-8 to cyan-7
+    return 'cyan-7'
   }
-
   return 'orange'
 }
 
 const getStatusButtonTooltip = (status, isHead) => {
   if (!status) return 'Update the status of this target period'
-
   const s = status.toLowerCase().trim()
 
   if (isHead) {
@@ -2507,23 +2766,18 @@ const getStatusButtonTooltip = (status, isHead) => {
   if (s === 'assessed accomplishment') {
     return 'Submit the final rating accomplishment for this employee'
   }
-
   return 'Update the status of this target period'
 }
 
 const isStatusActionDisabled = (status, isHead) => {
   if (!status) return false
-
   const s = status.toLowerCase().trim()
 
-  // Disable if already in final approved state
   const disabledStates = ['approved accomplishment', 'completed', 'closed']
-
   if (disabledStates.some((ds) => s.includes(ds))) {
     return true
   }
 
-  // For Heads: only enable for specific statuses
   if (isHead) {
     const enabledStatuses = [
       'draft',
@@ -2536,30 +2790,24 @@ const isStatusActionDisabled = (status, isHead) => {
     return !enabledStatuses.includes(s)
   }
 
-  // For Non-Heads: only enable for Discussed Target and Assessed Accomplishment
   return s !== 'discussed target' && s !== 'assessed accomplishment'
 }
 
-// ── SHOW BUTTON ONLY FOR SPECIFIC STATUSES ──────────────────────────────
 const shouldShowStatusButton = (status, isHead) => {
   if (!status) return false
-
   const s = status.toLowerCase().trim()
 
-  // For Head employees: show only for specific statuses
   if (isHead) {
     const headVisibleStatuses = [
       'draft',
       'discussed target',
       'returned target',
-      'calibrated/validated target',
       'assessed accomplishment',
       'returned accomplishment',
     ]
     return headVisibleStatuses.includes(s)
   }
 
-  // For Non-Head employees: only show for Discussed Target or Assessed Accomplishment
   const nonHeadVisibleStatuses = ['discussed target', 'assessed accomplishment']
   return nonHeadVisibleStatuses.includes(s)
 }
@@ -2570,16 +2818,14 @@ const openStatusModal = () => {
   const s = status?.toLowerCase().trim() || ''
   const isHead = isEmployeeHead(props.employee)
 
-  // Determine the next status based on current status
   let nextStatus = 'Approved Target'
   let modalTitle = 'Approved Target'
   let modalMessage = 'Are you sure you want to approve the targets for this employee?'
   let modalIcon = 'check_circle'
-  let modalColor = '#00bcd4' // Cyan-7 hex color (for header gradient)
-  let quasarColor = 'cyan-7' // Quasar color name (for button)
+  let modalColor = '#00bcd4'
+  let quasarColor = 'cyan-7'
 
   if (isHead) {
-    // Head employee logic
     if (
       s === 'draft' ||
       s === 'discussed target' ||
@@ -2590,46 +2836,45 @@ const openStatusModal = () => {
       modalTitle = 'Approved Target'
       modalMessage = `Are you sure you want to approve the targets for this employee?`
       modalIcon = 'check_circle'
-      modalColor = '#00bcd4' // Cyan-7 hex color
-      quasarColor = 'cyan-7' // Cyan-7 Quasar color
+      modalColor = '#00bcd4'
+      quasarColor = 'cyan-7'
     } else if (s === 'assessed accomplishment' || s === 'returned accomplishment') {
       nextStatus = 'Approved Accomplishment'
       modalTitle = 'Final Rating Accomplishment'
       modalMessage = `Are you sure you want to submit the final rating accomplishment for this employee?`
       modalIcon = 'star'
-      modalColor = '#00bcd4' // Cyan-7 hex color
-      quasarColor = 'cyan-7' // Cyan-7 Quasar color
+      modalColor = '#00bcd4'
+      quasarColor = 'cyan-7'
     }
   } else {
-    // Non-Head employee logic
     if (s === 'discussed target') {
       nextStatus = 'Approved Target'
       modalTitle = 'Approved Target'
       modalMessage = `Are you sure you want to approve the targets for this employee?`
       modalIcon = 'check_circle'
-      modalColor = '#00bcd4' // Cyan-7 hex color
-      quasarColor = 'cyan-7' // Cyan-7 Quasar color
+      modalColor = '#00bcd4'
+      quasarColor = 'cyan-7'
     } else if (s === 'assessed accomplishment') {
       nextStatus = 'Approved Accomplishment'
       modalTitle = 'Final Rating Accomplishment'
       modalMessage = `Are you sure you want to submit the final rating accomplishment for this employee?`
       modalIcon = 'star'
-      modalColor = '#00bcd4' // Cyan-7 hex color
-      quasarColor = 'cyan-7' // Cyan-7 Quasar color
+      modalColor = '#00bcd4'
+      quasarColor = 'cyan-7'
     }
   }
 
-  // Show the modal with dynamic content
   showStatusModal.value = true
   statusModalConfig.value = {
     title: modalTitle,
     message: modalMessage,
     icon: modalIcon,
-    color: modalColor, // Hex color for header gradient
-    quasarColor: quasarColor, // Quasar color for button
+    color: modalColor,
+    quasarColor: quasarColor,
     nextStatus: nextStatus,
   }
 }
+
 // ── Status Modal Config ────────────────────────────────────────────────────
 const statusModalConfig = ref({
   title: 'Change Status',
@@ -2748,10 +2993,6 @@ const groupedPerformanceStandardsByCategory = computed(() => {
 })
 
 // ── Computed: Monthly Performance ────────────────────────────────────────────
-/**
- * FIX: The original bare <template> had no v-if, so it never rendered.
- * groupedMonthlyData now reliably returns an array of month objects.
- */
 const groupedMonthlyData = computed(() => {
   const monthlyData = ipcrStore.monthlyPerformance
   if (!monthlyData) return []
@@ -2862,10 +3103,6 @@ const computeWeekTotal = (data) => {
 
 const calculateTotal = (ratingData) => computeWeekTotal(ratingData)
 
-/**
- * FIX: Centralized attendance getter for MPO tab — replaces the broken
- * v-for="week in [..., 'total_absent']" pattern that caused undefined renders.
- */
 const getMonthAttendance = (monthName, type, key) => {
   const monthAtt = attendanceByMonth.value[monthName]
   if (!monthAtt) return ''
@@ -3029,20 +3266,16 @@ const confirmApprove = async () => {
     return
   }
 
-  // Use the nextStatus from the modal config
   const nextStatus = statusModalConfig.value.nextStatus || 'Discussed Target'
 
   try {
-    // Call the store with the target period ID and new status
     await monitorStore.updateIPCRStatus(tpId, nextStatus)
 
-    // Emit event to update parent component
     emit('status-updated', {
       ...props.employee,
       ipcrStatus: nextStatus,
     })
 
-    // Show success notification
     $q.notify({
       type: 'positive',
       message: `Status updated to "${nextStatus}" successfully!`,
@@ -3050,7 +3283,6 @@ const confirmApprove = async () => {
       timeout: 2000,
     })
 
-    // Close modal and emit close/approve events
     closeStatusModal()
     emit('close')
     emit('approve')
@@ -5058,6 +5290,10 @@ const generateSummaryMonthlyPdfContent = () => {
   const division = props.levels?.division || 'N/A'
   const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
   const isFirstSem = isFirstSemester.value
+
+  const confirmedBy = mpoConfirmedSignatory.value
+  const approvedFinalRatingBy = mpoApprovedFinalRatingSignatory.value
+
   const monthColumns = isFirstSem
     ? [
         { key: 'jan', label: 'Jan' },
@@ -5431,7 +5667,9 @@ const generateSummaryMonthlyPdfContent = () => {
           },
           { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
           {
+            // Use confirmedBy computed property
             text:
+              confirmedBy?.name ||
               props.supervisorySignatory?.name ||
               props.managerialSignatory?.name ||
               '___________________',
@@ -5442,7 +5680,11 @@ const generateSummaryMonthlyPdfContent = () => {
           },
           { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
           {
-            text: props.managerialSignatory?.name || '___________________',
+            // Use approvedFinalRatingBy computed property
+            text:
+              approvedFinalRatingBy?.name ||
+              props.managerialSignatory?.name ||
+              '___________________',
             fontSize: 8,
             bold: true,
             alignment: 'center',
@@ -5454,7 +5696,9 @@ const generateSummaryMonthlyPdfContent = () => {
           { text: position, fontSize: 8, alignment: 'center' },
           { text: '', fontSize: 8 },
           {
+            // Use confirmedBy position
             text:
+              confirmedBy?.position ||
               props.supervisorySignatory?.position ||
               props.managerialSignatory?.position ||
               'Supervisor',
@@ -5463,7 +5707,11 @@ const generateSummaryMonthlyPdfContent = () => {
           },
           { text: '', fontSize: 8 },
           {
-            text: props.managerialSignatory?.position || 'Department Head',
+            // Use approvedFinalRatingBy position
+            text:
+              approvedFinalRatingBy?.position ||
+              props.managerialSignatory?.position ||
+              'Department Head',
             fontSize: 8,
             alignment: 'center',
           },
@@ -5489,7 +5737,6 @@ const generateSummaryMonthlyPdfContent = () => {
     compress: true,
   }
 }
-
 // ── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   await loadIpcrData()

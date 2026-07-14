@@ -6,6 +6,8 @@ export const useReceivingOPCRStore = defineStore('receivingOPCRStore', {
   state: () => ({
     loading: false,
     records: [],
+    planningRecords: [],
+    pmtRecords: [],
   }),
 
   actions: {
@@ -31,6 +33,60 @@ export const useReceivingOPCRStore = defineStore('receivingOPCRStore', {
       } catch (err) {
         console.error('fetchOPCRRecords error', err)
         this.records = []
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchOPCRPlanningRecords(year, semester) {
+      if (!year || !semester) return
+      this.loading = true
+      try {
+        const resp = await api.get(
+          `/planning/opcr/list-received-opcr/${encodeURIComponent(semester)}/${encodeURIComponent(year)}`,
+        )
+
+        const payload = Array.isArray(resp.data) ? resp.data : (resp.data?.data ?? [])
+
+        this.planningRecords = payload.map((r, i) => ({
+          id: r.id ?? r.control_no ?? r.ControlNo ?? `tmp-${i}`,
+          office_opcr_id: r.office_opcr_id ?? r.id,
+          control_no: String(r.control_no ?? r.ControlNo ?? ''),
+          office_name: r.office_name ?? r.office ?? r.name ?? '',
+          office_head_name: r.office_head_name ?? r.office_head ?? r.head ?? '',
+          status: r.status ?? r.opcr_status ?? 'pending',
+          __raw: r,
+        }))
+      } catch (err) {
+        console.error('fetchOPCRRecords error', err)
+        this.planningRecords = []
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async fetchOPCRPMTRecords(year, semester) {
+      if (!year || !semester) return
+      this.loading = true
+      try {
+        const resp = await api.get(
+          `/pmt/opcr/${encodeURIComponent(semester)}/${encodeURIComponent(year)}`,
+        )
+
+        const payload = Array.isArray(resp.data) ? resp.data : (resp.data?.data ?? [])
+
+        this.pmtRecords = payload.map((r, i) => ({
+          id: r.id ?? r.control_no ?? r.ControlNo ?? `tmp-${i}`,
+          office_opcr_id: r.office_opcr_id ?? r.id,
+          control_no: String(r.control_no ?? r.ControlNo ?? ''),
+          office_name: r.office_name ?? r.office ?? r.name ?? '',
+          office_head_name: r.office_head_name ?? r.office_head ?? r.head ?? '',
+          status: r.status ?? r.opcr_status ?? 'pending',
+          __raw: r,
+        }))
+      } catch (err) {
+        console.error('fetchOPCRRecords error', err)
+        this.pmtRecords = []
       } finally {
         this.loading = false
       }

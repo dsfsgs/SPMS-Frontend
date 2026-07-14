@@ -189,19 +189,33 @@
 
         <template v-slot:body-cell-action="props">
           <q-td :props="props" class="text-center">
-            <template v-if="getStatusOptions(props.row.status).length > 0">
+            <div class="row justify-center q-gutter-xs">
+              <!-- IPCR Button - opens IPCR modal to view/edit -->
               <q-btn
+                class="neu-button"
+                flat
+                round
+                color="blue"
+                icon="assignment_ind"
+                size="md"
+                @click="openIPCRModal(props.row)"
+              >
+                <q-tooltip anchor="top middle" self="bottom middle">View IPCR</q-tooltip>
+              </q-btn>
+
+              <!-- Status Update Button -->
+              <q-btn
+                v-if="getStatusOptions(props.row.status).length > 0"
                 flat
                 round
                 color="primary"
                 icon="sync_alt"
-                size="sm"
+                size="md"
                 @click="openUpdateModal(props.row)"
               >
                 <q-tooltip anchor="top middle" self="bottom middle">Update Status</q-tooltip>
               </q-btn>
-            </template>
-            <span v-else class="text-grey-4">—</span>
+            </div>
           </q-td>
         </template>
       </q-table>
@@ -419,6 +433,23 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- IPCR Modal - Same as IPCREmployeeUserPage -->
+    <q-dialog v-model="showIPCRModal" full-width transition-show="fade" transition-hide="fade">
+      <q-card class="full-height" style="border-radius: 0">
+        <IPCRReportSupervisor
+          v-if="selectedIPCRRecord"
+          :employee="ipcrEmployeeData"
+          :target-period="targetPeriodData"
+          :levels="hierarchyData"
+          :supervisory-signatory="supervisorySignatoryData"
+          :managerial-signatory="managerialSignatoryData"
+          :is-self="isSelf"
+          @close="closeIPCRModal"
+          @status-updated="handleStatusUpdated"
+        />
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -428,11 +459,14 @@ import { useQuasar } from 'quasar'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
 import { useReceivingIPCRStore } from 'src/stores/receivingIPCRStore'
 import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
+import { useUserStore } from 'src/stores/userStore'
+import IPCRReportSupervisor from 'src/components/IPCRReportReceiving.vue'
 
 const $q = useQuasar()
 const libStore = useLibraryStore()
 const ipcrStore = useReceivingIPCRStore()
 const accountManageStore = useUserManageStore()
+const userStore = useUserStore()
 
 const selectedYear = ref(null)
 const selectedSemester = ref(null)
@@ -449,6 +483,10 @@ const bulkNewStatus = ref(null)
 const selectedRows = ref([])
 const officeSearch = ref('')
 const filteredOfficeOptions = ref([])
+
+// IPCR Modal refs - Same as IPCREmployeeUserPage
+const showIPCRModal = ref(false)
+const selectedIPCRRecord = ref(null)
 
 // ─── Status Transition Map ────────────────────────────────────────────────────
 const STATUS_TRANSITIONS = {
@@ -474,18 +512,18 @@ const STATUS_TRANSITIONS = {
       description: 'Accept the resubmitted target.',
     },
   ],
-  'final rating accomplishment': [
+  'approved accomplishment': [
     {
       label: 'Received Accomplishment',
       value: 'Received Accomplishment',
       color: 'indigo-6',
-      description: 'Mark the final rating accomplishment as received.',
+      description: 'Accept the approved accomplishment submission.',
     },
     {
       label: 'Returned Accomplishment',
       value: 'Returned Accomplishment',
       color: 'red-6',
-      description: 'Return the final rating accomplishment for corrections.',
+      description: 'Send the accomplishment back for revision.',
     },
   ],
   'returned accomplishment': [
@@ -498,7 +536,6 @@ const STATUS_TRANSITIONS = {
   ],
 }
 
-// All distinct status values that appear in the records — used for the status filter dropdown
 const STATUS_FILTER_OPTIONS = [
   { label: 'Draft', value: 'draft' },
   { label: 'Discussed Target', value: 'discussed target' },
@@ -636,6 +673,70 @@ const filteredRows = computed(() => {
   return rows
 })
 
+// ─── IPCR Computed Properties (Same as IPCREmployeeUserPage) ────────────────
+const isSelf = computed(() => {
+  if (!selectedIPCRRecord.value) return false
+
+  const loggedInUser = userStore.user
+  const loggedInControlNo =
+    loggedInUser?.controlNo ||
+    loggedInUser?.control_no ||
+    loggedInUser?.employee?.controlNo ||
+    loggedInUser?.employee?.control_no ||
+    loggedInUser?.employeeData?.ControlNo
+
+  if (!loggedInControlNo) return false
+
+  return selectedIPCRRecord.value.control_no === loggedInControlNo
+})
+
+const ipcrEmployeeData = computed(() => {
+  if (!selectedIPCRRecord.value) return null
+
+  return {
+    label: selectedIPCRRecord.value.name,
+    name: selectedIPCRRecord.value.name,
+    position: selectedIPCRRecord.value.position,
+    control_no: selectedIPCRRecord.value.control_no,
+    status: selectedIPCRRecord.value.status,
+    office: selectedIPCRRecord.value.office,
+    division: selectedIPCRRecord.value.division || null,
+    section: selectedIPCRRecord.value.section || null,
+    ipcrStatus: selectedIPCRRecord.value.status || null,
+    target_periods: selectedIPCRRecord.value.target_periods || [],
+    employeeData: {
+      ControlNo: selectedIPCRRecord.value.control_no,
+    },
+  }
+})
+
+const targetPeriodData = computed(() => {
+  return {
+    semester: selectedSemester.value,
+    year: selectedYear.value,
+  }
+})
+
+const hierarchyData = computed(() => {
+  // Try to get hierarchy from the selected record or use empty
+  return {
+    office: selectedIPCRRecord.value?.office || null,
+    office2: selectedIPCRRecord.value?.office2 || null,
+    group: selectedIPCRRecord.value?.group || null,
+    division: selectedIPCRRecord.value?.division || null,
+    section: selectedIPCRRecord.value?.section || null,
+    unit: selectedIPCRRecord.value?.unit || null,
+  }
+})
+
+const supervisorySignatoryData = computed(() => {
+  return selectedIPCRRecord.value?.supervisorySignatory || null
+})
+
+const managerialSignatoryData = computed(() => {
+  return selectedIPCRRecord.value?.managerialSignatory || null
+})
+
 // ─── Methods ──────────────────────────────────────────────────────────────────
 const filterOffices = (val, update) => {
   update(() => {
@@ -654,6 +755,62 @@ const getEmployeeNames = () => {
 
 const clearSelection = () => {
   selectedRows.value = []
+}
+
+// ─── IPCR Modal Functions (Same as IPCREmployeeUserPage) ─────────────────────
+const openIPCRModal = (row) => {
+  // Build employee data with all necessary fields
+  selectedIPCRRecord.value = {
+    id: row.id,
+    name: row.name,
+    label: row.name,
+    position: row.position,
+    control_no: row.control_no,
+    status: row.status,
+    office: row.office,
+    division: row.division || null,
+    section: row.section || null,
+    office2: row.office2 || null,
+    group: row.group || null,
+    unit: row.unit || null,
+    supervisorySignatory: row.supervisorySignatory || null,
+    managerialSignatory: row.managerialSignatory || null,
+    target_periods: row.target_periods || [],
+    employeeData: {
+      ControlNo: row.control_no,
+      office: row.office,
+    },
+    _raw: row,
+  }
+
+  showIPCRModal.value = true
+}
+
+const closeIPCRModal = () => {
+  showIPCRModal.value = false
+  selectedIPCRRecord.value = null
+  if (selectedYear.value && selectedSemester.value && selectedOffice.value) {
+    ipcrStore.fetchIPCRRecords(selectedYear.value, selectedSemester.value, selectedOffice.value)
+  }
+}
+
+const handleStatusUpdated = (updatedEmployee) => {
+  // Update the employee's status in the local records
+  if (updatedEmployee && ipcrStore.records) {
+    const index = ipcrStore.records.findIndex(
+      (emp) => emp.id === updatedEmployee.id || emp.control_no === updatedEmployee.control_no,
+    )
+    if (index !== -1) {
+      ipcrStore.records[index].status = updatedEmployee.ipcrStatus || updatedEmployee.status
+    }
+  }
+
+  $q.notify({
+    type: 'positive',
+    message: 'IPCR status updated successfully!',
+    position: 'top',
+    timeout: 2000,
+  })
 }
 
 const openUpdateModal = (row) => {
@@ -677,7 +834,6 @@ const openBulkUpdateModal = () => {
     })
     return
   }
-  // Pre-select first option if only one is available
   bulkNewStatus.value =
     bulkTransitionOptions.value.length === 1 ? bulkTransitionOptions.value[0].value : null
   showBulkUpdateModal.value = true
@@ -770,7 +926,6 @@ watch(selectedSemester, () => {
   }
 })
 
-// Clear selection when status filter changes — avoids stale cross-status selections
 watch(selectedStatus, () => {
   clearSelection()
 })
@@ -858,5 +1013,33 @@ onMounted(async () => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+/* Neumorphic button styling */
+.neu-button {
+  border-radius: 50%;
+  background: #f7fafc;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.15),
+    -3px -3px 6px rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.neu-button:hover {
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.2),
+    -2px -2px 4px rgba(255, 255, 255, 0.9);
+  transform: translateY(1px);
+}
+
+.neu-button:active {
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.2),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.9);
+  transform: translateY(2px);
+}
+
+.full-height {
+  height: 100vh;
 }
 </style>

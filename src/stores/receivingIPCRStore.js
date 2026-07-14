@@ -109,7 +109,7 @@ export const useReceivingIPCRStore = defineStore('receivingIPCRStore', {
       try {
         const response = await api.post('/spms/update/ipcr', {
           ipcr_id: [ipcr_id],
-          status: newStatus.toLowerCase(),
+          status: newStatus,
         })
         const status = newStatus.toLowerCase()
         const idx = this.records.findIndex((r) => r.id === ipcr_id)

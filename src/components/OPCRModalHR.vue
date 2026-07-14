@@ -30,7 +30,7 @@
         <div class="text-body1">{{ opcrData.name }} - {{ employee?.position || 'N/A' }}</div>
         <div class="flex justify-end q-gutter-sm">
           <!-- <q-btn color="blue-9" icon="edit" label="Input" @click="openEditModal" /> -->
-          <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" />
+          <!-- <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" /> -->
         </div>
       </div>
 
@@ -234,42 +234,36 @@
 
                 <!-- Render performance standards for this category -->
                 <tr v-for="standard in getStandardsByCategory(category)" :key="standard.id">
-                  <td style="padding: 4px">
+                  <td>
                     <b>{{ standard.mfo || 'N/A' }}</b>
                   </td>
-                  <td style="padding: 4px">
-                    <div v-html="formatCompetencies(standard)"></div>
+                  <td>
+                    <div class="competency-list">
+                      <div v-html="formatCompetencies(standard)"></div>
+                    </div>
                   </td>
-                  <td style="padding: 4px">
-                    {{ standard.success_indicator || 'N/A' }}
+                  <td>{{ standard.success_indicator || 'N/A' }}</td>
+                  <td class="text-center">{{ standard.opcr?.budget || '-' }}</td>
+                  <td class="text-center">{{ standard.opcr?.accountable || '-' }}</td>
+                  <td>{{ standard.opcr_accomplishment?.accomplishment || '-' }}</td>
+                  <td class="text-center">
+                    {{ standard.opcr_accomplishment?.ratings?.quantity_rating || '-' }}
                   </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.budget || '-' }}
+                  <td class="text-center">
+                    {{ standard.opcr_accomplishment?.ratings?.effectiveness_rating || '-' }}
                   </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.accountable || '-' }}
+                  <td class="text-center">
+                    {{ standard.opcr_accomplishment?.ratings?.timeliness_rating || '-' }}
                   </td>
-                  <td style="padding: 4px">
-                    {{ standard.opcr?.accomplishment || '-' }}
+                  <td class="text-center">
+                    {{ standard.opcr_accomplishment?.ratings?.average_rating || '-' }}
                   </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_q || '-' }}
+                  <td>
+                    <div class="competency-list">
+                      <div v-html="formatProficiencyResult(standard)"></div>
+                    </div>
                   </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_e || '-' }}
-                  </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_t || '-' }}
-                  </td>
-                  <td style="text-align: center; padding: 4px">
-                    {{ standard.opcr?.rating_a || '-' }}
-                  </td>
-                  <td style="padding: 4px">
-                    <div v-html="formatProficiencyResult(standard)"></div>
-                  </td>
-                  <td style="padding: 4px">
-                    {{ standard.opcr?.remarks || '' }}
-                  </td>
+                  <td>{{ standard.opcr?.remarks || '' }}</td>
                 </tr>
               </template>
 
@@ -392,22 +386,22 @@ import { useQuasar } from 'quasar'
 import OPCRInput from './OPCRInput.vue'
 
 // Add pdfMake import
-let pdfMake = null
+// let pdfMake = null
 
-const initPdfMake = async () => {
-  if (!pdfMake) {
-    const pdfMakeModule = await import('pdfmake/build/pdfmake')
-    const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
+// const initPdfMake = async () => {
+//   if (!pdfMake) {
+//     const pdfMakeModule = await import('pdfmake/build/pdfmake')
+//     const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
 
-    pdfMake = pdfMakeModule.default || pdfMakeModule
-    const pdfFonts = pdfFontsModule.default || pdfFontsModule
+//     pdfMake = pdfMakeModule.default || pdfMakeModule
+//     const pdfFonts = pdfFontsModule.default || pdfFontsModule
 
-    if (pdfMake && !pdfMake.vfs) {
-      pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
-    }
-  }
-  return pdfMake
-}
+//     if (pdfMake && !pdfMake.vfs) {
+//       pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
+//     }
+//   }
+//   return pdfMake
+// }
 
 const props = defineProps({
   employee: {
@@ -427,7 +421,7 @@ const $q = useQuasar()
 
 // Modal state
 const editModalOpen = ref(false)
-const isPrinting = ref(false)
+// const isPrinting = ref(false)
 
 // Use store state directly
 const loading = computed(() => opcrStore.loading)
@@ -633,961 +627,961 @@ const getAdjectivalRating = (rating) => {
 }
 
 // Helper to convert image URL to base64
-const convertImageToBase64 = (url) => {
-  return new Promise((resolve, reject) => {
-    const img = new window.Image()
-    img.crossOrigin = 'Anonymous'
-    img.onload = function () {
-      try {
-        const canvas = document.createElement('canvas')
-        canvas.width = img.width
-        canvas.height = img.height
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0)
-        const dataURL = canvas.toDataURL('image/png')
-        resolve(dataURL)
-      } catch (err) {
-        reject(err)
-      }
-    }
-    img.onerror = function (err) {
-      reject(err)
-    }
-    img.src = url
-  })
-}
+// const convertImageToBase64 = (url) => {
+//   return new Promise((resolve, reject) => {
+//     const img = new window.Image()
+//     img.crossOrigin = 'Anonymous'
+//     img.onload = function () {
+//       try {
+//         const canvas = document.createElement('canvas')
+//         canvas.width = img.width
+//         canvas.height = img.height
+//         const ctx = canvas.getContext('2d')
+//         ctx.drawImage(img, 0, 0)
+//         const dataURL = canvas.toDataURL('image/png')
+//         resolve(dataURL)
+//       } catch (err) {
+//         reject(err)
+//       }
+//     }
+//     img.onerror = function (err) {
+//       reject(err)
+//     }
+//     img.src = url
+//   })
+// }
 
 // Create SVG placeholder function
-const createSvgPlaceholder = (text, width = 80, height = 80) => {
-  const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100%" height="100%" fill="#f0f0f0" stroke="#666" stroke-width="1" stroke-dasharray="2" />
-    <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#666" font-size="10" font-family="Arial">
-      ${text}
-    </text>
-  </svg>`
-  return `data:image/svg+xml;base64,${btoa(svg)}`
-}
+// const createSvgPlaceholder = (text, width = 80, height = 80) => {
+//   const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+//     <rect width="100%" height="100%" fill="#f0f0f0" stroke="#666" stroke-width="1" stroke-dasharray="2" />
+//     <text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="#666" font-size="10" font-family="Arial">
+//       ${text}
+//     </text>
+//   </svg>`
+//   return `data:image/svg+xml;base64,${btoa(svg)}`
+// }
 
-const formatDate = (date) => {
-  if (!date) return '__/__/____'
-  const d = new Date(date)
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const year = d.getFullYear()
-  return `${month}/${day}/${year}`
-}
+// const formatDate = (date) => {
+//   if (!date) return '__/__/____'
+//   const d = new Date(date)
+//   const month = String(d.getMonth() + 1).padStart(2, '0')
+//   const day = String(d.getDate()).padStart(2, '0')
+//   const year = d.getFullYear()
+//   return `${month}/${day}/${year}`
+// }
 
 // PDF Generation Function
-const handlePrint = async () => {
-  if (!opcrData.value) {
-    $q.notify({
-      type: 'warning',
-      message: 'No OPCR data available to print',
-      position: 'top',
-    })
-    return
-  }
+// const handlePrint = async () => {
+//   if (!opcrData.value) {
+//     $q.notify({
+//       type: 'warning',
+//       message: 'No OPCR data available to print',
+//       position: 'top',
+//     })
+//     return
+//   }
 
-  isPrinting.value = true
+//   isPrinting.value = true
 
-  try {
-    const pdfMakeInstance = await initPdfMake()
+//   try {
+//     const pdfMakeInstance = await initPdfMake()
 
-    if (!pdfMakeInstance) {
-      throw new Error('Failed to load pdfMake')
-    }
+//     if (!pdfMakeInstance) {
+//       throw new Error('Failed to load pdfMake')
+//     }
 
-    // Load images as base64 data URLs
-    let tagumLogoBase64 = null
-    let rotpLogoBase64 = null
+//     // Load images as base64 data URLs
+//     let tagumLogoBase64 = null
+//     let rotpLogoBase64 = null
 
-    try {
-      tagumLogoBase64 = await convertImageToBase64('/tagumlogo.png')
-      rotpLogoBase64 = await convertImageToBase64('/rotp.png')
-    } catch (error) {
-      console.warn('Could not load images, using SVG placeholders:', error)
-      tagumLogoBase64 = createSvgPlaceholder('TAGUM LOGO')
-      rotpLogoBase64 = createSvgPlaceholder('ROTP LOGO')
-    }
+//     try {
+//       tagumLogoBase64 = await convertImageToBase64('/tagumlogo.png')
+//       rotpLogoBase64 = await convertImageToBase64('/rotp.png')
+//     } catch (error) {
+//       console.warn('Could not load images, using SVG placeholders:', error)
+//       tagumLogoBase64 = createSvgPlaceholder('TAGUM LOGO')
+//       rotpLogoBase64 = createSvgPlaceholder('ROTP LOGO')
+//     }
 
-    const docDefinition = generateOpcrPdfContent(tagumLogoBase64, rotpLogoBase64)
+//     const docDefinition = generateOpcrPdfContent(tagumLogoBase64, rotpLogoBase64)
 
-    // Open in new window
-    pdfMakeInstance.createPdf(docDefinition).open()
+//     // Open in new window
+//     pdfMakeInstance.createPdf(docDefinition).open()
 
-    $q.notify({
-      type: 'positive',
-      message: 'PDF generated successfully',
-      position: 'top',
-    })
-  } catch (error) {
-    console.error('Error generating PDF:', error)
-    $q.notify({
-      type: 'negative',
-      message: `Failed to generate PDF: ${error.message}`,
-      position: 'top',
-    })
-  } finally {
-    isPrinting.value = false
-  }
-}
+//     $q.notify({
+//       type: 'positive',
+//       message: 'PDF generated successfully',
+//       position: 'top',
+//     })
+//   } catch (error) {
+//     console.error('Error generating PDF:', error)
+//     $q.notify({
+//       type: 'negative',
+//       message: `Failed to generate PDF: ${error.message}`,
+//       position: 'top',
+//     })
+//   } finally {
+//     isPrinting.value = false
+//   }
+// }
 
 // Generate OPCR PDF Content
-const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
-  const employeeName = opcrData.value?.name || 'N/A'
-  const position = props.employee?.position || 'N/A'
-  const office = props.employee?.office || 'N/A'
-  const period = `${props.targetPeriod?.semester || 'N/A'}, ${props.targetPeriod?.year || 'N/A'}`
+// const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
+//   const employeeName = opcrData.value?.name || 'N/A'
+//   const position = props.employee?.position || 'N/A'
+//   const office = props.employee?.office || 'N/A'
+//   const period = `${props.targetPeriod?.semester || 'N/A'}, ${props.targetPeriod?.year || 'N/A'}`
 
-  const content = []
+//   const content = []
 
-  // Header with logos
-  content.push({
-    columns: [
-      {
-        width: 'auto',
-        stack: tagumLogoBase64
-          ? [
-              {
-                image: tagumLogoBase64,
-                width: 40,
-                alignment: 'center',
-                margin: [0, 10, 0, 10],
-              },
-            ]
-          : [
-              {
-                text: 'TAGUM LOGO',
-                alignment: 'center',
-                italics: true,
-                margin: [0, 20, 0, 10],
-              },
-            ],
-      },
-      {
-        width: '*',
-        stack: [
-          {
-            text: 'Republic of the Philippines',
-            alignment: 'center',
-            fontSize: 10,
-            margin: [0, 10, 0, 2],
-          },
-          {
-            text: 'Province of Davao del Norte',
-            alignment: 'center',
-            fontSize: 10,
-            margin: [0, 0, 0, 2],
-          },
-          {
-            text: 'CITY OF TAGUM',
-            alignment: 'center',
-            fontSize: 10,
-            bold: true,
-            margin: [0, 0, 0, 10],
-          },
-        ],
-      },
-      {
-        width: 'auto',
-        stack: rotpLogoBase64
-          ? [
-              {
-                image: rotpLogoBase64,
-                width: 40,
-                alignment: 'center',
-                margin: [0, 10, 0, 10],
-              },
-            ]
-          : [
-              {
-                text: 'ROTP LOGO',
-                alignment: 'center',
-                italics: true,
-                margin: [0, 20, 0, 10],
-              },
-            ],
-      },
-    ],
-    margin: [0, 0, 0, 0],
-  })
+//   // Header with logos
+//   content.push({
+//     columns: [
+//       {
+//         width: 'auto',
+//         stack: tagumLogoBase64
+//           ? [
+//               {
+//                 image: tagumLogoBase64,
+//                 width: 40,
+//                 alignment: 'center',
+//                 margin: [0, 10, 0, 10],
+//               },
+//             ]
+//           : [
+//               {
+//                 text: 'TAGUM LOGO',
+//                 alignment: 'center',
+//                 italics: true,
+//                 margin: [0, 20, 0, 10],
+//               },
+//             ],
+//       },
+//       {
+//         width: '*',
+//         stack: [
+//           {
+//             text: 'Republic of the Philippines',
+//             alignment: 'center',
+//             fontSize: 10,
+//             margin: [0, 10, 0, 2],
+//           },
+//           {
+//             text: 'Province of Davao del Norte',
+//             alignment: 'center',
+//             fontSize: 10,
+//             margin: [0, 0, 0, 2],
+//           },
+//           {
+//             text: 'CITY OF TAGUM',
+//             alignment: 'center',
+//             fontSize: 10,
+//             bold: true,
+//             margin: [0, 0, 0, 10],
+//           },
+//         ],
+//       },
+//       {
+//         width: 'auto',
+//         stack: rotpLogoBase64
+//           ? [
+//               {
+//                 image: rotpLogoBase64,
+//                 width: 40,
+//                 alignment: 'center',
+//                 margin: [0, 10, 0, 10],
+//               },
+//             ]
+//           : [
+//               {
+//                 text: 'ROTP LOGO',
+//                 alignment: 'center',
+//                 italics: true,
+//                 margin: [0, 20, 0, 10],
+//               },
+//             ],
+//       },
+//     ],
+//     margin: [0, 0, 0, 0],
+//   })
 
-  // Title
-  content.push({
-    text: 'OFFICE PERFORMANCE COMMITMENT AND REVIEW (OPCR)',
-    alignment: 'center',
-    fontSize: 11,
-    bold: true,
-    margin: [0, 0, 0, 15],
-  })
+//   // Title
+//   content.push({
+//     text: 'OFFICE PERFORMANCE COMMITMENT AND REVIEW (OPCR)',
+//     alignment: 'center',
+//     fontSize: 11,
+//     bold: true,
+//     margin: [0, 0, 0, 15],
+//   })
 
-  // Commitment Statement Table
-  content.push({
-    table: {
-      widths: ['100%'],
-      body: [
-        [
-          {
-            text: [
-              { text: 'I, ' },
-              { text: employeeName, bold: true },
-              { text: ', ' },
-              { text: position },
-              { text: ' of the ' },
-              { text: office },
-              {
-                text: ', commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measures for the period of ',
-              },
-              { text: period, bold: true },
-              { text: '.' },
-            ],
-            fontSize: 9,
-            margin: [5, 5, 5, 5],
-            border: [true, true, true, false],
-          },
-        ],
-      ],
-    },
-    layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
-      hLineColor: () => '#000000',
-      vLineColor: () => '#000000',
-    },
-    margin: [0, 0, 0, 0],
-  })
+//   // Commitment Statement Table
+//   content.push({
+//     table: {
+//       widths: ['100%'],
+//       body: [
+//         [
+//           {
+//             text: [
+//               { text: 'I, ' },
+//               { text: employeeName, bold: true },
+//               { text: ', ' },
+//               { text: position },
+//               { text: ' of the ' },
+//               { text: office },
+//               {
+//                 text: ', commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measures for the period of ',
+//               },
+//               { text: period, bold: true },
+//               { text: '.' },
+//             ],
+//             fontSize: 9,
+//             margin: [5, 5, 5, 5],
+//             border: [true, true, true, false],
+//           },
+//         ],
+//       ],
+//     },
+//     layout: {
+//       hLineWidth: () => 1,
+//       vLineWidth: () => 1,
+//       hLineColor: () => '#000000',
+//       vLineColor: () => '#000000',
+//     },
+//     margin: [0, 0, 0, 0],
+//   })
 
-  // Signatory section in commitment
-  content.push({
-    table: {
-      widths: ['*', '*'],
-      body: [
-        [
-          {
-            text: '',
-            border: [true, false, false, false],
-          },
-          {
-            stack: [
-              {
-                text: employeeName,
-                bold: true,
-                fontSize: 9,
-                alignment: 'center',
-                margin: [0, 10, 0, 2],
-              },
-              {
-                text: position,
-                fontSize: 8,
-                alignment: 'center',
-              },
-              {
-                text: `Date: ${formatDate(new Date())}`,
-                fontSize: 8,
-                alignment: 'center',
-              },
-            ],
-            border: [false, false, true, false],
-          },
-        ],
-      ],
-    },
-    layout: {
-      hLineWidth: () => 0,
-      vLineWidth: () => 1,
-      vLineColor: () => '#000000',
-    },
-    margin: [0, 0, 0, 0],
-  })
+//   // Signatory section in commitment
+//   content.push({
+//     table: {
+//       widths: ['*', '*'],
+//       body: [
+//         [
+//           {
+//             text: '',
+//             border: [true, false, false, false],
+//           },
+//           {
+//             stack: [
+//               {
+//                 text: employeeName,
+//                 bold: true,
+//                 fontSize: 9,
+//                 alignment: 'center',
+//                 margin: [0, 10, 0, 2],
+//               },
+//               {
+//                 text: position,
+//                 fontSize: 8,
+//                 alignment: 'center',
+//               },
+//               {
+//                 text: `Date: ${formatDate(new Date())}`,
+//                 fontSize: 8,
+//                 alignment: 'center',
+//               },
+//             ],
+//             border: [false, false, true, false],
+//           },
+//         ],
+//       ],
+//     },
+//     layout: {
+//       hLineWidth: () => 0,
+//       vLineWidth: () => 1,
+//       vLineColor: () => '#000000',
+//     },
+//     margin: [0, 0, 0, 0],
+//   })
 
-  // Approval Section
-  content.push({
-    table: {
-      widths: ['50%', '50%'],
-      body: [
-        [
-          {
-            text: 'Approved by:',
-            fontSize: 9,
-            bold: true,
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          {
-            text: 'Date',
-            fontSize: 9,
-            bold: true,
-            alignment: 'left',
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-        ],
-        [
-          {
-            stack: [
-              {
-                text: 'REY T. UY',
-                bold: true,
-                fontSize: 9,
-                alignment: 'center',
-                margin: [0, 20, 0, 0],
-              },
-              {
-                text: '________________________________',
-                alignment: 'center',
-                fontSize: 9,
-              },
-              {
-                text: 'City Mayor',
-                fontSize: 9,
-                alignment: 'center',
-              },
-            ],
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          {
-            text: '',
-            border: [true, true, true, true],
-          },
-        ],
-      ],
-    },
-    layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
-      hLineColor: () => '#000000',
-      vLineColor: () => '#000000',
-    },
-    margin: [0, 0, 0, 15],
-  })
+//   // Approval Section
+//   content.push({
+//     table: {
+//       widths: ['50%', '50%'],
+//       body: [
+//         [
+//           {
+//             text: 'Approved by:',
+//             fontSize: 9,
+//             bold: true,
+//             border: [true, true, true, true],
+//             margin: [5, 5, 5, 5],
+//           },
+//           {
+//             text: 'Date',
+//             fontSize: 9,
+//             bold: true,
+//             alignment: 'left',
+//             border: [true, true, true, true],
+//             margin: [5, 5, 5, 5],
+//           },
+//         ],
+//         [
+//           {
+//             stack: [
+//               {
+//                 text: 'REY T. UY',
+//                 bold: true,
+//                 fontSize: 9,
+//                 alignment: 'center',
+//                 margin: [0, 20, 0, 0],
+//               },
+//               {
+//                 text: '________________________________',
+//                 alignment: 'center',
+//                 fontSize: 9,
+//               },
+//               {
+//                 text: 'City Mayor',
+//                 fontSize: 9,
+//                 alignment: 'center',
+//               },
+//             ],
+//             border: [true, true, true, true],
+//             margin: [5, 5, 5, 5],
+//           },
+//           {
+//             text: '',
+//             border: [true, true, true, true],
+//           },
+//         ],
+//       ],
+//     },
+//     layout: {
+//       hLineWidth: () => 1,
+//       vLineWidth: () => 1,
+//       hLineColor: () => '#000000',
+//       vLineColor: () => '#000000',
+//     },
+//     margin: [0, 0, 0, 15],
+//   })
 
-  // Rating Scale Table (aligned right)
-  content.push({
-    columns: [
-      { width: '*', text: '' },
-      {
-        width: 'auto',
-        table: {
-          widths: [100, 30],
-          body: [
-            [
-              {
-                text: 'Outstanding',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '5',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              {
-                text: 'Very Satisfactory',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '4',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              {
-                text: 'Satisfactory',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '3',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              {
-                text: 'Unsatisfactory',
-                fontSize: 8,
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-              {
-                text: '2',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-            [
-              { text: 'Poor', fontSize: 8, border: [true, true, true, true], margin: [3, 3, 3, 3] },
-              {
-                text: '1',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-                margin: [3, 3, 3, 3],
-              },
-            ],
-          ],
-        },
-        layout: {
-          hLineWidth: () => 1,
-          vLineWidth: () => 1,
-          hLineColor: () => '#000000',
-          vLineColor: () => '#000000',
-        },
-      },
-    ],
-    margin: [0, 0, 0, 10],
-  })
+//   // Rating Scale Table (aligned right)
+//   content.push({
+//     columns: [
+//       { width: '*', text: '' },
+//       {
+//         width: 'auto',
+//         table: {
+//           widths: [100, 30],
+//           body: [
+//             [
+//               {
+//                 text: 'Outstanding',
+//                 fontSize: 8,
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//               {
+//                 text: '5',
+//                 fontSize: 8,
+//                 alignment: 'center',
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//             ],
+//             [
+//               {
+//                 text: 'Very Satisfactory',
+//                 fontSize: 8,
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//               {
+//                 text: '4',
+//                 fontSize: 8,
+//                 alignment: 'center',
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//             ],
+//             [
+//               {
+//                 text: 'Satisfactory',
+//                 fontSize: 8,
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//               {
+//                 text: '3',
+//                 fontSize: 8,
+//                 alignment: 'center',
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//             ],
+//             [
+//               {
+//                 text: 'Unsatisfactory',
+//                 fontSize: 8,
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//               {
+//                 text: '2',
+//                 fontSize: 8,
+//                 alignment: 'center',
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//             ],
+//             [
+//               { text: 'Poor', fontSize: 8, border: [true, true, true, true], margin: [3, 3, 3, 3] },
+//               {
+//                 text: '1',
+//                 fontSize: 8,
+//                 alignment: 'center',
+//                 border: [true, true, true, true],
+//                 margin: [3, 3, 3, 3],
+//               },
+//             ],
+//           ],
+//         },
+//         layout: {
+//           hLineWidth: () => 1,
+//           vLineWidth: () => 1,
+//           hLineColor: () => '#000000',
+//           vLineColor: () => '#000000',
+//         },
+//       },
+//     ],
+//     margin: [0, 0, 0, 10],
+//   })
 
-  // Main OPCR Table
-  const tableBody = [
-    // Header rows
-    [
-      {
-        text: 'MFO',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'REQUIRED COMPETENCY &\nPROFICIENCY LEVEL',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'SUCCESS INDICATOR',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'ALLOTED BUDGET',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'DIVISION/\nINDIVIDUAL\nACCOUNTABLE',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'ACTUAL\nACCOMPLISHMENT',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'RATING',
-        colSpan: 4,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {
-        text: 'PROFICIENCY\nRESULT',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'REMARKS',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-    ],
-    [
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {
-        text: 'Q',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'E',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'T',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {
-        text: 'A',
-        alignment: 'center',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-    ],
-  ]
+//   // Main OPCR Table
+//   const tableBody = [
+//     // Header rows
+//     [
+//       {
+//         text: 'MFO',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'REQUIRED COMPETENCY &\nPROFICIENCY LEVEL',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'SUCCESS INDICATOR',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'ALLOTED BUDGET',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'DIVISION/\nINDIVIDUAL\nACCOUNTABLE',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'ACTUAL\nACCOMPLISHMENT',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'RATING',
+//         colSpan: 4,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {},
+//       {},
+//       {},
+//       {
+//         text: 'PROFICIENCY\nRESULT',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'REMARKS',
+//         rowSpan: 2,
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//     ],
+//     [
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {
+//         text: 'Q',
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'E',
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'T',
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: 'A',
+//         alignment: 'center',
+//         fontSize: 8,
+//         bold: true,
+//         fillColor: '#f2f2f2',
+//         border: [true, true, true, true],
+//       },
+//       {},
+//       {},
+//     ],
+//   ]
 
-  // Add data rows for each category
-  categories.value.forEach((category) => {
-    // Category header
-    tableBody.push([
-      {
-        text: category,
-        colSpan: 12,
-        fontSize: 9,
-        bold: true,
-        fillColor: '#d9d9d9',
-        border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-    ])
+//   // Add data rows for each category
+//   categories.value.forEach((category) => {
+//     // Category header
+//     tableBody.push([
+//       {
+//         text: category,
+//         colSpan: 12,
+//         fontSize: 9,
+//         bold: true,
+//         fillColor: '#d9d9d9',
+//         border: [true, true, true, true],
+//         margin: [3, 3, 3, 3],
+//       },
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//     ])
 
-    // Standards for this category
-    const standards = getStandardsByCategory(category)
-    standards.forEach((standard) => {
-      tableBody.push([
-        {
-          text: standard.mfo || 'N/A',
-          fontSize: 7,
-          bold: true,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: formatCompetencies(standard),
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.success_indicator || 'N/A',
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.opcr?.budget || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.accountable || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.accomplishment || '-',
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.opcr?.rating_q || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.rating_e || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.rating_t || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: standard.opcr?.rating_a || '-',
-          fontSize: 7,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-        {
-          text: formatProficiencyResult(standard),
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-        {
-          text: standard.opcr?.remarks || '',
-          fontSize: 7,
-          border: [true, true, true, true],
-          margin: [2, 2, 2, 2],
-        },
-      ])
-    })
-  })
+//     // Standards for this category
+//     const standards = getStandardsByCategory(category)
+//     standards.forEach((standard) => {
+//       tableBody.push([
+//         {
+//           text: standard.mfo || 'N/A',
+//           fontSize: 7,
+//           bold: true,
+//           border: [true, true, true, true],
+//           margin: [2, 2, 2, 2],
+//         },
+//         {
+//           text: formatCompetencies(standard),
+//           fontSize: 7,
+//           border: [true, true, true, true],
+//           margin: [2, 2, 2, 2],
+//         },
+//         {
+//           text: standard.success_indicator || 'N/A',
+//           fontSize: 7,
+//           border: [true, true, true, true],
+//           margin: [2, 2, 2, 2],
+//         },
+//         {
+//           text: standard.opcr?.budget || '-',
+//           fontSize: 7,
+//           alignment: 'center',
+//           border: [true, true, true, true],
+//         },
+//         {
+//           text: standard.opcr?.accountable || '-',
+//           fontSize: 7,
+//           alignment: 'center',
+//           border: [true, true, true, true],
+//         },
+//         {
+//           text: standard.opcr?.accomplishment || '-',
+//           fontSize: 7,
+//           border: [true, true, true, true],
+//           margin: [2, 2, 2, 2],
+//         },
+//         {
+//           text: standard.opcr?.rating_q || '-',
+//           fontSize: 7,
+//           alignment: 'center',
+//           border: [true, true, true, true],
+//         },
+//         {
+//           text: standard.opcr?.rating_e || '-',
+//           fontSize: 7,
+//           alignment: 'center',
+//           border: [true, true, true, true],
+//         },
+//         {
+//           text: standard.opcr?.rating_t || '-',
+//           fontSize: 7,
+//           alignment: 'center',
+//           border: [true, true, true, true],
+//         },
+//         {
+//           text: standard.opcr?.rating_a || '-',
+//           fontSize: 7,
+//           alignment: 'center',
+//           border: [true, true, true, true],
+//         },
+//         {
+//           text: formatProficiencyResult(standard),
+//           fontSize: 7,
+//           border: [true, true, true, true],
+//           margin: [2, 2, 2, 2],
+//         },
+//         {
+//           text: standard.opcr?.remarks || '',
+//           fontSize: 7,
+//           border: [true, true, true, true],
+//           margin: [2, 2, 2, 2],
+//         },
+//       ])
+//     })
+//   })
 
-  // Average Rating Section
-  tableBody.push([
-    {
-      text: 'Category',
-      colSpan: 2,
-      fontSize: 8,
-      bold: true,
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {},
-    {
-      text: 'COMPETENCY ASSESSMENT (Subjective)',
-      colSpan: 10,
-      fontSize: 8,
-      bold: true,
-      alignment: 'center',
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-  ])
+//   // Average Rating Section
+//   tableBody.push([
+//     {
+//       text: 'Category',
+//       colSpan: 2,
+//       fontSize: 8,
+//       bold: true,
+//       border: [true, true, true, true],
+//       margin: [3, 3, 3, 3],
+//     },
+//     {},
+//     {
+//       text: 'COMPETENCY ASSESSMENT (Subjective)',
+//       colSpan: 10,
+//       fontSize: 8,
+//       bold: true,
+//       alignment: 'center',
+//       border: [true, true, true, true],
+//       margin: [3, 3, 3, 3],
+//     },
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//   ])
 
-  // Calculate how many category rating rows we'll have
-  let categoryRatingRowCount = 0
-  if (hasCategoryData('A. STRATEGIC FUNCTION')) categoryRatingRowCount++
-  if (hasCategoryData('B. CORE FUNCTION')) categoryRatingRowCount++
-  if (hasCategoryData('C. SUPPORT FUNCTION')) categoryRatingRowCount++
-  categoryRatingRowCount += 2 // Final Rating + Adjectival Rating
+//   // Calculate how many category rating rows we'll have
+//   let categoryRatingRowCount = 0
+//   if (hasCategoryData('A. STRATEGIC FUNCTION')) categoryRatingRowCount++
+//   if (hasCategoryData('B. CORE FUNCTION')) categoryRatingRowCount++
+//   if (hasCategoryData('C. SUPPORT FUNCTION')) categoryRatingRowCount++
+//   categoryRatingRowCount += 2 // Final Rating + Adjectival Rating
 
-  // Category ratings
-  if (hasCategoryData('A. STRATEGIC FUNCTION')) {
-    tableBody.push([
-      {
-        text: 'Strategic Functions:',
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
-      },
-      {
-        text: calculateCategoryRating('A. STRATEGIC FUNCTION'),
-        fontSize: 8,
-        bold: true,
-        alignment: 'center',
-        border: [true, true, true, true],
-      },
-      {
-        text: '',
-        colSpan: 10,
-        rowSpan: categoryRatingRowCount,
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-    ])
-  }
+//   // Category ratings
+//   if (hasCategoryData('A. STRATEGIC FUNCTION')) {
+//     tableBody.push([
+//       {
+//         text: 'Strategic Functions:',
+//         fontSize: 8,
+//         bold: true,
+//         border: [true, true, true, true],
+//         margin: [3, 3, 3, 3],
+//       },
+//       {
+//         text: calculateCategoryRating('A. STRATEGIC FUNCTION'),
+//         fontSize: 8,
+//         bold: true,
+//         alignment: 'center',
+//         border: [true, true, true, true],
+//       },
+//       {
+//         text: '',
+//         colSpan: 10,
+//         rowSpan: categoryRatingRowCount,
+//         border: [true, true, true, true],
+//       },
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//     ])
+//   }
 
-  if (hasCategoryData('B. CORE FUNCTION')) {
-    tableBody.push([
-      {
-        text: 'Core Functions:',
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
-      },
-      {
-        text: calculateCategoryRating('B. CORE FUNCTION'),
-        fontSize: 8,
-        bold: true,
-        alignment: 'center',
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-    ])
-  }
+//   if (hasCategoryData('B. CORE FUNCTION')) {
+//     tableBody.push([
+//       {
+//         text: 'Core Functions:',
+//         fontSize: 8,
+//         bold: true,
+//         border: [true, true, true, true],
+//         margin: [3, 3, 3, 3],
+//       },
+//       {
+//         text: calculateCategoryRating('B. CORE FUNCTION'),
+//         fontSize: 8,
+//         bold: true,
+//         alignment: 'center',
+//         border: [true, true, true, true],
+//       },
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//     ])
+//   }
 
-  if (hasCategoryData('C. SUPPORT FUNCTION')) {
-    tableBody.push([
-      {
-        text: 'Support Functions:',
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
-      },
-      {
-        text: calculateCategoryRating('C. SUPPORT FUNCTION'),
-        fontSize: 8,
-        bold: true,
-        alignment: 'center',
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-    ])
-  }
+//   if (hasCategoryData('C. SUPPORT FUNCTION')) {
+//     tableBody.push([
+//       {
+//         text: 'Support Functions:',
+//         fontSize: 8,
+//         bold: true,
+//         border: [true, true, true, true],
+//         margin: [3, 3, 3, 3],
+//       },
+//       {
+//         text: calculateCategoryRating('C. SUPPORT FUNCTION'),
+//         fontSize: 8,
+//         bold: true,
+//         alignment: 'center',
+//         border: [true, true, true, true],
+//       },
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//       {},
+//     ])
+//   }
 
-  // Final Rating
-  tableBody.push([
-    {
-      text: 'Final Rating:',
-      fontSize: 8,
-      bold: true,
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {
-      text: calculateAverageRating(),
-      fontSize: 8,
-      bold: true,
-      alignment: 'center',
-      border: [true, true, true, true],
-    },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-  ])
+//   // Final Rating
+//   tableBody.push([
+//     {
+//       text: 'Final Rating:',
+//       fontSize: 8,
+//       bold: true,
+//       border: [true, true, true, true],
+//       margin: [3, 3, 3, 3],
+//     },
+//     {
+//       text: calculateAverageRating(),
+//       fontSize: 8,
+//       bold: true,
+//       alignment: 'center',
+//       border: [true, true, true, true],
+//     },
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//   ])
 
-  // Adjectival Rating
-  tableBody.push([
-    {
-      text: 'Adjectival Rating:',
-      fontSize: 8,
-      bold: true,
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {
-      text: getAdjectivalRating(calculateAverageRating()),
-      fontSize: 8,
-      bold: true,
-      alignment: 'center',
-      border: [true, true, true, true],
-    },
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-    {},
-  ])
+//   // Adjectival Rating
+//   tableBody.push([
+//     {
+//       text: 'Adjectival Rating:',
+//       fontSize: 8,
+//       bold: true,
+//       border: [true, true, true, true],
+//       margin: [3, 3, 3, 3],
+//     },
+//     {
+//       text: getAdjectivalRating(calculateAverageRating()),
+//       fontSize: 8,
+//       bold: true,
+//       alignment: 'center',
+//       border: [true, true, true, true],
+//     },
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//     {},
+//   ])
 
-  // Add the main table with NO header rows repeating
-  content.push({
-    table: {
-      headerRows: 0, // Don't repeat any header rows
-      widths: ['10%', '12%', '10%', '8%', '8%', '10%', '5%', '5%', '5%', '5%', '10%', '12%'],
-      body: tableBody,
-    },
-    layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
-      hLineColor: () => '#000000',
-      vLineColor: () => '#000000',
-    },
-    margin: [0, 0, 0, 10],
-  })
+//   // Add the main table with NO header rows repeating
+//   content.push({
+//     table: {
+//       headerRows: 0, // Don't repeat any header rows
+//       widths: ['10%', '12%', '10%', '8%', '8%', '10%', '5%', '5%', '5%', '5%', '10%', '12%'],
+//       body: tableBody,
+//     },
+//     layout: {
+//       hLineWidth: () => 1,
+//       vLineWidth: () => 1,
+//       hLineColor: () => '#000000',
+//       vLineColor: () => '#000000',
+//     },
+//     margin: [0, 0, 0, 10],
+//   })
 
-  // Signature Section - Make it unbreakable
-  content.push({
-    table: {
-      widths: ['50%', '50%'],
-      body: [
-        [
-          {
-            text: 'Assessed by:',
-            fontSize: 9,
-            bold: true,
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          {
-            text: 'Final Rating by:',
-            fontSize: 9,
-            bold: true,
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-        ],
-        [
-          {
-            stack: [
-              {
-                text: props.employee?.supervisor || 'N/A',
-                bold: true,
-                fontSize: 9,
-                alignment: 'center',
-                margin: [0, 40, 0, 2],
-              },
-              {
-                text: '________________________________',
-                alignment: 'center',
-                fontSize: 9,
-              },
-              {
-                text: 'Immediate Supervisor',
-                fontSize: 8,
-                alignment: 'center',
-              },
-            ],
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          {
-            stack: [
-              {
-                text: 'REY T. UY',
-                bold: true,
-                fontSize: 9,
-                alignment: 'center',
-                margin: [0, 40, 0, 2],
-              },
-              {
-                text: '________________________________',
-                alignment: 'center',
-                fontSize: 9,
-              },
-              {
-                text: 'City Mayor',
-                fontSize: 8,
-                alignment: 'center',
-              },
-            ],
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-        ],
-      ],
-    },
-    layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
-      hLineColor: () => '#000000',
-      vLineColor: () => '#000000',
-    },
-    margin: [0, 0, 0, 0],
-    unbreakable: true, // Prevent signature section from breaking across pages
-  })
+//   // Signature Section - Make it unbreakable
+//   content.push({
+//     table: {
+//       widths: ['50%', '50%'],
+//       body: [
+//         [
+//           {
+//             text: 'Assessed by:',
+//             fontSize: 9,
+//             bold: true,
+//             border: [true, true, true, true],
+//             margin: [5, 5, 5, 5],
+//           },
+//           {
+//             text: 'Final Rating by:',
+//             fontSize: 9,
+//             bold: true,
+//             border: [true, true, true, true],
+//             margin: [5, 5, 5, 5],
+//           },
+//         ],
+//         [
+//           {
+//             stack: [
+//               {
+//                 text: props.employee?.supervisor || 'N/A',
+//                 bold: true,
+//                 fontSize: 9,
+//                 alignment: 'center',
+//                 margin: [0, 40, 0, 2],
+//               },
+//               {
+//                 text: '________________________________',
+//                 alignment: 'center',
+//                 fontSize: 9,
+//               },
+//               {
+//                 text: 'Immediate Supervisor',
+//                 fontSize: 8,
+//                 alignment: 'center',
+//               },
+//             ],
+//             border: [true, true, true, true],
+//             margin: [5, 5, 5, 5],
+//           },
+//           {
+//             stack: [
+//               {
+//                 text: 'REY T. UY',
+//                 bold: true,
+//                 fontSize: 9,
+//                 alignment: 'center',
+//                 margin: [0, 40, 0, 2],
+//               },
+//               {
+//                 text: '________________________________',
+//                 alignment: 'center',
+//                 fontSize: 9,
+//               },
+//               {
+//                 text: 'City Mayor',
+//                 fontSize: 8,
+//                 alignment: 'center',
+//               },
+//             ],
+//             border: [true, true, true, true],
+//             margin: [5, 5, 5, 5],
+//           },
+//         ],
+//       ],
+//     },
+//     layout: {
+//       hLineWidth: () => 1,
+//       vLineWidth: () => 1,
+//       hLineColor: () => '#000000',
+//       vLineColor: () => '#000000',
+//     },
+//     margin: [0, 0, 0, 0],
+//     unbreakable: true, // Prevent signature section from breaking across pages
+//   })
 
-  return {
-    pageSize: 'LEGAL',
-    pageOrientation: 'landscape',
-    pageMargins: [36, 36, 36, 36],
-    content: content,
-    defaultStyle: {
-      fontSize: 8,
-    },
-  }
-}
+//   return {
+//     pageSize: 'LEGAL',
+//     pageOrientation: 'landscape',
+//     pageMargins: [36, 36, 36, 36],
+//     content: content,
+//     defaultStyle: {
+//       fontSize: 8,
+//     },
+//   }
+// }
 
 onMounted(() => {
   loadOpcrData()
@@ -1614,6 +1608,11 @@ onMounted(() => {
   font-weight: bold;
   line-height: 1.5;
   font-size: 11px;
+}
+
+.competency-list {
+  font-size: 9px;
+  white-space: pre-line;
 }
 
 .opcr-title {

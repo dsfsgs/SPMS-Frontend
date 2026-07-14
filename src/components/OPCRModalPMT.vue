@@ -626,7 +626,7 @@ const getStatusOptions = (currentStatus) => {
   const status = currentStatus?.toLowerCase().trim() || ''
 
   switch (status) {
-    case 'received target':
+    case 'reviewed target':
       return [
         {
           label: 'Calibrated/Validated Target',
@@ -638,7 +638,7 @@ const getStatusOptions = (currentStatus) => {
           label: 'Returned Target',
           value: 'Returned Target',
           color: 'red-6',
-          description: 'Return the target for revision.',
+          description: 'Return the target for revisions.',
         },
       ]
     case 'prevalidated accomplishment':
@@ -653,7 +653,7 @@ const getStatusOptions = (currentStatus) => {
           label: 'Returned Accomplishment',
           value: 'Returned Accomplishment',
           color: 'red-6',
-          description: 'Return the accomplishment for revision.',
+          description: 'Return the accomplishment for corrections.',
         },
       ]
     default:
@@ -740,10 +740,10 @@ const getStatusColor = (row) => {
 // }
 
 // Determine if the update button should be shown
-// Only show for Received Target or Prevalidated Accomplishment
+// Only show for Reviewed Target or Prevalidated Accomplishment
 const shouldShowUpdateButton = computed(() => {
   const status = opcrData.value?.opcr_status?.toLowerCase().trim() || ''
-  return status === 'received target' || status === 'prevalidated accomplishment'
+  return status === 'reviewed target' || status === 'prevalidated accomplishment'
 })
 
 // =========================

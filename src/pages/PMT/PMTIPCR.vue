@@ -115,7 +115,7 @@
                 — mixed statuses selected; only same-status records can be bulk updated
               </span>
               <span v-else class="text-caption text-grey-7">
-                — all <strong>{{ commonStatus }}</strong>
+                — all <strong>{{ formatStatus(commonStatus) }}</strong>
               </span>
             </div>
             <div class="row q-gutter-xs">
@@ -160,7 +160,7 @@
       <q-table
         :rows="filteredRows"
         :columns="columns"
-        row-key="id"
+        row-key="ipcr_id"
         :loading="ipcrStore.loading"
         flat
         wrap-cells
@@ -191,7 +191,6 @@
         <template v-slot:body-cell-action="props">
           <q-td :props="props" class="text-center">
             <div class="row justify-center q-gutter-xs">
-              <!-- IPCR Button: Shows for all employees except CONTRACTUAL, HONORARIUM, and Managerial -->
               <q-btn
                 v-if="canShowIPCR(props.row)"
                 class="neu-button"
@@ -205,7 +204,6 @@
                 <q-tooltip>IPCR</q-tooltip>
               </q-btn>
 
-              <!-- Status Update Button: Only for "Reviewed Target" and "Prevalidated Accomplishment" -->
               <q-btn
                 v-if="canUpdateStatus(props.row.status)"
                 flat
@@ -238,7 +236,6 @@
         <q-separator />
 
         <q-card-section class="q-pt-md">
-          <!-- Employee Info -->
           <div
             class="row items-start q-pa-sm q-mb-md bg-grey-1"
             style="border: 1px solid #e0e0e0; border-radius: 8px"
@@ -265,7 +262,6 @@
             />
           </div>
 
-          <!-- Status Selection -->
           <div
             class="text-caption text-grey-6 text-weight-medium q-mb-sm"
             style="letter-spacing: 0.5px; text-transform: uppercase"
@@ -343,7 +339,6 @@
         <q-separator />
 
         <q-card-section class="q-pt-md">
-          <!-- Info Banner -->
           <q-banner rounded dense class="bg-blue-1 text-blue-9 q-mb-md">
             <template v-slot:avatar>
               <q-icon name="info" color="blue" />
@@ -353,11 +348,10 @@
               >{{ selectedRows.length }} record{{ selectedRows.length !== 1 ? 's' : '' }}</strong
             >
             across {{ uniqueOfficeCount }} office(s). All records are currently
-            <strong>{{ commonStatus }}</strong
+            <strong>{{ formatStatus(commonStatus) }}</strong
             >.
           </q-banner>
 
-          <!-- Selected Employees -->
           <div
             class="q-pa-sm q-mb-md bg-grey-1"
             style="border: 1px solid #e0e0e0; border-radius: 8px"
@@ -371,7 +365,6 @@
             <div class="text-body2 text-grey-8">{{ getEmployeeNames() }}</div>
           </div>
 
-          <!-- Bulk Status Options — same transitions as individual, driven by commonStatus -->
           <div
             class="text-caption text-grey-6 text-weight-medium q-mb-sm"
             style="letter-spacing: 0.5px; text-transform: uppercase"
@@ -487,54 +480,52 @@ const currentTargetPeriod = ref(null)
 const EXCLUDED_STATUSES = ['CONTRACTUAL', 'HONORARIUM']
 
 // ─── Status Transition Map ────────────────────────────────────────────────────
-// Only show update options for Reviewed Target and Prevalidated Accomplishment
 const STATUS_TRANSITIONS = {
-  'reviewed target': [
+  'Reviewed Target': [
     {
       label: 'Calibrated/Validated Target',
-      value: 'calibrated/validated target',
+      value: 'Calibrated/Validated Target',
       color: 'green-7',
       description: 'Mark the target as calibrated and validated.',
     },
     {
       label: 'Returned Target',
-      value: 'returned target',
+      value: 'Returned Target',
       color: 'red-6',
       description: 'Send the target back to the employee for revision.',
     },
   ],
-  'prevalidated accomplishment': [
+  'Prevalidated Accomplishment': [
     {
       label: 'Calibrated/Validated Accomplishment',
-      value: 'calibrated/validated accomplishment',
+      value: 'Calibrated/Validated Accomplishment',
       color: 'green-7',
       description: 'Mark the accomplishment as calibrated and validated.',
     },
     {
       label: 'Returned Accomplishment',
-      value: 'returned accomplishment',
+      value: 'Returned Accomplishment',
       color: 'red-6',
       description: 'Return the accomplishment for corrections.',
     },
   ],
 }
 
-// All distinct status values that appear in the records — used for the status filter dropdown
 const STATUS_FILTER_OPTIONS = [
-  { label: 'Draft', value: 'draft' },
-  { label: 'Discussed Target', value: 'discussed target' },
-  { label: 'Approved Target', value: 'approved target' },
-  { label: 'Received Target', value: 'received target' },
-  { label: 'Returned Target', value: 'returned target' },
-  { label: 'Reviewed Target', value: 'reviewed target' },
-  { label: 'Calibrated/Validated Target', value: 'calibrated/validated target' },
-  { label: 'Final Rating Accomplishment', value: 'final rating accomplishment' },
-  { label: 'Approved Accomplishment', value: 'approved accomplishment' },
-  { label: 'Received Accomplishment', value: 'received accomplishment' },
-  { label: 'Returned Accomplishment', value: 'returned accomplishment' },
-  { label: 'Reviewed Accomplishment', value: 'reviewed accomplishment' },
-  { label: 'Prevalidated Accomplishment', value: 'prevalidated accomplishment' },
-  { label: 'Calibrated/Validated Accomplishment', value: 'calibrated/validated accomplishment' },
+  { label: 'Draft', value: 'Draft' },
+  { label: 'Discussed Target', value: 'Discussed Target' },
+  { label: 'Approved Target', value: 'Approved Target' },
+  { label: 'Received Target', value: 'Received Target' },
+  { label: 'Returned Target', value: 'Returned Target' },
+  { label: 'Reviewed Target', value: 'Reviewed Target' },
+  { label: 'Calibrated/Validated Target', value: 'Calibrated/Validated Target' },
+  { label: 'Final Rating Accomplishment', value: 'Final Rating Accomplishment' },
+  { label: 'Approved Accomplishment', value: 'Approved Accomplishment' },
+  { label: 'Received Accomplishment', value: 'Received Accomplishment' },
+  { label: 'Returned Accomplishment', value: 'Returned Accomplishment' },
+  { label: 'Reviewed Accomplishment', value: 'Reviewed Accomplishment' },
+  { label: 'Prevalidated Accomplishment', value: 'Prevalidated Accomplishment' },
+  { label: 'Calibrated/Validated Accomplishment', value: 'Calibrated/Validated Accomplishment' },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -554,51 +545,41 @@ const canShowIPCR = (employee) => {
 
 const canUpdateStatus = (status) => {
   if (!status) return false
-  const normalizedStatus = status.toLowerCase().trim()
-  return (
-    normalizedStatus === 'reviewed target' || normalizedStatus === 'prevalidated accomplishment'
-  )
+  return status === 'Reviewed Target' || status === 'Prevalidated Accomplishment'
 }
 
 const getStatusOptions = (status) => {
   if (!status) return []
-  const normalizedStatus = status.toLowerCase().trim()
-  if (
-    normalizedStatus === 'reviewed target' ||
-    normalizedStatus === 'prevalidated accomplishment'
-  ) {
-    return STATUS_TRANSITIONS[normalizedStatus] || []
-  }
-  return []
+  return STATUS_TRANSITIONS[status] || []
 }
 
 const formatStatus = (status) => {
   if (!status) return 'Pending'
-  return status.charAt(0).toUpperCase() + status.slice(1)
+  return status
 }
 
 const statusColor = (status) => {
-  switch ((status || '').toLowerCase().trim()) {
-    case 'draft':
+  switch (status) {
+    case 'Draft':
       return 'grey-6'
-    case 'discussed target':
+    case 'Discussed Target':
       return 'blue-6'
-    case 'approved target':
-    case 'approved accomplishment':
+    case 'Approved Target':
+    case 'Approved Accomplishment':
       return 'cyan-7'
-    case 'received target':
-    case 'received accomplishment':
+    case 'Received Target':
+    case 'Received Accomplishment':
       return 'indigo-6'
-    case 'returned target':
-    case 'returned accomplishment':
+    case 'Returned Target':
+    case 'Returned Accomplishment':
       return 'red-6'
-    case 'reviewed target':
-    case 'reviewed accomplishment':
+    case 'Reviewed Target':
+    case 'Reviewed Accomplishment':
       return 'purple-6'
-    case 'calibrated/validated target':
-    case 'calibrated/validated accomplishment':
+    case 'Calibrated/Validated Target':
+    case 'Calibrated/Validated Accomplishment':
       return 'green-7'
-    case 'prevalidated accomplishment':
+    case 'Prevalidated Accomplishment':
       return 'orange-6'
     default:
       return 'blue-grey-4'
@@ -681,20 +662,14 @@ const semesterOptions = computed(() => {
 const officeOptions = computed(() => pmtStore.filteredOffices || [])
 const uniqueOfficeCount = computed(() => new Set(selectedRows.value.map((r) => r.office)).size)
 
-// Only show status values that actually appear in the loaded records
 const statusFilterOptions = computed(() => {
-  const presentStatuses = new Set(
-    (ipcrStore.pmtRecords || []).map((r) => (r.status || '').toLowerCase().trim()),
-  )
+  const presentStatuses = new Set((ipcrStore.pmtRecords || []).map((r) => r.status).filter(Boolean))
   return STATUS_FILTER_OPTIONS.filter((o) => presentStatuses.has(o.value))
 })
 
-// Determine if selected rows share a single common status
 const commonStatus = computed(() => {
   if (!selectedRows.value.length) return null
-  const statuses = [
-    ...new Set(selectedRows.value.map((r) => (r.status || '').toLowerCase().trim())),
-  ]
+  const statuses = [...new Set(selectedRows.value.map((r) => r.status).filter(Boolean))]
   return statuses.length === 1 ? statuses[0] : null
 })
 
@@ -703,29 +678,24 @@ const hasMixedStatuses = computed(() => {
   return commonStatus.value === null
 })
 
-// Transitions available for bulk — mirrors individual logic, driven by commonStatus
 const bulkTransitionOptions = computed(() => {
   if (!commonStatus.value) return []
-  // Only allow bulk updates for Reviewed Target and Prevalidated Accomplishment
   if (
-    commonStatus.value === 'reviewed target' ||
-    commonStatus.value === 'prevalidated accomplishment'
+    commonStatus.value === 'Reviewed Target' ||
+    commonStatus.value === 'Prevalidated Accomplishment'
   ) {
     return STATUS_TRANSITIONS[commonStatus.value] || []
   }
   return []
 })
 
-// Options for the individual update modal
 const availableStatusOptions = computed(() => getStatusOptions(selectedRecord.value?.status))
 
 const filteredRows = computed(() => {
   let rows = ipcrStore.pmtRecords || []
 
   if (selectedStatus.value) {
-    rows = rows.filter(
-      (r) => (r.status || '').toLowerCase().trim() === selectedStatus.value.toLowerCase().trim(),
-    )
+    rows = rows.filter((r) => r.status === selectedStatus.value)
   }
 
   const q = (searchQuery.value || '').toLowerCase().trim()
@@ -772,6 +742,7 @@ const openBulkUpdateModal = () => {
     $q.notify({ type: 'warning', message: 'No records selected', position: 'top' })
     return
   }
+
   if (hasMixedStatuses.value) {
     $q.notify({
       type: 'warning',
@@ -781,7 +752,7 @@ const openBulkUpdateModal = () => {
     })
     return
   }
-  // Pre-select first option if only one is available
+
   bulkNewStatus.value =
     bulkTransitionOptions.value.length === 1 ? bulkTransitionOptions.value[0].value : null
   showBulkUpdateModal.value = true
@@ -795,7 +766,17 @@ const handleUpdateStatus = async () => {
 
   updatingStatus.value = true
   try {
-    await ipcrStore.updateIPCRStatus(selectedRecord.value.id, newStatus.value)
+    // Use ipcr_id from the record
+    const recordId = selectedRecord.value.ipcr_id || selectedRecord.value.id
+
+    if (!recordId) {
+      throw new Error('Record ID is missing')
+    }
+
+    console.log('🔍 Updating individual record:', { id: recordId, status: newStatus.value })
+
+    await ipcrStore.updateIPCRStatus(recordId, newStatus.value)
+
     $q.notify({
       type: 'positive',
       message: 'Status updated successfully',
@@ -805,7 +786,11 @@ const handleUpdateStatus = async () => {
     showUpdateModal.value = false
     selectedRecord.value = null
     newStatus.value = null
+
+    // Refresh data
+    await refreshData()
   } catch (error) {
+    console.error('Update error:', error)
     $q.notify({
       type: 'negative',
       message: 'Failed to update status',
@@ -825,18 +810,39 @@ const handleBulkUpdateStatus = async () => {
 
   updatingStatus.value = true
   try {
-    const selectedIds = selectedRows.value.map((row) => row.id)
+    // Extract ipcr_id from selected rows
+    const selectedIds = selectedRows.value
+      .map((row) => row.ipcr_id || row.id)
+      .filter((id) => id !== undefined && id !== null)
+
+    console.log('📦 Extracted IDs for bulk update:', selectedIds)
+
+    if (selectedIds.length === 0) {
+      $q.notify({
+        type: 'error',
+        message: 'No valid IDs found for selected records',
+        caption: 'Please refresh the data and try again',
+        position: 'top',
+      })
+      return
+    }
+
     await ipcrStore.bulkUpdateIPCRStatus(selectedIds, bulkNewStatus.value)
+
     $q.notify({
       type: 'positive',
-      message: `${selectedRows.value.length} record(s) updated successfully`,
+      message: `${selectedIds.length} record(s) updated successfully`,
       caption: `Changed to "${bulkNewStatus.value}"`,
       position: 'top',
     })
     showBulkUpdateModal.value = false
     clearSelection()
     bulkNewStatus.value = null
+
+    // Refresh data
+    await refreshData()
   } catch (error) {
+    console.error('Bulk update error:', error)
     $q.notify({
       type: 'negative',
       message: 'Failed to update statuses',
@@ -848,11 +854,19 @@ const handleBulkUpdateStatus = async () => {
   }
 }
 
+// ─── Refresh Data ─────────────────────────────────────────────────────────────
+const refreshData = async () => {
+  if (selectedYear.value && selectedSemester.value && selectedOffice.value) {
+    const officeObj = officeOptions.value.find((o) => o.officeId === selectedOffice.value)
+    const officeName = officeObj?.name || selectedOffice.value
+    await ipcrStore.fetchPMTIPCRRecords(selectedYear.value, selectedSemester.value, officeName)
+  }
+}
+
 // ─── IPCR Modal Methods ──────────────────────────────────────────────────────
 const showIPCRModal = (employee) => {
-  // Map the employee data to the format expected by IPCRReportHR
   selectedEmployee.value = {
-    id: employee.id,
+    id: employee.ipcr_id || employee.id,
     label: employee.name,
     name: employee.name,
     position: employee.position,
@@ -872,7 +886,6 @@ const showIPCRModal = (employee) => {
     managerialSignatory: null,
   }
 
-  // Set current target period as an OBJECT with year and semester
   currentTargetPeriod.value = {
     year: selectedYear.value,
     semester: selectedSemester.value,
@@ -889,14 +902,7 @@ const closeIPCRModal = () => {
 
 const handleStatusUpdated = async () => {
   console.log('🔄 Status updated, refreshing data...')
-
-  // Refresh the data
-  if (selectedYear.value && selectedSemester.value && selectedOffice.value) {
-    const officeObj = officeOptions.value.find((o) => o.officeId === selectedOffice.value)
-    const officeName = officeObj?.name || selectedOffice.value
-    await ipcrStore.fetchPMTIPCRRecords(selectedYear.value, selectedSemester.value, officeName)
-  }
-
+  await refreshData()
   $q.notify({
     message: 'Employee status updated successfully',
     color: 'positive',
@@ -908,12 +914,9 @@ const handleStatusUpdated = async () => {
 // ─── Watchers ─────────────────────────────────────────────────────────────────
 watch([selectedYear, selectedSemester, selectedOffice], ([y, s, officeId]) => {
   if (y && s && officeId) {
-    // Find the office object to get its name
     const officeObj = officeOptions.value.find((o) => o.officeId === officeId)
     const officeName = officeObj?.name || officeId
-
     console.log('📊 Fetching IPCR records:', { year: y, semester: s, officeId, officeName })
-
     ipcrStore.fetchPMTIPCRRecords(y, s, officeName)
     clearSelection()
     selectedStatus.value = null
@@ -937,7 +940,6 @@ watch(selectedSemester, () => {
   }
 })
 
-// Clear selection when status filter changes — avoids stale cross-status selections
 watch(selectedStatus, () => {
   clearSelection()
 })
@@ -946,14 +948,10 @@ watch(selectedStatus, () => {
 onMounted(async () => {
   try {
     if (!libStore.targetPeriods?.length) await libStore.fetchTargetPeriods()
-
     if (!pmtStore.filteredOffices?.length) {
       await pmtStore.fetchPMTOffices()
     }
-
-    // Initialize filtered office options
     filteredOfficeOptions.value = pmtStore.filteredOffices || []
-
     await nextTick()
 
     if (yearOptions.value.length > 0) {
@@ -1033,7 +1031,6 @@ onMounted(async () => {
   transform: translateY(-4px);
 }
 
-/* Neumorphic round button (action icons) */
 .neu-button {
   border-radius: 50%;
   background: #f7fafc;

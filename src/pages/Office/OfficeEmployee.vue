@@ -68,6 +68,7 @@
             flat
             bordered
             wrap-cells
+            :grid="$q.screen.xs"
             :loading="employeeStore.loading"
             :pagination="{ rowsPerPage: 10 }"
             :rows-per-page-options="[10, 20, 50]"
@@ -134,6 +135,16 @@
             <template v-slot:body-cell-actions="props">
               <q-td :props="props">
                 <q-btn
+                  icon="how_to_reg"
+                  color="green"
+                  flat
+                  dense
+                  class="q-mr-xs"
+                  @click="openSignatoryModal(props.row)"
+                >
+                  <q-tooltip>Assign Signatories</q-tooltip>
+                </q-btn>
+                <q-btn
                   icon="delete"
                   color="negative"
                   flat
@@ -153,6 +164,140 @@
     </div>
 
     <AddEmployeeModal v-model:showModal="showAddModal" @add="handleAddEmployees" />
+
+    <!-- ===================== ASSIGN SIGNATORY DIALOG ===================== -->
+    <q-dialog v-model="showSignatoryModal" persistent>
+      <q-card class="signatory-card">
+        <q-card-section class="signatory-header">
+          <div class="signatory-title">
+            <q-icon name="how_to_reg" class="q-mr-sm" />
+            Assign Signatories
+            <div class="signatory-subtitle" v-if="signatoryEmployee">
+              for {{ signatoryEmployee.name }} —
+              {{ signatoryEmployee.position || signatoryEmployee.job_title }}
+            </div>
+          </div>
+          <q-btn icon="close" flat round dense v-close-popup @click="closeSignatoryModal" />
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="signatory-body">
+          <div v-if="!signatoryEmployee?.ControlNo" class="missing-control-warning">
+            <q-icon name="warning" class="q-mr-xs" />
+            This employee has no Control No on record — signatories cannot be saved until that's
+            fixed.
+          </div>
+
+          <div v-if="isLimitedSignatoryMode" class="limited-mode-note">
+            <q-icon name="info" class="q-mr-xs" />
+            {{ signatoryEmployee?.status || signatoryEmployee?.Status }} employees only require QPEF
+            Assessed by and Final Rating by.
+          </div>
+
+          <div v-if="loadingSignatoryRecord" class="loading-container">
+            <q-spinner size="1.5em" class="q-mr-sm" color="green" />
+            <span>Checking for existing signatories...</span>
+          </div>
+
+          <template v-else>
+            <div
+              v-for="section in visibleSignatorySections"
+              :key="section.key"
+              class="signatory-section"
+            >
+              <div class="section-title">{{ section.displayTitle }}</div>
+
+              <div v-for="role in section.roles" :key="role.key" class="signatory-role-row">
+                <div class="role-label">
+                  {{ role.label }}:
+                  <q-badge
+                    v-if="role.isApprover"
+                    color="green"
+                    outline
+                    class="q-ml-xs"
+                    label="Linked"
+                  />
+                </div>
+
+                <div class="role-fields">
+                  <!-- SEARCHABLE NAME SELECT — filtered to Regular, Casual, Coterminous only -->
+                  <q-select
+                    :model-value="getSignatoryValue(section.key, role.key).control_no"
+                    :options="signatoryEmployeeOptions"
+                    option-value="ControlNo"
+                    option-label="name"
+                    emit-value
+                    map-options
+                    dense
+                    outlined
+                    use-input
+                    clearable
+                    fill-input
+                    hide-selected
+                    input-debounce="200"
+                    label="Name"
+                    class="role-field"
+                    :loading="loadingSignatoryEmployees"
+                    @filter="onFilterSignatoryEmployees"
+                    @update:model-value="
+                      (val) =>
+                        onSelectSignatoryEmployee(section.key, role.key, val, role.isApprover)
+                    "
+                  >
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey">
+                          {{
+                            loadingSignatoryEmployees
+                              ? 'Loading employees...'
+                              : 'No employees found'
+                          }}
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                    <template v-slot:option="scope">
+                      <q-item v-bind="scope.itemProps">
+                        <q-item-section>
+                          <q-item-label>{{ scope.opt.name }}</q-item-label>
+                          <q-item-label caption>
+                            {{ scope.opt.position || scope.opt.job_title }}
+                          </q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                  </q-select>
+
+                  <q-input
+                    :model-value="getSignatoryValue(section.key, role.key).position"
+                    dense
+                    outlined
+                    readonly
+                    label="Position"
+                    class="role-field"
+                  />
+                </div>
+              </div>
+            </div>
+          </template>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right" class="q-pa-md signatory-actions">
+          <q-btn flat label="Cancel" color="grey-8" v-close-popup @click="closeSignatoryModal" />
+          <q-btn
+            unelevated
+            color="green"
+            label="Save Signatories"
+            :loading="savingSignatories"
+            :disable="loadingSignatoryRecord"
+            @click="handleSaveSignatories"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <!-- =================== END ASSIGN SIGNATORY DIALOG =================== -->
   </div>
 </template>
 
@@ -162,10 +307,13 @@ import { api } from 'src/boot/axios'
 import { useUserStore } from 'src/stores/userStore'
 import { useEmployeeStore } from 'src/stores/office/employee_Store'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
+import { useIpcrStore } from 'src/stores/signatoriesStore'
 import { useMessage } from 'src/composables/message'
 
-// Maps each org-tree node type to the single "head" position title
-// that is valid at that level. Employee is always allowed at every level.
+// ---------------------------------------------------------------------
+// ORG LEVEL / SORTING CONFIG
+// ---------------------------------------------------------------------
+
 const LEVEL_TITLE_MAP = {
   office: 'Department Head',
   office2: 'Office Head',
@@ -175,8 +323,15 @@ const LEVEL_TITLE_MAP = {
   unit: 'Unit Head',
 }
 
-// Display order for job_title (position rank): heads first, in organizational
-// hierarchy order, then Employee last.
+const LEVEL_RANK_HEAD_MAP = {
+  office: 'Office-Head',
+  office2: 'Office2-Head',
+  group: 'Group-Head',
+  division: 'Division-Head',
+  section: 'Section-Head',
+  unit: 'Unit-Head',
+}
+
 const JOB_TITLE_ORDER = {
   'Department Head': 0,
   'Office Head': 1,
@@ -187,7 +342,6 @@ const JOB_TITLE_ORDER = {
   Employee: 6,
 }
 
-// Display order for employment status.
 const STATUS_ORDER = {
   Regular: 0,
   Casual: 1,
@@ -195,6 +349,9 @@ const STATUS_ORDER = {
   Contractual: 3,
   Honorarium: 4,
 }
+
+// Statuses that only need the reduced QPEF fields (Assessed by / Final Rating by)
+const LIMITED_SIGNATORY_STATUSES = ['contractual', 'honorarium']
 
 const getJobTitleRank = (jobTitle) => {
   const key = (jobTitle || '').trim()
@@ -206,13 +363,116 @@ const getStatusRank = (status) => {
   return Object.prototype.hasOwnProperty.call(STATUS_ORDER, key) ? STATUS_ORDER[key] : 99
 }
 
+// ---------------------------------------------------------------------
+// SIGNATORY CONFIG
+// isApprover: true marks fields in the linked "Approved by" group — the
+//   first one assigned auto-fills the rest.
+// payloadField: the exact key the backend expects (see /api/ipcr/store),
+//   and also the key each field is nested under in the GET response.
+// fullOnly (on a section or a role): hidden when the employee's status is
+//   Contractual/Honorarium (see LIMITED_SIGNATORY_STATUSES).
+// limitedTitle: section title shown instead of `title` when in limited mode.
+// ---------------------------------------------------------------------
+const SIGNATORY_SECTIONS = [
+  {
+    key: 'performance_standard',
+    title: 'Performance Standard',
+    fullOnly: true,
+    roles: [
+      {
+        key: 'discussed_by',
+        label: 'Discussed by',
+        isApprover: false,
+        payloadField: 'performance_standard_discussed_by_control_no',
+      },
+      {
+        key: 'approved_by',
+        label: 'Approved by',
+        isApprover: true,
+        payloadField: 'performance_standard_approved_by_control_no',
+      },
+    ],
+  },
+  {
+    key: 'ipcr',
+    title: 'IPCR',
+    limitedTitle: 'QPEF',
+    roles: [
+      {
+        key: 'reviewed_by',
+        label: 'Reviewed by',
+        isApprover: false,
+        payloadField: 'ipcr_reviewed_by_control_no',
+        fullOnly: true,
+      },
+      {
+        key: 'approved_by',
+        label: 'Approved by',
+        isApprover: true,
+        payloadField: 'ipcr_approved_by_control_no',
+        fullOnly: true,
+      },
+      {
+        key: 'assessed_by',
+        label: 'Assessed by',
+        isApprover: false,
+        payloadField: 'ipcr_assessed_by_control_no',
+      },
+      {
+        key: 'final_rating_by',
+        label: 'Final Rating by',
+        isApprover: false,
+        payloadField: 'ipcr_final_rating_by_control_no',
+      },
+    ],
+  },
+  {
+    key: 'por',
+    title: 'POR',
+    fullOnly: true,
+    roles: [
+      {
+        key: 'confirmed',
+        label: 'Confirmed',
+        isApprover: false,
+        payloadField: 'por_confirmed_control_no',
+      },
+      {
+        key: 'approved_for_final_rating',
+        label: 'Approved for Final Rating',
+        isApprover: true,
+        payloadField: 'por_approved_final_rating_control_no',
+      },
+    ],
+  },
+]
+
+const emptySignatoryValue = () => ({
+  employee_id: null,
+  control_no: null,
+  name: '',
+  position: '',
+})
+
+const buildInitialSignatoryState = () => {
+  const state = {}
+  SIGNATORY_SECTIONS.forEach((section) => {
+    state[section.key] = {}
+    section.roles.forEach((role) => {
+      state[section.key][role.key] = emptySignatoryValue()
+    })
+  })
+  return state
+}
+
 export default {
   components: { AddEmployeeModal },
   setup() {
     const employeeStore = useEmployeeStore()
     const libraryStore = useLibraryStore()
+    const ipcrStore = useIpcrStore()
     const { confirm, success, error } = useMessage()
-    return { employeeStore, libraryStore, confirm, success, error }
+    return { employeeStore, libraryStore, ipcrStore, confirm, success, error }
   },
   data() {
     return {
@@ -223,6 +483,20 @@ export default {
       treeNodes: [],
       expandedNodes: [],
       searchQuery: '',
+
+      // --- Signatory dialog state ---
+      showSignatoryModal: false,
+      signatoryEmployee: null,
+      signatorySections: SIGNATORY_SECTIONS,
+      signatories: buildInitialSignatoryState(),
+      approverGroupInitialized: false,
+      savingSignatories: false,
+      loadingSignatoryRecord: false,
+      signatoryFilterText: '',
+
+      allEmployeesList: [],
+      loadingSignatoryEmployees: false,
+
       columns: [
         {
           name: 'name',
@@ -259,16 +533,6 @@ export default {
     }
   },
   computed: {
-    // TITLE OPTIONS SOURCED FROM libraryStore.positions (via fetchPositions),
-    // FILTERED PER SELECTED NODE LEVEL:
-    // office -> Department Head + Employee
-    // office2 -> Office Head + Employee
-    // group -> Group Head + Employee
-    // division -> Division Head + Employee
-    // section -> Section Head + Employee
-    // unit -> Unit Head + Employee
-    // The head title is disabled (can't be selected) if another employee
-    // in the same organizational unit already holds it. Employee is never restricted.
     dynamicTitleOptions() {
       const allPositions = this.libraryStore.sortedPositions
 
@@ -277,7 +541,6 @@ export default {
           (p) => (p.position_name || '').toLowerCase().trim() === name.toLowerCase().trim(),
         )
 
-      // No node selected yet — fall back to showing everything from the library
       if (!this.selectedNode) {
         return allPositions.map((position) => ({
           value: position.position_name,
@@ -309,7 +572,6 @@ export default {
       return options
     },
 
-    // DYNAMIC RANK OPTIONS WITH HEAD DISABLE LOGIC
     rankOptions() {
       const baseOptions = this.libraryStore.ranks.map((rank) => ({
         value: rank.rank_name,
@@ -317,37 +579,14 @@ export default {
         id: rank.id,
       }))
 
-      if (this.selectedNode) {
-        // Determine which head type to add based on selected node
-        let headType = null
-        switch (this.selectedNode.type) {
-          case 'office':
-            headType = 'Office-Head'
-            break
-          case 'office2':
-            headType = 'Office2-Head'
-            break
-          case 'group':
-            headType = 'Group-Head'
-            break
-          case 'division':
-            headType = 'Division-Head'
-            break
-          case 'section':
-            headType = 'Section-Head'
-            break
-          case 'unit':
-            headType = 'Unit-Head'
-            break
-        }
+      const headType = this.selectedNode ? LEVEL_RANK_HEAD_MAP[this.selectedNode.type] : null
 
-        if (headType) {
-          baseOptions.push({
-            value: headType,
-            label: headType,
-            disable: (employee) => this.isHeadOptionDisabled(employee, headType),
-          })
-        }
+      if (headType) {
+        baseOptions.push({
+          value: headType,
+          label: headType,
+          disable: (employee) => this.isHeadOptionDisabled(employee, headType),
+        })
       }
 
       return baseOptions
@@ -405,9 +644,6 @@ export default {
       })
     },
 
-    // Position-rank hierarchy first (head down to Employee), then employment
-    // status (Regular > Casual > Coterminous > Contractual > Honorarium),
-    // then alphabetically by name as a tiebreaker.
     sortedFilteredEmployees() {
       return [...this.filteredEmployees].sort((a, b) => {
         const jobDiff = getJobTitleRank(a.job_title) - getJobTitleRank(b.job_title)
@@ -428,12 +664,68 @@ export default {
       const userStore = useUserStore()
       return userStore.user?.office?.name || 'Unknown Office'
     },
+
+    // --- Signatory computed props ---
+
+    // True when this employee only needs the reduced QPEF fields.
+    isLimitedSignatoryMode() {
+      const status = (this.signatoryEmployee?.status || this.signatoryEmployee?.Status || '')
+        .trim()
+        .toLowerCase()
+      return LIMITED_SIGNATORY_STATUSES.includes(status)
+    },
+
+    // Sections/roles actually shown in the dialog, adjusted for the
+    // employee's status (full form vs. limited QPEF fields).
+    visibleSignatorySections() {
+      const limited = this.isLimitedSignatoryMode
+      return this.signatorySections
+        .filter((section) => !limited || !section.fullOnly)
+        .map((section) => ({
+          ...section,
+          displayTitle: limited && section.limitedTitle ? section.limitedTitle : section.title,
+          roles: section.roles.filter((role) => !limited || !role.fullOnly),
+        }))
+    },
+
+    // Full roster, excluding the employee currently being assigned, and
+    // filtered to Regular / Casual / Coterminous only.
+    signatoryBaseEmployeeOptions() {
+      if (!this.signatoryEmployee) return []
+
+      const validStatuses = ['Regular', 'Casual', 'Coterminous']
+
+      return this.allEmployeesList.filter((emp) => {
+        if (emp.id === this.signatoryEmployee.id) return false
+        const status = (emp.status || emp.Status || '').trim()
+        return validStatuses.some((s) => s.toLowerCase() === status.toLowerCase())
+      })
+    },
+
+    signatoryEmployeeOptions() {
+      if (!this.signatoryFilterText) return this.signatoryBaseEmployeeOptions
+      const needle = this.signatoryFilterText.toLowerCase()
+      return this.signatoryBaseEmployeeOptions.filter((emp) =>
+        (emp.name || '').toLowerCase().includes(needle),
+      )
+    },
+
+    // Flat list of { sectionKey, roleKey } for every "Approved by"-type field
+    signatoryApproverFieldRefs() {
+      const refs = []
+      this.signatorySections.forEach((section) => {
+        section.roles.forEach((role) => {
+          if (role.isApprover) refs.push({ sectionKey: section.key, roleKey: role.key })
+        })
+      })
+      return refs
+    },
   },
   async created() {
     try {
       await this.libraryStore.fetchRanks()
-    } catch (error) {
-      console.error('Failed to fetch ranks:', error)
+    } catch (err) {
+      console.error('Failed to fetch ranks:', err)
       this.$q.notify({
         type: 'warning',
         message: 'Failed to load rank options. Using default ranks.',
@@ -449,8 +741,8 @@ export default {
 
     try {
       await this.libraryStore.fetchPositions()
-    } catch (error) {
-      console.error('Failed to fetch positions:', error)
+    } catch (err) {
+      console.error('Failed to fetch positions:', err)
       this.$q.notify({
         type: 'warning',
         message: 'Failed to load position rank options. Using default titles.',
@@ -469,6 +761,8 @@ export default {
     await this.fetchOrganizationStructure()
   },
   methods: {
+    // ============== ORG TREE HELPERS ==============
+
     findNodeById(nodes, id) {
       for (const node of nodes) {
         if (node.id === id) return node
@@ -480,35 +774,39 @@ export default {
       return null
     },
 
-    // CHECK IF RANK HEAD OPTION SHOULD BE DISABLED (ONLY ONE HEAD PER UNIT)
+    findParentByType(nodes, childId, parentType) {
+      for (const node of nodes) {
+        if (node.children) {
+          const directChild = node.children.find((child) => child.id === childId)
+          if (directChild && node.type === parentType) return node.name
+          const found = this.findParentByType(node.children, childId, parentType)
+          if (found) return found
+        }
+      }
+      return null
+    },
+
     isHeadOptionDisabled(employee, headType) {
       if (!this.selectedNode) return false
-
       const existingHead = this.filteredEmployees.find((emp) => {
         if (emp.id === employee.id) return false
         if (emp.rank !== headType) return false
         return this.isSameOrganizationalUnit(emp, employee)
       })
-
       return !!existingHead
     },
 
-    // CHECK IF POSITION-RANK (job_title) HEAD OPTION SHOULD BE DISABLED
-    // (ONLY ONE Department/Office/Group/Division/Section/Unit Head PER LEVEL)
     isHeadTitleOptionDisabled(employee, headTitle) {
       if (!this.selectedNode) return false
-
       const existingHead = this.filteredEmployees.find((emp) => {
         if (emp.id === employee.id) return false
         if ((emp.job_title || '').toLowerCase().trim() !== headTitle.toLowerCase().trim())
           return false
         return this.isSameOrganizationalUnit(emp, employee)
       })
-
       return !!existingHead
     },
 
-    // MAPS EMPLOYMENT STATUS TO A CSS CLASS FOR THE STATUS BADGE
     getStatusClass(status) {
       const key = (status || '').trim().toLowerCase()
       const map = {
@@ -526,6 +824,209 @@ export default {
       this.employeeStore.fetchUnassignedEmployees()
     },
 
+    // ============== SIGNATORY METHODS ==============
+
+    async loadSignatoryEmployeeList() {
+      this.loadingSignatoryEmployees = true
+      try {
+        this.allEmployeesList = await this.employeeStore.loadAllEmployees()
+      } catch (err) {
+        console.error('Failed to load employees for signatory selection:', err)
+        this.$q.notify({ type: 'negative', message: 'Failed to load employee list' })
+        this.allEmployeesList = []
+      } finally {
+        this.loadingSignatoryEmployees = false
+      }
+    },
+
+    async openSignatoryModal(employee) {
+      this.signatoryEmployee = employee
+      this.signatories = buildInitialSignatoryState()
+      this.signatoryFilterText = ''
+      this.approverGroupInitialized = false
+      this.showSignatoryModal = true
+
+      // Roster used by the search-select dropdowns.
+      await this.loadSignatoryEmployeeList()
+
+      // Check if this employee already has a saved signatory record.
+      await this.loadExistingSignatoryRecord(employee)
+    },
+
+    async loadExistingSignatoryRecord(employee) {
+      const controlNo = employee?.ControlNo || employee?.control_no
+      if (!controlNo) return
+
+      this.loadingSignatoryRecord = true
+      try {
+        const record = await this.ipcrStore.fetchSignatory(controlNo)
+        if (record) {
+          this.hydrateSignatoriesFromRecord(record)
+        }
+        // record === null means no existing signatory — form stays blank
+        // for the user to create a new one, which is expected behavior.
+      } catch (err) {
+        console.error('Failed to load existing signatory record:', err)
+        this.$q.notify({ type: 'negative', message: 'Failed to load existing signatory record' })
+      } finally {
+        this.loadingSignatoryRecord = false
+      }
+    },
+
+    // Maps a fetched record's per-role signatory objects into the
+    // dialog's state. Each field on the record is already a full object:
+    // { ControlNo, name, rank, job_title } — no roster lookup needed.
+    hydrateSignatoriesFromRecord(record) {
+      const fresh = buildInitialSignatoryState()
+
+      this.signatorySections.forEach((section) => {
+        section.roles.forEach((role) => {
+          const value = record[role.payloadField]
+          if (!value || !value.ControlNo) return
+
+          fresh[section.key][role.key] = {
+            employee_id: null, // record only carries ControlNo, not an internal id
+            control_no: value.ControlNo,
+            name: value.name || '',
+            position: value.job_title || '',
+          }
+        })
+      })
+
+      this.signatories = fresh
+      this.approverGroupInitialized = this.signatoryApproverFieldRefs.some(
+        ({ sectionKey, roleKey }) => !!this.signatories[sectionKey][roleKey].control_no,
+      )
+    },
+
+    closeSignatoryModal() {
+      this.showSignatoryModal = false
+      this.signatoryEmployee = null
+      this.signatoryFilterText = ''
+    },
+
+    getSignatoryValue(sectionKey, roleKey) {
+      return this.signatories[sectionKey]?.[roleKey] || emptySignatoryValue()
+    },
+
+    // Looks up a roster employee by ControlNo (not internal id) — this is
+    // the key the select, the fetched record, and the save payload all
+    // consistently use.
+    findSignatoryEmployeeById(controlNo) {
+      return (
+        this.allEmployeesList.find((emp) => String(emp.ControlNo) === String(controlNo)) || null
+      )
+    },
+
+    applySignatoryEmployee(sectionKey, roleKey, employee) {
+      const current = this.signatories[sectionKey][roleKey]
+      this.signatories[sectionKey][roleKey] = {
+        ...current,
+        employee_id: employee ? employee.id : null,
+        control_no: employee ? employee.ControlNo : null,
+        name: employee ? employee.name : '',
+        position: employee ? employee.position || employee.job_title || '' : '',
+      }
+    },
+
+    onSelectSignatoryEmployee(sectionKey, roleKey, controlNo, isApprover) {
+      const employee = controlNo ? this.findSignatoryEmployeeById(controlNo) : null
+      this.applySignatoryEmployee(sectionKey, roleKey, employee)
+
+      if (!isApprover || !employee) return
+
+      // Only the FIRST time any "Approved by" field is assigned do we
+      // propagate to the rest.
+      if (!this.approverGroupInitialized) {
+        this.signatoryApproverFieldRefs.forEach((ref) => {
+          if (ref.sectionKey === sectionKey && ref.roleKey === roleKey) return
+          this.applySignatoryEmployee(ref.sectionKey, ref.roleKey, employee)
+        })
+        this.approverGroupInitialized = true
+      }
+    },
+
+    onFilterSignatoryEmployees(val, update) {
+      update(() => {
+        this.signatoryFilterText = val
+      })
+    },
+
+    // Builds the flat payload the backend expects. Always includes every
+    // field — fields hidden by limited mode simply stay null.
+    buildSignatoryPayload() {
+      const payload = {
+        control_no: this.signatoryEmployee?.ControlNo || this.signatoryEmployee?.control_no,
+      }
+
+      this.signatorySections.forEach((section) => {
+        section.roles.forEach((role) => {
+          const value = this.signatories[section.key][role.key]
+          payload[role.payloadField] = value.control_no || null
+        })
+      })
+
+      return payload
+    },
+
+    // Only requires fields that are actually visible for this employee's status.
+    getMissingSignatoryFields(payload) {
+      const missing = []
+      if (!payload.control_no) missing.push("the employee's own Control No")
+
+      this.visibleSignatorySections.forEach((section) => {
+        section.roles.forEach((role) => {
+          if (!payload[role.payloadField]) {
+            missing.push(`${section.displayTitle} — ${role.label}`)
+          }
+        })
+      })
+
+      return missing
+    },
+
+    async handleSaveSignatories() {
+      const payload = this.buildSignatoryPayload()
+      const missing = this.getMissingSignatoryFields(payload)
+
+      if (missing.length) {
+        this.$q.notify({
+          type: 'warning',
+          message: `Please complete all signatory fields: ${missing.join(', ')}`,
+          timeout: 4000,
+        })
+        return
+      }
+
+      const confirmed = await this.confirm({
+        title: 'Confirm Save',
+        text: `Save signatories for ${this.signatoryEmployee?.name}?`,
+        confirmText: 'Yes, save',
+        cancelText: 'Cancel',
+        // Forces the confirmation dialog above the still-open signatory
+        // dialog. If useMessage's confirm() forwards extra keys to
+        // $q.dialog(), this applies Quasar's max z-index utility class.
+        class: 'z-max',
+      })
+
+      if (!confirmed) return
+
+      this.savingSignatories = true
+      try {
+        await this.ipcrStore.storeIpcr(payload)
+        await this.success('Signatories saved successfully')
+        this.showSignatoryModal = false
+      } catch (err) {
+        console.error(err)
+        const serverMessage = err?.response?.data?.message
+        await this.error(serverMessage || err.message || 'Failed to save signatories')
+      } finally {
+        this.savingSignatories = false
+      }
+    },
+
+    // ============== END SIGNATORY METHODS ==============
+
     updateExpanded(expanded) {
       this.expandedNodes = expanded
     },
@@ -536,8 +1037,8 @@ export default {
       this.searchQuery = ''
       try {
         await this.employeeStore.fetchEmployeesByNode(this.selectedNode)
-      } catch (error) {
-        console.error('Error fetching employees for node:', error)
+      } catch (err) {
+        console.error('Error fetching employees for node:', err)
         this.$q.notify({ type: 'negative', message: 'Failed to load employees' })
       }
     },
@@ -559,7 +1060,6 @@ export default {
         if (result?.success) {
           await this.employeeStore.fetchEmployeesByNode(this.selectedNode)
           this.updateTreeCounts()
-
           await this.success('Employee deleted successfully')
         } else {
           throw new Error('Failed to delete employee')
@@ -582,38 +1082,38 @@ export default {
           (office) => office.office === currentOfficeName,
         )
 
-        if (officeData) {
-          await this.employeeStore.loadAllEmployees()
-
-          const counts = this.employeeStore.employeeCounts
-          this.treeNodes = [this.processOrganizationData(officeData, counts)]
-          this.expandedNodes = [this.treeNodes[0].id]
-          this.selectedNodeId = this.treeNodes[0].id
-          this.selectedNode = this.treeNodes[0]
-          this.employeeStore.currentNode = this.selectedNode
-
-          await this.employeeStore.fetchEmployeesByNode(this.selectedNode)
-        } else {
+        if (!officeData) {
           console.error('No office found matching:', currentOfficeName)
           this.$q.notify({
             type: 'warning',
             message: `No structure found for office: ${currentOfficeName}`,
           })
+          return
         }
-      } catch (error) {
-        console.error('Error fetching organization structure:', error)
+
+        await this.employeeStore.loadAllEmployees()
+
+        const counts = this.employeeStore.employeeCounts
+        this.treeNodes = [this.processOrganizationData(officeData, counts)]
+        this.expandedNodes = [this.treeNodes[0].id]
+        this.selectedNodeId = this.treeNodes[0].id
+        this.selectedNode = this.treeNodes[0]
+        this.employeeStore.currentNode = this.selectedNode
+
+        await this.employeeStore.fetchEmployeesByNode(this.selectedNode)
+      } catch (err) {
+        console.error('Error fetching organization structure:', err)
         this.$q.notify({ type: 'negative', message: 'Failed to load organization structure' })
       } finally {
         this.loading = false
       }
     },
 
+    // ============== ORG TREE BUILDING ==============
+
     processOrganizationData(officeData, counts) {
       let nodeIdCounter = 1
-
-      const generateId = (prefix) => {
-        return `${prefix}-${nodeIdCounter++}`
-      }
+      const generateId = (prefix) => `${prefix}-${nodeIdCounter++}`
 
       const officeNode = {
         id: generateId('office'),
@@ -632,10 +1132,8 @@ export default {
         officeData.office2.forEach((office2Data) => {
           if (office2Data.office2) {
             office2WithValues.push(office2Data)
-          } else {
-            if (Array.isArray(office2Data.group)) {
-              groupsWithoutOffice2.push(...office2Data.group)
-            }
+          } else if (Array.isArray(office2Data.group)) {
+            groupsWithoutOffice2.push(...office2Data.group)
           }
         })
 
@@ -661,9 +1159,7 @@ export default {
     },
 
     processGroups(groupsData, parentNode, counts, generateId) {
-      if (!Array.isArray(groupsData) || groupsData.length === 0) {
-        return
-      }
+      if (!Array.isArray(groupsData) || groupsData.length === 0) return
 
       groupsData.forEach((groupData) => {
         if (!groupData) return
@@ -672,22 +1168,8 @@ export default {
           if (Array.isArray(groupData.divisions)) {
             this.processDivisions(groupData.divisions, parentNode, counts, generateId)
           }
-          if (Array.isArray(groupData.sections_without_division)) {
-            this.processSectionsWithoutDivision(
-              groupData.sections_without_division,
-              parentNode,
-              counts,
-              generateId,
-            )
-          }
-          if (Array.isArray(groupData.units_without_division)) {
-            this.processUnitsWithoutDivision(
-              groupData.units_without_division,
-              parentNode,
-              counts,
-              generateId,
-            )
-          }
+          this.processSections(groupData.sections_without_division, parentNode, counts, generateId)
+          this.processUnits(groupData.units_without_division, parentNode, counts, generateId)
           return
         }
 
@@ -702,27 +1184,20 @@ export default {
         }
 
         this.processDivisions(groupData.divisions || [], groupNode, counts, generateId)
-        this.processSectionsWithoutDivision(
+        this.processSections(
           groupData.sections_without_division || [],
           groupNode,
           counts,
           generateId,
         )
-        this.processUnitsWithoutDivision(
-          groupData.units_without_division || [],
-          groupNode,
-          counts,
-          generateId,
-        )
+        this.processUnits(groupData.units_without_division || [], groupNode, counts, generateId)
 
         parentNode.children.push(groupNode)
       })
     },
 
     processDivisions(divisionsData, parentNode, counts, generateId) {
-      if (!Array.isArray(divisionsData) || divisionsData.length === 0) {
-        return
-      }
+      if (!Array.isArray(divisionsData) || divisionsData.length === 0) return
 
       divisionsData.forEach((divData) => {
         if (!divData || !divData.division) return
@@ -738,45 +1213,14 @@ export default {
         }
 
         this.processSections(divData.sections || [], divisionNode, counts, generateId)
-        this.processUnitsWithoutSection(
-          divData.units_without_section || [],
-          divisionNode,
-          counts,
-          generateId,
-        )
+        this.processUnits(divData.units_without_section || [], divisionNode, counts, generateId)
 
         parentNode.children.push(divisionNode)
       })
     },
 
     processSections(sectionsData, parentNode, counts, generateId) {
-      if (!Array.isArray(sectionsData) || sectionsData.length === 0) {
-        return
-      }
-
-      sectionsData.forEach((secData) => {
-        if (!secData || !secData.section) return
-
-        const sectionNode = {
-          id: generateId('sec'),
-          label: secData.section,
-          name: secData.section,
-          type: 'section',
-          icon: 'group',
-          count: counts.sections?.[secData.section]?.count || 0,
-          children: [],
-        }
-
-        this.processUnits(secData.units || [], sectionNode, counts, generateId)
-
-        parentNode.children.push(sectionNode)
-      })
-    },
-
-    processSectionsWithoutDivision(sectionsData, parentNode, counts, generateId) {
-      if (!Array.isArray(sectionsData) || sectionsData.length === 0) {
-        return
-      }
+      if (!Array.isArray(sectionsData) || sectionsData.length === 0) return
 
       sectionsData.forEach((secData) => {
         if (!secData || !secData.section) return
@@ -798,14 +1242,12 @@ export default {
     },
 
     processUnits(unitsData, parentNode, counts, generateId) {
-      if (!Array.isArray(unitsData) || unitsData.length === 0) {
-        return
-      }
+      if (!Array.isArray(unitsData) || unitsData.length === 0) return
 
       unitsData.forEach((unitName) => {
         if (!unitName) return
 
-        const unitNode = {
+        parentNode.children.push({
           id: generateId('unit'),
           label: unitName,
           name: unitName,
@@ -813,74 +1255,28 @@ export default {
           icon: 'people',
           count: counts.units?.[unitName]?.count || 0,
           children: [],
-        }
-        parentNode.children.push(unitNode)
-      })
-    },
-
-    processUnitsWithoutSection(unitsData, parentNode, counts, generateId) {
-      if (!Array.isArray(unitsData) || unitsData.length === 0) {
-        return
-      }
-
-      unitsData.forEach((unitName) => {
-        if (!unitName) return
-
-        const unitNode = {
-          id: generateId('unit'),
-          label: unitName,
-          name: unitName,
-          type: 'unit',
-          icon: 'people',
-          count: counts.units?.[unitName]?.count || 0,
-          children: [],
-        }
-        parentNode.children.push(unitNode)
-      })
-    },
-
-    processUnitsWithoutDivision(unitsData, parentNode, counts, generateId) {
-      if (!Array.isArray(unitsData) || unitsData.length === 0) {
-        return
-      }
-
-      unitsData.forEach((unitName) => {
-        if (!unitName) return
-
-        const unitNode = {
-          id: generateId('unit'),
-          label: unitName,
-          name: unitName,
-          type: 'unit',
-          icon: 'people',
-          count: counts.units?.[unitName]?.count || 0,
-          children: [],
-        }
-        parentNode.children.push(unitNode)
+        })
       })
     },
 
     updateTreeCounts() {
       const counts = this.employeeStore.employeeCounts || {}
-      const updateNodeCounts = (node) => {
-        if (node.type === 'office') {
-          node.count = counts.office || 0
-        } else if (node.type === 'office2') {
-          node.count = counts.office2?.[node.name]?.count || 0
-        } else if (node.type === 'group') {
-          node.count = counts.groups?.[node.name]?.count || 0
-        } else if (node.type === 'division') {
-          node.count = counts.divisions?.[node.name]?.count || 0
-        } else if (node.type === 'section') {
-          node.count = counts.sections?.[node.name]?.count || 0
-        } else if (node.type === 'unit') {
-          node.count = counts.units?.[node.name]?.count || 0
-        }
-        if (node.children) {
-          node.children.forEach((child) => updateNodeCounts(child))
-        }
+      const countByType = {
+        office: () => counts.office || 0,
+        office2: (name) => counts.office2?.[name]?.count || 0,
+        group: (name) => counts.groups?.[name]?.count || 0,
+        division: (name) => counts.divisions?.[name]?.count || 0,
+        section: (name) => counts.sections?.[name]?.count || 0,
+        unit: (name) => counts.units?.[name]?.count || 0,
       }
-      this.treeNodes.forEach((node) => updateNodeCounts(node))
+
+      const updateNodeCounts = (node) => {
+        const getCount = countByType[node.type]
+        if (getCount) node.count = getCount(node.name)
+        node.children?.forEach(updateNodeCounts)
+      }
+
+      this.treeNodes.forEach(updateNodeCounts)
     },
 
     async handleAddEmployees(selectedEmployees) {
@@ -926,7 +1322,6 @@ export default {
         }))
 
         await this.employeeStore.addEmployees({ employees: employeesToAdd })
-
         await this.employeeStore.fetchEmployeesByNode(this.selectedNode)
         this.updateTreeCounts()
 
@@ -972,37 +1367,12 @@ export default {
     },
 
     getUnitForSelectedNode() {
-      if (this.selectedNode.type === 'unit') return this.selectedNode.name
-      return null
-    },
-
-    findParentByType(nodes, childId, parentType) {
-      for (const node of nodes) {
-        if (node.children) {
-          const directChild = node.children.find((child) => child.id === childId)
-          if (directChild && node.type === parentType) {
-            return node.name
-          }
-          const found = this.findParentByType(node.children, childId, parentType)
-          if (found) return found
-        }
-      }
-      return null
+      return this.selectedNode.type === 'unit' ? this.selectedNode.name : null
     },
 
     async updateEmployeeRank(employee, newRank) {
       const originalRank = employee.rank
-
-      const headPositions = [
-        'Office-Head',
-        'Office2-Head',
-        'Group-Head',
-        'Division-Head',
-        'Section-Head',
-        'Unit-Head',
-      ]
-
-      const isHeadPosition = headPositions.includes(newRank)
+      const isHeadPosition = Object.values(LEVEL_RANK_HEAD_MAP).includes(newRank)
 
       this.$q
         .dialog({
@@ -1013,52 +1383,48 @@ export default {
         })
         .onOk(async () => {
           try {
-            if (isHeadPosition) {
-              const currentHead = this.filteredEmployees.find(
-                (emp) =>
-                  emp.id !== employee.id &&
-                  this.isSameOrganizationalUnit(emp, employee) &&
-                  emp.rank === newRank,
-              )
-
-              if (currentHead) {
-                this.$q
-                  .dialog({
-                    title: 'Current Head Exists',
-                    message: `There is already a ${newRank} (${currentHead.name}) in this unit. Do you want to demote them to Employee?`,
-                    cancel: true,
-                    persistent: true,
-                  })
-                  .onOk(async () => {
-                    try {
-                      await this.employeeStore.updateEmployeeRank(currentHead.id, 'Employee')
-                      currentHead.rank = 'Employee'
-                      await this.saveRankChange(employee, newRank)
-                    } catch (error) {
-                      console.error('Failed to demote current head:', error)
-                      employee.rank = originalRank
-                      this.$q.notify({
-                        type: 'negative',
-                        message: 'Failed to demote current head',
-                      })
-                    }
-                  })
-                  .onCancel(() => {
-                    employee.rank = originalRank
-                  })
-              } else {
-                await this.saveRankChange(employee, newRank)
-              }
-            } else {
+            if (!isHeadPosition) {
               await this.saveRankChange(employee, newRank)
+              return
             }
-          } catch (error) {
-            console.error('Failed to update rank:', error)
+
+            const currentHead = this.filteredEmployees.find(
+              (emp) =>
+                emp.id !== employee.id &&
+                this.isSameOrganizationalUnit(emp, employee) &&
+                emp.rank === newRank,
+            )
+
+            if (!currentHead) {
+              await this.saveRankChange(employee, newRank)
+              return
+            }
+
+            this.$q
+              .dialog({
+                title: 'Current Head Exists',
+                message: `There is already a ${newRank} (${currentHead.name}) in this unit. Do you want to demote them to Employee?`,
+                cancel: true,
+                persistent: true,
+              })
+              .onOk(async () => {
+                try {
+                  await this.employeeStore.updateEmployeeRank(currentHead.id, 'Employee')
+                  currentHead.rank = 'Employee'
+                  await this.saveRankChange(employee, newRank)
+                } catch (err) {
+                  console.error('Failed to demote current head:', err)
+                  employee.rank = originalRank
+                  this.$q.notify({ type: 'negative', message: 'Failed to demote current head' })
+                }
+              })
+              .onCancel(() => {
+                employee.rank = originalRank
+              })
+          } catch (err) {
+            console.error('Failed to update rank:', err)
             employee.rank = originalRank
-            this.$q.notify({
-              type: 'negative',
-              message: `Failed to update rank: ${error.message}`,
-            })
+            this.$q.notify({ type: 'negative', message: `Failed to update rank: ${err.message}` })
           }
         })
         .onCancel(() => {
@@ -1069,10 +1435,7 @@ export default {
     async saveRankChange(employee, newRank) {
       await this.employeeStore.updateEmployeeRank(employee.id, newRank)
       employee.rank = newRank
-      this.$q.notify({
-        type: 'positive',
-        message: `${employee.name}'s rank updated to ${newRank}`,
-      })
+      this.$q.notify({ type: 'positive', message: `${employee.name}'s rank updated to ${newRank}` })
     },
 
     async updateEmployeeTitle(employee, newTitle) {
@@ -1093,12 +1456,12 @@ export default {
               type: 'positive',
               message: `${employee.name}'s position rank updated to ${newTitle}`,
             })
-          } catch (error) {
-            console.error('Failed to update title:', error)
+          } catch (err) {
+            console.error('Failed to update title:', err)
             employee.job_title = originalTitle
             this.$q.notify({
               type: 'negative',
-              message: `Failed to update position rank: ${error.message}`,
+              message: `Failed to update position rank: ${err.message}`,
             })
           }
         })
@@ -1108,78 +1471,183 @@ export default {
     },
 
     isSameOrganizationalUnit(emp1, emp2) {
-      if (this.selectedNode?.type === 'unit') {
-        return emp1.unit === emp2.unit && emp1.unit === this.selectedNode.name
-      }
+      const node = this.selectedNode
+      if (!node) return false
 
-      if (this.selectedNode?.type === 'section') {
-        return (
-          emp1.section === emp2.section &&
-          emp1.section === this.selectedNode.name &&
-          !emp1.unit &&
-          !emp2.unit
-        )
+      switch (node.type) {
+        case 'unit':
+          return emp1.unit === emp2.unit && emp1.unit === node.name
+        case 'section':
+          return (
+            emp1.section === emp2.section && emp1.section === node.name && !emp1.unit && !emp2.unit
+          )
+        case 'division':
+          return (
+            emp1.division === emp2.division &&
+            emp1.division === node.name &&
+            !emp1.section &&
+            !emp2.section &&
+            !emp1.unit &&
+            !emp2.unit
+          )
+        case 'group':
+          return (
+            emp1.group === emp2.group &&
+            emp1.group === node.name &&
+            !emp1.division &&
+            !emp2.division &&
+            !emp1.section &&
+            !emp2.section &&
+            !emp1.unit &&
+            !emp2.unit
+          )
+        case 'office2':
+          return (
+            emp1.office2 === emp2.office2 &&
+            emp1.office2 === node.name &&
+            !emp1.group &&
+            !emp2.group &&
+            !emp1.division &&
+            !emp2.division &&
+            !emp1.section &&
+            !emp2.section &&
+            !emp1.unit &&
+            !emp2.unit
+          )
+        case 'office':
+          return (
+            emp1.office_id === emp2.office_id &&
+            !emp1.office2 &&
+            !emp2.office2 &&
+            !emp1.group &&
+            !emp2.group &&
+            !emp1.division &&
+            !emp2.division &&
+            !emp1.section &&
+            !emp2.section &&
+            !emp1.unit &&
+            !emp2.unit
+          )
+        default:
+          return false
       }
-
-      if (this.selectedNode?.type === 'division') {
-        return (
-          emp1.division === emp2.division &&
-          emp1.division === this.selectedNode.name &&
-          !emp1.section &&
-          !emp2.section &&
-          !emp1.unit &&
-          !emp2.unit
-        )
-      }
-
-      if (this.selectedNode?.type === 'group') {
-        return (
-          emp1.group === emp2.group &&
-          emp1.group === this.selectedNode.name &&
-          !emp1.division &&
-          !emp2.division &&
-          !emp1.section &&
-          !emp2.section &&
-          !emp1.unit &&
-          !emp2.unit
-        )
-      }
-
-      if (this.selectedNode?.type === 'office2') {
-        return (
-          emp1.office2 === emp2.office2 &&
-          emp1.office2 === this.selectedNode.name &&
-          !emp1.group &&
-          !emp2.group &&
-          !emp1.division &&
-          !emp2.division &&
-          !emp1.section &&
-          !emp2.section &&
-          !emp1.unit &&
-          !emp2.unit
-        )
-      }
-
-      if (this.selectedNode?.type === 'office') {
-        return (
-          emp1.office_id === emp2.office_id &&
-          !emp1.office2 &&
-          !emp2.office2 &&
-          !emp1.group &&
-          !emp2.group &&
-          !emp1.division &&
-          !emp2.division &&
-          !emp1.section &&
-          !emp2.section &&
-          !emp1.unit &&
-          !emp2.unit
-        )
-      }
-
-      return false
     },
   },
 }
 </script>
 
 <style src="../../assets/office/employee.css" scoped></style>
+
+<style scoped>
+/* ===================== Signatory Dialog ===================== */
+.signatory-card {
+  width: 720px;
+  max-width: 95vw;
+}
+.signatory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.signatory-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+}
+.signatory-subtitle {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #666;
+}
+.signatory-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.missing-control-warning,
+.limited-mode-note {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+.missing-control-warning {
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+.limited-mode-note {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #a5d6a7;
+}
+.signatory-section {
+  margin-bottom: 20px;
+}
+.section-title {
+  font-weight: 600;
+  color: #2e7d32;
+  border-bottom: 2px solid #2e7d32;
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+}
+.signatory-role-row {
+  margin-bottom: 12px;
+}
+.role-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #444;
+  margin-bottom: 4px;
+}
+.role-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.role-field {
+  width: 100%;
+}
+
+/* ===================== Responsive breakpoints ===================== */
+@media (max-width: 1024px) {
+  .employee-container {
+    flex-direction: column;
+  }
+  .organization-panel {
+    width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .employee-list-panel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .search-input-wrapper {
+    width: 100%;
+  }
+  .add-employee-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .signatory-card {
+    width: 100%;
+  }
+  .signatory-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .signatory-actions .q-btn {
+    width: 100%;
+  }
+}
+</style>

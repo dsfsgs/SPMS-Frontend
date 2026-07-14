@@ -71,19 +71,33 @@
 
       <template #body-cell-action="props">
         <q-td :props="props" class="text-center">
-          <template v-if="getStatusOptions(props.row.status).length > 0">
+          <div class="row justify-center q-gutter-xs">
+            <!-- OPCR Button - opens OPCR modal to view/edit -->
             <q-btn
+              class="neu-button"
+              flat
+              round
+              color="red"
+              icon="assignment_ind"
+              size="md"
+              @click="openOPCRModal(props.row)"
+            >
+              <q-tooltip anchor="top middle" self="bottom middle">View OPCR</q-tooltip>
+            </q-btn>
+
+            <!-- Status Update Button - Only show if status transitions available -->
+            <q-btn
+              v-if="getStatusOptions(props.row.status).length > 0"
               flat
               round
               color="primary"
               icon="sync_alt"
-              size="sm"
+              size="md"
               @click="openUpdateModal(props.row)"
             >
               <q-tooltip anchor="top middle" self="bottom middle">Update Status</q-tooltip>
             </q-btn>
-          </template>
-          <span v-else class="text-grey-4">—</span>
+          </div>
         </q-td>
       </template>
     </q-table>
@@ -189,6 +203,16 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- OPCR Modal -->
+    <q-dialog v-model="showOPCRModal" full-width>
+      <OPCRModal
+        :employee="selectedOPCRRecord"
+        :targetPeriod="currentTargetPeriod"
+        @close="closeOPCRModal"
+        @refresh="handleOPCRRefresh"
+      />
+    </q-dialog>
   </q-page>
 </template>
 
@@ -197,6 +221,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useQuasar } from 'quasar'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
 import { useReceivingOPCRStore } from 'src/stores/receivingOPCRStore'
+import OPCRModal from 'src/components/OPCRModalReceiving.vue'
 
 const $q = useQuasar()
 const libStore = useLibraryStore()
@@ -210,6 +235,11 @@ const showUpdateModal = ref(false)
 const updatingStatus = ref(false)
 const selectedRecord = ref(null)
 const newStatus = ref(null)
+
+// OPCR Modal refs
+const showOPCRModal = ref(false)
+const selectedOPCRRecord = ref(null)
+const currentTargetPeriod = ref(null)
 
 // Status transition map — keyed by normalized current status
 const STATUS_TRANSITIONS = {
@@ -255,6 +285,48 @@ const STATUS_TRANSITIONS = {
       value: 'Received Accomplishment',
       color: 'indigo-6',
       description: 'Accept the resubmitted accomplishment report.',
+    },
+  ],
+  'approved accomplishment': [
+    {
+      label: 'Received Accomplishment',
+      value: 'Received Accomplishment',
+      color: 'indigo-6',
+      description: 'Receive the approved accomplishment report.',
+    },
+    {
+      label: 'Returned Accomplishment',
+      value: 'Returned Accomplishment',
+      color: 'red-6',
+      description: 'Return the approved accomplishment report for revisions.',
+    },
+  ],
+  'received target': [
+    {
+      label: 'Calibrated/Validated Target',
+      value: 'Calibrated/Validated Target',
+      color: 'green-7',
+      description: 'Mark the target as calibrated and validated.',
+    },
+    {
+      label: 'Returned Target',
+      value: 'Returned Target',
+      color: 'red-6',
+      description: 'Return the target for revision.',
+    },
+  ],
+  'prevalidated accomplishment': [
+    {
+      label: 'Calibrated/Validated Accomplishment',
+      value: 'Calibrated/Validated Accomplishment',
+      color: 'green-7',
+      description: 'Mark the accomplishment as calibrated and validated.',
+    },
+    {
+      label: 'Returned Accomplishment',
+      value: 'Returned Accomplishment',
+      color: 'red-6',
+      description: 'Return the accomplishment for revision.',
     },
   ],
 }
@@ -336,6 +408,8 @@ const statusColor = (status) => {
     case 'calibrated/validated target':
     case 'calibrated/validated accomplishment':
       return 'green-7'
+    case 'prevalidated accomplishment':
+      return 'orange-6'
     default:
       return 'blue-grey-4'
   }
@@ -358,6 +432,49 @@ const fetchOPCRRecords = async (year, semester) => {
     })
   } finally {
     loading.value = false
+  }
+}
+
+// OPCR Modal functions
+const openOPCRModal = (row) => {
+  // Transform the row data to match the employee structure expected by OPCRModal
+  selectedOPCRRecord.value = {
+    id: row.id,
+    label: row.office_head_name || row.office_name,
+    position: row.office_head_name ? 'Office Head' : 'Office',
+    rank: 'Managerial',
+    office: row.office_name,
+    employeeData: {
+      office: row.office_name,
+      office_head: row.office_head_name,
+      ControlNo: row.control_no,
+      office_id: row.office_id,
+      office_opcr_id: row.office_opcr_id,
+    },
+    control_no: row.control_no,
+    office_opcr_id: row.office_opcr_id,
+    office_id: row.office_id,
+    _raw: row,
+  }
+
+  // Set the target period
+  currentTargetPeriod.value = {
+    semester: selectedSemester.value,
+    year: selectedYear.value,
+  }
+
+  showOPCRModal.value = true
+}
+
+const closeOPCRModal = () => {
+  showOPCRModal.value = false
+  selectedOPCRRecord.value = null
+  currentTargetPeriod.value = null
+}
+
+const handleOPCRRefresh = async () => {
+  if (selectedYear.value && selectedSemester.value) {
+    await fetchOPCRRecords(selectedYear.value, selectedSemester.value)
   }
 }
 
@@ -464,5 +581,29 @@ onMounted(async () => {
 .status-option--active {
   border-color: #1976d2;
   background-color: #e3f2fd;
+}
+
+/* Neumorphic button styling */
+.neu-button {
+  border-radius: 50%;
+  background: #f7fafc;
+  box-shadow:
+    3px 3px 6px rgba(0, 0, 0, 0.15),
+    -3px -3px 6px rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.neu-button:hover {
+  box-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.2),
+    -2px -2px 4px rgba(255, 255, 255, 0.9);
+  transform: translateY(1px);
+}
+
+.neu-button:active {
+  box-shadow:
+    inset 2px 2px 4px rgba(0, 0, 0, 0.2),
+    inset -2px -2px 4px rgba(255, 255, 255, 0.9);
+  transform: translateY(2px);
 }
 </style>

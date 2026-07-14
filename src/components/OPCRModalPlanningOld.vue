@@ -30,7 +30,7 @@
       <div class="row justify-between items-center q-px-md q-py-sm bg-grey-3">
         <div class="text-body1">{{ opcrData.name }} - {{ employee?.position || 'N/A' }}</div>
         <div class="flex justify-end q-gutter-sm">
-          <!-- Show Update button only for Received Target or Prevalidated Accomplishment -->
+          <!-- Show Update button only for Draft or Returned Target status -->
           <q-btn
             v-if="shouldShowUpdateButton"
             color="orange-9"
@@ -195,48 +195,51 @@
           <table class="opcr-table q-mt-md" style="border-collapse: collapse; width: 100%">
             <thead>
               <tr>
-                <th rowspan="2" style="width: 10%; text-align: center; vertical-align: middle">
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
                   MFO
                 </th>
 
-                <th rowspan="2" style="width: 15%; text-align: center; vertical-align: middle">
-                  REQUIRED COMPETENCY &amp;<br />PROFICIENCY LEVEL
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
+                  REQUIRED COMPETENCY &<br />PROFICIENCY LEVEL
                 </th>
 
-                <th rowspan="2" style="width: 12%; text-align: center; vertical-align: middle">
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
                   SUCCESS INDICATOR
                 </th>
 
-                <th rowspan="2" style="width: 8%; text-align: center; vertical-align: middle">
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
                   ALLOTED BUDGET
                 </th>
 
-                <th rowspan="2" style="width: 10%; text-align: center; vertical-align: middle">
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
                   DIVISION/ INDIVIDUAL ACCOUNTABLE
                 </th>
 
-                <th rowspan="2" style="width: 10%; text-align: center; vertical-align: middle">
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
                   ACTUAL ACCOMPLISHMENT
                 </th>
 
-                <th colspan="4" style="width: 10%; text-align: center; vertical-align: middle">
+                <th colspan="4" style="width: 11.11%; text-align: center; vertical-align: middle">
                   RATING
                 </th>
 
-                <th rowspan="2" style="width: 10%; text-align: center; vertical-align: middle">
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
                   PROFICIENCY RESULT
                 </th>
 
-                <th rowspan="2" style="width: 10%; text-align: center; vertical-align: middle">
+                <th rowspan="2" style="width: 11.11%; text-align: center; vertical-align: middle">
                   REMARKS
                 </th>
               </tr>
 
               <tr>
-                <th style="width: 2.5%; text-align: center; vertical-align: middle">Q</th>
-                <th style="width: 2.5%; text-align: center; vertical-align: middle">E</th>
-                <th style="width: 2.5%; text-align: center; vertical-align: middle">T</th>
-                <th style="width: 2.5%; text-align: center; vertical-align: middle">A</th>
+                <th style="width: 2.78%; text-align: center; vertical-align: middle">Q</th>
+
+                <th style="width: 2.78%; text-align: center; vertical-align: middle">E</th>
+
+                <th style="width: 2.78%; text-align: center; vertical-align: middle">T</th>
+
+                <th style="width: 2.78%; text-align: center; vertical-align: middle">A</th>
               </tr>
             </thead>
 
@@ -251,36 +254,62 @@
 
                 <!-- Render performance standards for this category -->
                 <tr v-for="standard in getStandardsByCategory(category)" :key="standard.id">
-                  <td>
+                  <td style="padding: 4px">
                     <b>{{ standard.mfo || 'N/A' }}</b>
                   </td>
-                  <td>
-                    <div class="competency-list">
-                      <div v-html="formatCompetencies(standard)"></div>
-                    </div>
+                  <td style="padding: 4px">
+                    <div v-html="formatCompetencies(standard)"></div>
                   </td>
-                  <td>{{ standard.success_indicator || 'N/A' }}</td>
-                  <td class="text-center">{{ standard.opcr?.budget || '-' }}</td>
-                  <td class="text-center">{{ standard.opcr?.accountable || '-' }}</td>
-                  <td>{{ standard.opcr_accomplishment?.accomplishment || '-' }}</td>
-                  <td class="text-center">
-                    {{ standard.opcr_accomplishment?.ratings?.quantity_rating || '-' }}
+                  <td style="padding: 4px">
+                    {{ standard.success_indicator || 'N/A' }}
                   </td>
-                  <td class="text-center">
-                    {{ standard.opcr_accomplishment?.ratings?.effectiveness_rating || '-' }}
+                  <td style="text-align: center; padding: 4px">
+                    {{ standard.opcr?.budget || '-' }}
                   </td>
-                  <td class="text-center">
-                    {{ standard.opcr_accomplishment?.ratings?.timeliness_rating || '-' }}
+                  <td style="text-align: center; padding: 4px">
+                    {{ standard.opcr?.accountable || '-' }}
                   </td>
-                  <td class="text-center">
-                    {{ standard.opcr_accomplishment?.ratings?.average_rating || '-' }}
+                  <td style="padding: 4px">
+                    {{
+                      standard.opcr_accomplishment?.accomplishment ||
+                      standard.opcr?.accomplishment ||
+                      '-'
+                    }}
                   </td>
-                  <td>
-                    <div class="competency-list">
-                      <div v-html="formatProficiencyResult(standard)"></div>
-                    </div>
+                  <td style="text-align: center; padding: 4px">
+                    {{
+                      standard.opcr_accomplishment?.ratings?.quantity_rating ||
+                      standard.opcr?.rating_q ||
+                      '-'
+                    }}
                   </td>
-                  <td>{{ standard.opcr?.remarks || '' }}</td>
+                  <td style="text-align: center; padding: 4px">
+                    {{
+                      standard.opcr_accomplishment?.ratings?.effectiveness_rating ||
+                      standard.opcr?.rating_e ||
+                      '-'
+                    }}
+                  </td>
+                  <td style="text-align: center; padding: 4px">
+                    {{
+                      standard.opcr_accomplishment?.ratings?.timeliness_rating ||
+                      standard.opcr?.rating_t ||
+                      '-'
+                    }}
+                  </td>
+                  <td style="text-align: center; padding: 4px">
+                    {{
+                      standard.opcr_accomplishment?.ratings?.average_rating ||
+                      standard.opcr?.rating_a ||
+                      '-'
+                    }}
+                  </td>
+                  <td style="padding: 4px">
+                    <div v-html="formatProficiencyResult(standard)"></div>
+                  </td>
+                  <td style="padding: 4px">
+                    {{ standard.opcr?.remarks || '' }}
+                  </td>
                 </tr>
               </template>
 
@@ -390,54 +419,53 @@
       <div class="text-grey-7 q-mt-md">No OPCR data available</div>
     </q-card-section>
 
-    <!-- Status Update Modal -->
+    <!-- Status Update Modal - Same style as IPCR -->
     <q-dialog v-model="showStatusModal" persistent>
-      <q-card style="min-width: 380px; max-width: 95vw; border-radius: 12px; overflow: hidden">
-        <!-- Modal Header -->
+      <q-card style="min-width: 380px; border-radius: 12px; overflow: hidden">
         <div
-          style="
-            background: linear-gradient(135deg, #e65100, #f57c00);
-            padding: 20px 24px 16px;
-            position: relative;
-          "
+          :style="`background: linear-gradient(135deg, ${statusModalConfig.color}, ${statusModalConfig.color}dd); padding: 20px 24px 16px; position: relative;`"
         >
           <div class="row items-center no-wrap">
-            <q-icon name="sync_alt" color="white" size="28px" class="q-mr-sm" />
+            <q-icon :name="statusModalConfig.icon" color="white" size="28px" class="q-mr-sm" />
             <div>
               <div class="text-white text-weight-bold" style="font-size: 16px">
-                Update OPCR Status
+                {{ statusModalConfig.title }}
               </div>
-              <div class="text-blue-2 text-caption">Office Performance Commitment Review</div>
+              <div class="text-white text-caption" style="opacity: 0.8">Target Period Update</div>
             </div>
           </div>
         </div>
-
-        <!-- Modal Body -->
         <q-card-section class="q-pt-lg q-pb-md q-px-lg">
-          <!-- Office / Employee Summary -->
+          <div class="text-body1 text-grey-8 q-mb-md">
+            {{ statusModalConfig.message }}
+          </div>
           <div
             class="q-pa-sm rounded-borders q-mb-md"
-            style="background: #f5f5f5; border-left: 4px solid #1976d2; border-radius: 6px"
+            style="background: #f5f5f5; border-left: 4px solid #f57c00; border-radius: 6px"
           >
             <div class="row items-center q-gutter-xs">
-              <q-icon name="badge" size="16px" color="primary" />
-              <span class="text-caption text-weight-medium text-grey-7">
-                {{ opcrData?.name || 'N/A' }} — {{ employee?.position || 'N/A' }}
-              </span>
+              <q-icon name="calendar_today" size="16px" color="orange-9" />
+              <span class="text-caption text-weight-medium text-grey-7"
+                >{{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}</span
+              >
             </div>
             <div class="row items-center q-gutter-xs q-mt-xs">
-              <q-icon name="calendar_today" size="16px" color="primary" />
-              <span class="text-caption text-grey-7">
-                {{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}
-              </span>
-            </div>
-            <div class="row items-center q-gutter-xs q-mt-xs">
-              <q-icon name="info" size="16px" color="primary" />
-              <span class="text-caption text-grey-7">
-                Current:
+              <q-icon name="badge" size="16px" color="orange-9" />
+              <span class="text-caption text-grey-7"
+                >Current:
                 <q-badge
                   :color="getStatusColor({ opcr_status: opcrData?.opcr_status })"
                   :label="opcrData?.opcr_status || 'N/A'"
+                  class="q-ml-xs"
+              /></span>
+            </div>
+            <div class="row items-center q-gutter-xs q-mt-xs">
+              <q-icon name="arrow_forward" size="16px" color="green-8" />
+              <span class="text-caption text-grey-7"
+                >New:
+                <q-badge
+                  :color="getNewStatusColor()"
+                  :label="selectedStatus || 'Select status'"
                   class="q-ml-xs"
                 />
               </span>
@@ -445,51 +473,34 @@
           </div>
 
           <!-- Status Selection -->
-          <div
-            class="text-caption text-grey-7 text-weight-medium q-mb-sm"
-            style="letter-spacing: 0.5px; text-transform: uppercase; font-size: 11px"
-          >
-            Select New Status
-          </div>
-
-          <div class="column q-gutter-sm">
-            <div
-              v-for="option in availableStatusOptions"
-              :key="option.value"
-              class="status-option row items-center q-pa-sm cursor-pointer"
-              :class="
-                selectedStatus === option.value ? 'status-option--active' : 'status-option--idle'
-              "
-              @click="!statusLoading && (selectedStatus = option.value)"
-            >
-              <q-radio
-                :model-value="selectedStatus"
-                :val="option.value"
-                color="primary"
-                dense
-                class="q-mr-sm"
+          <div class="q-mb-md">
+            <div class="text-subtitle2 text-weight-medium text-grey-8 q-mb-sm">
+              Select New Status
+            </div>
+            <q-btn-group spread>
+              <q-btn
+                label="Returned Target"
+                icon="undo"
+                color="red-6"
+                outline
+                :class="{ 'bg-red-1': selectedStatus === 'Returned Target' }"
+                @click="selectedStatus = 'Returned Target'"
                 :disable="statusLoading"
-                @update:model-value="selectedStatus = option.value"
               />
-              <div class="col">
-                <div class="text-body2 text-weight-medium text-grey-9">{{ option.label }}</div>
-                <div class="text-caption text-grey-6">{{ option.description }}</div>
-              </div>
-              <q-badge
-                :color="option.color"
-                :label="option.label"
-                class="q-px-sm q-py-xs col-auto"
-                style="border-radius: 4px; font-size: 11px"
+              <q-btn
+                label="Reviewed Target"
+                icon="check_circle"
+                color="purple"
+                outline
+                :class="{ 'bg-purple-1': selectedStatus === 'Reviewed Target' }"
+                @click="selectedStatus = 'Reviewed Target'"
+                :disable="statusLoading"
               />
-            </div>
-
-            <div v-if="!availableStatusOptions.length" class="text-caption text-grey-6 q-pa-sm">
-              No status transitions available for the current status.
-            </div>
+            </q-btn-group>
           </div>
 
           <!-- Remarks -->
-          <div class="q-mt-md">
+          <div class="q-mb-md">
             <div class="row items-center q-mb-xs">
               <div class="text-subtitle2 text-weight-medium text-grey-8">Remarks</div>
               <div class="text-caption text-grey-6 q-ml-sm">(Optional)</div>
@@ -510,20 +521,17 @@
             </q-input>
           </div>
 
-          <!-- Error Alert -->
           <q-banner
             v-if="updateStatusStore.error"
             dense
             rounded
-            class="text-white q-mt-md"
+            class="text-white q-mb-md"
             style="background: #c62828"
           >
             <template v-slot:avatar><q-icon name="error" /></template>
             {{ updateStatusStore.error }}
           </q-banner>
         </q-card-section>
-
-        <!-- Modal Actions -->
         <q-card-actions align="right" class="q-px-lg q-pb-lg q-pt-none">
           <q-btn
             flat
@@ -531,18 +539,22 @@
             color="grey-7"
             :disable="statusLoading"
             @click="closeStatusModal"
+            style="border-radius: 8px; padding: 8px 20px"
           />
           <q-btn
+            label="Update Status"
+            icon="save"
+            :color="selectedStatus === 'Returned Target' ? 'red-6' : 'purple-6'"
             unelevated
-            label="Apply Update"
-            color="primary"
             :loading="statusLoading"
             :disable="statusLoading || !selectedStatus"
             @click="updateStatus"
+            style="border-radius: 8px; padding: 8px 20px"
           />
         </q-card-actions>
       </q-card>
     </q-dialog>
+
     <q-dialog v-model="editModalOpen" persistent>
       <OPCRInput :employee="employee" :targetPeriod="targetPeriod" @close="closeEditModal" />
     </q-dialog>
@@ -620,49 +632,13 @@ const opcrData = computed(() => opcrStore.opcrData)
 const statusLoading = computed(() => updateStatusStore.loading)
 
 // =========================
-// Status Options based on current status
+// Status Modal Config
 // =========================
-const getStatusOptions = (currentStatus) => {
-  const status = currentStatus?.toLowerCase().trim() || ''
-
-  switch (status) {
-    case 'received target':
-      return [
-        {
-          label: 'Reviewed Target',
-          value: 'Reviewed Target',
-          color: 'purple-6',
-          description: 'Review the received target submission.',
-        },
-        {
-          label: 'Returned Target',
-          value: 'Returned Target',
-          color: 'red-6',
-          description: 'Return the target for revisions.',
-        },
-      ]
-    case 'received accomplishment':
-      return [
-        {
-          label: 'Reviewed Accomplishment',
-          value: 'Reviewed Accomplishment',
-          color: 'purple-6',
-          description: 'Review the received accomplishment report.',
-        },
-        {
-          label: 'Returned Accomplishment',
-          value: 'Returned Accomplishment',
-          color: 'red-6',
-          description: 'Return the accomplishment for corrections.',
-        },
-      ]
-    default:
-      return []
-  }
-}
-
-const availableStatusOptions = computed(() => {
-  return getStatusOptions(opcrData.value?.opcr_status)
+const statusModalConfig = ref({
+  title: 'Update Status',
+  message: 'Please select the new status for this target period.',
+  icon: 'assignment_turned_in',
+  color: '#f57c00',
 })
 
 // =========================
@@ -694,56 +670,34 @@ const getStatusColor = (row) => {
     case 'calibrated/validated target':
     case 'calibrated/validated accomplishment':
       return 'green-7'
-    case 'prevalidated accomplishment':
-      return 'orange-6'
     default:
       return 'grey'
   }
 }
 
 // Get new status color for the badge
-// const getNewStatusColor = () => {
-//   const s = selectedStatus.value?.toLowerCase().trim() || ''
-//   switch (s) {
-//     case 'returned target':
-//     case 'returned accomplishment':
-//       return 'red-6'
-//     case 'reviewed target':
-//     case 'reviewed accomplishment':
-//       return 'purple-6'
-//     case 'calibrated/validated target':
-//     case 'calibrated/validated accomplishment':
-//       return 'green-7'
-//     case 'received target':
-//     case 'received accomplishment':
-//       return 'indigo-6'
-//     default:
-//       return 'grey'
-//   }
-// }
+const getNewStatusColor = () => {
+  const s = selectedStatus.value?.toLowerCase().trim() || ''
 
-// const getStatusColorFromValue = (status) => {
-//   const s = status?.toLowerCase().trim() || ''
-//   switch (s) {
-//     case 'returned target':
-//     case 'returned accomplishment':
-//       return 'red-6'
-//     case 'calibrated/validated target':
-//     case 'calibrated/validated accomplishment':
-//       return 'green-7'
-//     case 'received target':
-//     case 'received accomplishment':
-//       return 'indigo-6'
-//     default:
-//       return 'primary'
-//   }
-// }
+  switch (s) {
+    case 'returned target':
+    case 'returned accomplishment':
+      return 'red-6'
+    case 'reviewed target':
+    case 'reviewed accomplishment':
+      return 'purple-6'
+    case 'approved target':
+    case 'approved accomplishment':
+      return 'cyan-7'
+    default:
+      return 'grey'
+  }
+}
 
 // Determine if the update button should be shown
-// Only show for Received Target or Received Accomplishment
 const shouldShowUpdateButton = computed(() => {
   const status = opcrData.value?.opcr_status?.toLowerCase().trim() || ''
-  return status === 'received target' || status === 'received accomplishment'
+  return status === 'draft' || status === 'returned target' || status === 'received target'
 })
 
 // =========================
@@ -809,44 +763,30 @@ const getProficiencyLevel = (level) => {
   return levels[level] || 'Not Applicable'
 }
 
-// Format competencies
 const formatCompetencies = (standard) => {
   const core = standard.core || []
   const technical = standard.technical || []
   const leadership = standard.leadership || []
-
   const combined = [...core, ...technical, ...leadership]
 
-  if (combined.length === 0) {
-    return 'Not Applicable'
-  }
+  if (combined.length === 0) return 'Not Applicable'
 
-  const formatted = combined.map((comp, index) => {
-    const proficiency = getProficiencyLevel(comp.level)
-    return `${index + 1}. ${comp.description} (${proficiency})`
-  })
-
-  return formatted.join('\n')
+  return combined
+    .map((comp, index) => `${index + 1}. ${comp.description} (${getProficiencyLevel(comp.level)})`)
+    .join('\n')
 }
 
-// Format proficiency result
 const formatProficiencyResult = (standard) => {
   const core = standard.core || []
   const technical = standard.technical || []
   const leadership = standard.leadership || []
-
   const combined = [...core, ...technical, ...leadership]
 
-  if (combined.length === 0) {
-    return 'Not Applicable'
-  }
+  if (combined.length === 0) return 'Not Applicable'
 
-  const proficiencyLevels = combined.map((comp, index) => {
-    const proficiency = getProficiencyLevel(comp.level)
-    return `${index + 1}. ${proficiency}`
-  })
-
-  return proficiencyLevels.join('\n')
+  return combined
+    .map((comp, index) => `${index + 1}. ${getProficiencyLevel(comp.level)}`)
+    .join('\n')
 }
 
 // =========================
@@ -928,8 +868,15 @@ const getAdjectivalRating = (rating) => {
 // Status dialog handlers
 // =========================
 const openStatusModal = () => {
-  const options = availableStatusOptions.value
-  selectedStatus.value = options.length > 0 ? options[0].value : ''
+  // Set default status based on current status
+  const currentStatus = opcrData.value?.opcr_status?.toLowerCase().trim() || ''
+
+  if (currentStatus === 'draft' || currentStatus === 'returned target') {
+    selectedStatus.value = 'Reviewed Target'
+  } else {
+    selectedStatus.value = ''
+  }
+
   statusRemarks.value = ''
   updateStatusStore.clearError()
   showStatusModal.value = true
@@ -1816,20 +1763,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   content.push({
     table: {
       headerRows: 0,
-      widths: [
-        '10%',
-        '15%',
-        '12%',
-        '8%',
-        '10%',
-        '10%',
-        '2.5%',
-        '2.5%',
-        '2.5%',
-        '2.5%',
-        '10%',
-        '10%',
-      ],
+      widths: ['10%', '12%', '10%', '8%', '8%', '10%', '5%', '5%', '5%', '5%', '10%', '12%'],
       body: tableBody,
     },
     layout: {
@@ -2031,90 +1965,5 @@ onMounted(() => {
   padding: 6px 14px;
   min-width: auto;
   font-size: 9px;
-}
-
-/* Competency and Proficiency List Styles */
-.competency-list {
-  font-size: 9px;
-  white-space: pre-line;
-}
-
-.competency-ul {
-  margin: 0;
-  padding-left: 16px;
-  list-style-type: none;
-}
-
-.competency-li {
-  padding: 2px 0;
-  line-height: 1.4;
-  font-size: 9px;
-  text-align: left;
-  display: block;
-  white-space: normal;
-  word-wrap: break-word;
-}
-
-.proficiency-badge {
-  display: inline-block;
-  background-color: #e3f2fd;
-  color: #1565c0;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 8px;
-  font-weight: bold;
-  margin-left: 4px;
-}
-
-.proficiency-list {
-  width: 100%;
-}
-
-.proficiency-ul {
-  margin: 0;
-  padding-left: 16px;
-  list-style-type: none;
-}
-
-.proficiency-li {
-  padding: 2px 0;
-  line-height: 1.4;
-  font-size: 9px;
-  text-align: left;
-  display: block;
-  white-space: normal;
-  word-wrap: break-word;
-}
-
-/* Status option list styling (matches OPCRList page) */
-.status-option {
-  border: 1.5px solid transparent;
-  border-radius: 8px;
-  transition: all 0.15s ease;
-}
-.status-option--idle {
-  border-color: #e0e0e0;
-  background-color: #fafafa;
-}
-.status-option--idle:hover {
-  border-color: #bdbdbd;
-  background-color: #f5f5f5;
-}
-.status-option--active {
-  border-color: #1976d2;
-  background-color: #e3f2fd;
-}
-
-/* Ensure numbered lists display properly */
-#opcr-preview .opcr-table td ul {
-  margin: 0;
-  padding-left: 16px;
-  list-style-type: none;
-}
-
-#opcr-preview .opcr-table td ul li {
-  display: block;
-  padding: 1px 0;
-  text-align: left;
 }
 </style>

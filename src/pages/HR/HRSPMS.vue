@@ -46,14 +46,6 @@
                   </q-select>
                 </div>
 
-                <!-- <div class="row q-gutter-sm items-center q-mb-sm">
-                  <div class="q-pa-sm text-grey-9 text-bold col">
-                    Status: <q-badge color="blue">Draft</q-badge>
-                  </div>
-                  <q-btn color="orange-9" icon="edit" label="Update" />
-                  <q-btn color="red-9" icon="print" label="Remove" />
-                </div> -->
-
                 <!-- Office Dropdown -->
                 <div class="row q-mb-md">
                   <q-select
@@ -301,9 +293,9 @@
                               <q-tooltip>QPEF</q-tooltip>
                             </q-btn>
 
-                            <!-- OPCR: Only for Managerial rank -->
+                            <!-- OPCR: Only for Managerial rank AND status allows actions -->
                             <q-btn
-                              v-if="canShowOPCR(props.row)"
+                              v-if="canShowOPCR(props.row) && !shouldHideActionButtons(props.row)"
                               class="neu-button"
                               flat
                               round
@@ -315,9 +307,9 @@
                               <q-tooltip>OPCR</q-tooltip>
                             </q-btn>
 
-                            <!-- IPCR: Only if NOT CONTRACTUAL or HONORARIUM, and NOT Managerial -->
+                            <!-- IPCR: Only if NOT CONTRACTUAL or HONORARIUM, NOT Managerial, AND status allows actions -->
                             <q-btn
-                              v-if="canShowIPCR(props.row)"
+                              v-if="canShowIPCR(props.row) && !shouldHideActionButtons(props.row)"
                               class="neu-button"
                               flat
                               round
@@ -449,6 +441,20 @@ const filteredOfficeOptions = ref([])
 // ============================================================================
 
 const EXCLUDED_STATUSES = ['CONTRACTUAL', 'HONORARIUM']
+
+/**
+ * Statuses where IPCR/OPCR action buttons should be hidden
+ * These include: empty, null, Not Started, Draft, Discussed Target, Approved Target, Returned Target
+ */
+const HIDDEN_ACTION_STATUSES = [
+  '', // empty string
+  null, // null value
+  'not started',
+  'draft',
+  'discussed target',
+  'approved target',
+  'returned target',
+]
 
 /**
  * Employment status ordering for display (top-to-bottom).
@@ -692,6 +698,20 @@ const isHeadRank = (rank) => !!rank && HEAD_RANKS.some((h) => rank.toLowerCase()
 
 const shouldCountEmployee = (employee) =>
   !!employee?.employeeData && !isExcludedStatus(employee.employeeData.status)
+
+/**
+ * Determine if IPCR/OPCR action buttons should be hidden based on status
+ * Returns true if status is in HIDDEN_ACTION_STATUSES list
+ */
+const shouldHideActionButtons = (employee) => {
+  const status = employee?.ipcrStatus?.toLowerCase().trim() || ''
+
+  // Check if status is in the hidden list (case-insensitive)
+  return HIDDEN_ACTION_STATUSES.some((hiddenStatus) => {
+    if (hiddenStatus === null) return status === ''
+    return status === hiddenStatus.toLowerCase().trim()
+  })
+}
 
 // ============================================================================
 // UTILITY — Button Visibility

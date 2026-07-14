@@ -396,8 +396,8 @@ const semesterOptions = computed(() => {
 
 const filteredRows = computed(() => {
   const query = (searchQuery.value || '').toLowerCase().trim()
-  if (!query) return receivingStore.records
-  return receivingStore.records.filter((r) =>
+  if (!query) return receivingStore.pmtRecords
+  return receivingStore.pmtRecords.filter((r) =>
     [r.control_no, r.office_name, r.office_head_name, r.status].some((f) =>
       (f || '').toLowerCase().includes(query),
     ),
@@ -442,12 +442,12 @@ const statusColor = (status) => {
 
 const fetchOPCRRecords = async (year, semester) => {
   if (!year || !semester) {
-    receivingStore.records = []
+    receivingStore.pmtRecords = []
     return
   }
   loading.value = true
   try {
-    await receivingStore.fetchOPCRRecords(year, semester)
+    await receivingStore.fetchOPCRPMTRecords(year, semester)
   } catch (error) {
     $q.notify({
       type: 'negative',
@@ -549,7 +549,7 @@ watch([selectedYear, selectedSemester], ([newYear, newSemester], [oldYear, oldSe
       fetchOPCRRecords(newYear, newSemester)
     }
   } else {
-    receivingStore.records = []
+    receivingStore.pmtRecords = []
   }
 })
 

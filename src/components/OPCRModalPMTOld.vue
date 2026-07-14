@@ -3,7 +3,7 @@
     <!-- Header section -->
     <q-card-section
       class="header-section row items-center justify-between"
-      style="background-color: #e98193; height: 50px"
+      style="background-color: #722b2b; height: 50px"
     >
       <div class="text-h6 text-white">Office Performance Commitment Review (OPCR)</div>
 
@@ -629,31 +629,31 @@ const getStatusOptions = (currentStatus) => {
     case 'received target':
       return [
         {
-          label: 'Reviewed Target',
-          value: 'Reviewed Target',
-          color: 'purple-6',
-          description: 'Review the received target submission.',
+          label: 'Calibrated/Validated Target',
+          value: 'Calibrated/Validated Target',
+          color: 'green-7',
+          description: 'Mark the target as calibrated and validated.',
         },
         {
           label: 'Returned Target',
           value: 'Returned Target',
           color: 'red-6',
-          description: 'Return the target for revisions.',
+          description: 'Return the target for revision.',
         },
       ]
-    case 'received accomplishment':
+    case 'prevalidated accomplishment':
       return [
         {
-          label: 'Reviewed Accomplishment',
-          value: 'Reviewed Accomplishment',
-          color: 'purple-6',
-          description: 'Review the received accomplishment report.',
+          label: 'Calibrated/Validated Accomplishment',
+          value: 'Calibrated/Validated Accomplishment',
+          color: 'green-7',
+          description: 'Mark the accomplishment as calibrated and validated.',
         },
         {
           label: 'Returned Accomplishment',
           value: 'Returned Accomplishment',
           color: 'red-6',
-          description: 'Return the accomplishment for corrections.',
+          description: 'Return the accomplishment for revision.',
         },
       ]
     default:
@@ -740,10 +740,10 @@ const getStatusColor = (row) => {
 // }
 
 // Determine if the update button should be shown
-// Only show for Received Target or Received Accomplishment
+// Only show for Received Target or Prevalidated Accomplishment
 const shouldShowUpdateButton = computed(() => {
   const status = opcrData.value?.opcr_status?.toLowerCase().trim() || ''
-  return status === 'received target' || status === 'received accomplishment'
+  return status === 'received target' || status === 'prevalidated accomplishment'
 })
 
 // =========================

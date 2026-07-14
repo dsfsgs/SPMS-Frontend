@@ -626,34 +626,28 @@ const getStatusOptions = (currentStatus) => {
   const status = currentStatus?.toLowerCase().trim() || ''
 
   switch (status) {
-    case 'received target':
+    case 'draft':
       return [
         {
-          label: 'Reviewed Target',
-          value: 'Reviewed Target',
-          color: 'purple-6',
-          description: 'Review the received target submission.',
+          label: 'Received Target',
+          value: 'Received Target',
+          color: 'indigo-6',
+          description: 'Mark this OPCR as received and ready for review.',
         },
         {
           label: 'Returned Target',
           value: 'Returned Target',
           color: 'red-6',
-          description: 'Return the target for revisions.',
+          description: 'Send this OPCR back to the office for revision.',
         },
       ]
-    case 'received accomplishment':
+    case 'returned target':
       return [
         {
-          label: 'Reviewed Accomplishment',
-          value: 'Reviewed Accomplishment',
-          color: 'purple-6',
-          description: 'Review the received accomplishment report.',
-        },
-        {
-          label: 'Returned Accomplishment',
-          value: 'Returned Accomplishment',
-          color: 'red-6',
-          description: 'Return the accomplishment for corrections.',
+          label: 'Received Target',
+          value: 'Received Target',
+          color: 'indigo-6',
+          description: 'Accept the revised target submission.',
         },
       ]
     default:
@@ -740,10 +734,10 @@ const getStatusColor = (row) => {
 // }
 
 // Determine if the update button should be shown
-// Only show for Received Target or Received Accomplishment
+// Only show for Received Target or Prevalidated Accomplishment
 const shouldShowUpdateButton = computed(() => {
   const status = opcrData.value?.opcr_status?.toLowerCase().trim() || ''
-  return status === 'received target' || status === 'received accomplishment'
+  return status === 'draft' || status === 'returned target'
 })
 
 // =========================

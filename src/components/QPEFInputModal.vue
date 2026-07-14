@@ -34,31 +34,22 @@
             </div>
           </div>
           <div class="flex justify-end q-gutter-sm">
+            <!-- Edit button - HIDDEN when status is "Received" -->
             <q-btn
-              v-if="isViewMode"
+              v-if="isViewMode && qpefStatus !== 'Received'"
               color="orange"
               icon="edit"
               label="Edit"
               @click="handleEdit"
-              :disable="qpefStatus === 'Received'"
-            >
-              <q-tooltip v-if="qpefStatus === 'Received'">
-                Cannot edit - this QPEF has been received
-              </q-tooltip>
-            </q-btn>
+            />
             <q-btn
-              v-if="!isViewMode"
+              v-if="!isViewMode && qpefStatus !== 'Received'"
               color="primary"
               icon="save"
               label="Save"
               :loading="isSaving"
-              :disable="qpefStatus === 'Received'"
               @click="handleSave"
-            >
-              <q-tooltip v-if="qpefStatus === 'Received'">
-                Cannot save - this QPEF has been received
-              </q-tooltip>
-            </q-btn>
+            />
             <q-btn color="green-9" icon="print" label="Print" @click="handlePrint" />
           </div>
         </div>
@@ -879,14 +870,8 @@ const currentYear = computed(() => props.year)
 
 // ── Conditional Logic for Non-Renewal ──────────────────────────────────────
 const isNonRenewalDisabled = computed(() => {
-  // If in view mode, we don't want to disable based on rating
-  // because the rating might have been saved with a non-renewal recommendation
-  // even if the current computed rating is higher (e.g., rating changed after save)
   if (isViewMode.value) return false
-
   const finalRatingValue = finalRating.value
-  // Disable non-renewal if final rating is 3 or higher
-  // Enable only when final rating is 1 or 2
   return finalRatingValue >= 3
 })
 
@@ -974,7 +959,6 @@ const handleQuarterChange = async (quarter) => {
 
 // ── Load existing data ────────────────────────────────────────────────────────
 const loadExistingData = (data) => {
-  // Load Job Performance
   if (data.job_performance?.items) {
     formData.jobPerformance.itemIds = []
     data.job_performance.items.forEach((item, index) => {
@@ -985,7 +969,6 @@ const loadExistingData = (data) => {
     })
   }
 
-  // Load Competencies
   if (data.competencies_attitude?.items) {
     formData.competencies.itemIds = []
     data.competencies_attitude.items.forEach((item, index) => {
@@ -996,7 +979,6 @@ const loadExistingData = (data) => {
     })
   }
 
-  // Load Physical
   if (data.physical_mental?.items) {
     formData.physical.itemIds = []
     data.physical_mental.items.forEach((item, index) => {
@@ -1007,7 +989,6 @@ const loadExistingData = (data) => {
     })
   }
 
-  // Load Recommendations
   if (data.recommendation_development) {
     const rec = data.recommendation_development
 
@@ -1022,7 +1003,6 @@ const loadExistingData = (data) => {
 
     formData.supervisorComments = rec.recommendation || ''
 
-    // Set the selected recommendation based on which one is true
     if (formData.recommendations.retention) {
       selectedRecommendation.value = 'retention'
     } else if (formData.recommendations.commendation) {
@@ -1058,13 +1038,11 @@ const clearForm = () => {
 
 // ── Recommendation change handler ──────────────────────────────────────────
 const handleRecommendationChange = (value) => {
-  // Reset all recommendations
   formData.recommendations.retention = false
   formData.recommendations.improvement = false
   formData.recommendations.commendation = false
   formData.recommendations.nonRenewal = false
 
-  // Set only the selected one
   if (value === 'retention') formData.recommendations.retention = true
   else if (value === 'improvement') formData.recommendations.improvement = true
   else if (value === 'commendation') formData.recommendations.commendation = true
@@ -1991,7 +1969,6 @@ const handleEdit = () => {
 }
 
 const handleSave = async () => {
-  // Check if status is Received
   if (props.qpefStatus === 'Received') {
     $q.notify({
       type: 'negative',
@@ -2011,7 +1988,6 @@ const handleSave = async () => {
     return
   }
 
-  // Validate that non-renewal is only selected when rating is 1-2
   if (formData.recommendations.nonRenewal && finalRating.value >= 3) {
     $q.notify({
       type: 'negative',
@@ -2117,15 +2093,13 @@ const handleSave = async () => {
   }
 }
 
-// ── Print (single employee) ───────────────────────────────────────────────────
+// ── Print ───────────────────────────────────────────────────────────────────────
 const handlePrint = async () => {
   try {
-    // Import pdfmake
     const pdfMake = await import('pdfmake/build/pdfmake')
     const pdfMakeInstance = pdfMake.default || pdfMake
     const vfsFonts = await import('pdfmake/build/vfs_fonts')
 
-    // Setup fonts properly
     if (vfsFonts && vfsFonts.pdfMake && vfsFonts.pdfMake.vfs) {
       pdfMakeInstance.vfs = vfsFonts.pdfMake.vfs
     } else if (vfsFonts.default && vfsFonts.default.vfs) {
@@ -2134,7 +2108,6 @@ const handlePrint = async () => {
       pdfMakeInstance.vfs = vfsFonts.vfs
     }
 
-    // Load logo
     let logoBase64 = null
     try {
       const logoUrl = '/logo.png'
@@ -2151,7 +2124,6 @@ const handlePrint = async () => {
       console.warn('Logo load failed:', e)
     }
 
-    // Create a plain object copy of the form data for PDF generation
     const formDataCopy = {
       jobPerformance: {
         task1: formData.jobPerformance.task1,
@@ -2201,10 +2173,8 @@ const handlePrint = async () => {
       supervisorComments: formData.supervisorComments || '',
     }
 
-    // Determine quarter to use
     const quarterToUse = selectedQuarterLocal.value || props.quarter || 'Q1'
 
-    // Build document definition
     const docDefinition = buildDocDefinition({
       employee: props.employee,
       quarter: quarterToUse,
@@ -2223,7 +2193,6 @@ const handlePrint = async () => {
       logoBase64: logoBase64 || tagumLogo,
     })
 
-    // Create and open PDF
     const pdfDoc = pdfMakeInstance.createPdf(docDefinition)
     pdfDoc.open()
 

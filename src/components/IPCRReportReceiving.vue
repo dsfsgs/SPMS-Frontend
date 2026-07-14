@@ -61,7 +61,7 @@
               :label="getButtonLabel()"
               class="full-width"
               :disable="isStatusCompleted"
-              @click="openStatusModal"
+              @click="openUpdateModal"
             >
               <q-tooltip v-if="isStatusCompleted">
                 This IPCR status is already completed
@@ -2369,83 +2369,159 @@
     </div>
   </div>
 
-  <!-- Status Update Modal -->
-  <q-dialog v-model="showStatusModal" persistent>
-    <q-card style="min-width: 380px; border-radius: 12px; overflow: hidden">
+  <!-- Status Update Modal - New Design -->
+  <q-dialog v-model="showUpdateModal" persistent>
+    <q-card style="min-width: 480px; max-width: 95vw; border-radius: 12px; overflow: hidden">
+      <!-- Modal Header -->
       <div
-        :style="`background: linear-gradient(135deg, ${getModalGradient()}); padding: 20px 24px 16px; position: relative;`"
+        style="
+          background: linear-gradient(135deg, #e65100, #f57c00);
+          padding: 20px 24px 16px;
+          position: relative;
+        "
       >
         <div class="row items-center no-wrap">
-          <q-icon :name="getModalIcon()" color="white" size="28px" class="q-mr-sm" />
+          <q-icon name="sync_alt" color="white" size="28px" class="q-mr-sm" />
           <div>
-            <div class="text-white text-weight-bold" style="font-size: 16px">Update Status</div>
-            <div class="text-white text-caption" style="opacity: 0.8">
-              {{ getModalSubtitle() }}
+            <div class="text-white text-weight-bold" style="font-size: 16px">
+              Update IPCR Status
             </div>
+            <div class="text-blue-2 text-caption">Individual Performance Commitment Review</div>
           </div>
         </div>
       </div>
+
+      <!-- Modal Body -->
       <q-card-section class="q-pt-lg q-pb-md q-px-lg">
-        <div class="text-body1 text-grey-8 q-mb-md">
-          Are you sure you want to update this target period to "{{ getNewStatus() }}"?
-        </div>
+        <!-- Employee Summary -->
         <div
           class="q-pa-sm rounded-borders q-mb-md"
-          style="background: #f5f5f5; border-left: 4px solid #1565c0; border-radius: 6px"
+          style="background: #f5f5f5; border-left: 4px solid #1976d2; border-radius: 6px"
         >
           <div class="row items-center q-gutter-xs">
-            <q-icon name="calendar_today" size="16px" color="blue-9" />
-            <span class="text-caption text-weight-medium text-grey-7"
-              >{{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}</span
-            >
+            <q-icon name="badge" size="16px" color="primary" />
+            <span class="text-caption text-weight-medium text-grey-7">
+              {{ selectedRecord?.name || 'N/A' }} — {{ selectedRecord?.position || 'N/A' }}
+            </span>
           </div>
           <div class="row items-center q-gutter-xs q-mt-xs">
-            <q-icon name="badge" size="16px" color="blue-9" />
-            <span class="text-caption text-grey-7"
-              >Current:
+            <q-icon name="business" size="16px" color="primary" />
+            <span class="text-caption text-grey-7">
+              {{ selectedRecord?.office || 'N/A' }}
+            </span>
+          </div>
+          <div class="row items-center q-gutter-xs q-mt-xs">
+            <q-icon name="calendar_today" size="16px" color="primary" />
+            <span class="text-caption text-grey-7">
+              {{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}
+            </span>
+          </div>
+          <div class="row items-center q-gutter-xs q-mt-xs">
+            <q-icon name="info" size="16px" color="primary" />
+            <span class="text-caption text-grey-7">
+              Current:
               <q-badge
-                :color="getStatusColor(employee?.ipcrStatus)"
-                :label="employee?.ipcrStatus || 'N/A'"
+                :color="statusColor(selectedRecord?.status)"
+                :label="formatStatus(selectedRecord?.status)"
                 class="q-ml-xs"
-            /></span>
-          </div>
-          <div class="row items-center q-gutter-xs q-mt-xs">
-            <q-icon name="arrow_forward" size="16px" color="green-8" />
-            <span class="text-caption text-grey-7"
-              >New:
-              <q-badge :color="getNewStatusColor()" :label="getNewStatus()" class="q-ml-xs" />
+              />
             </span>
           </div>
         </div>
+
+        <!-- Status Selection -->
+        <div
+          class="text-caption text-grey-7 text-weight-medium q-mb-sm"
+          style="letter-spacing: 0.5px; text-transform: uppercase; font-size: 11px"
+        >
+          Select New Status
+        </div>
+
+        <div class="column q-gutter-sm">
+          <div
+            v-for="option in availableStatusOptions"
+            :key="option.value"
+            class="status-option row items-center q-pa-sm cursor-pointer"
+            :class="newStatus === option.value ? 'status-option--active' : 'status-option--idle'"
+            @click="!updatingStatus && (newStatus = option.value)"
+          >
+            <q-radio
+              :model-value="newStatus"
+              :val="option.value"
+              color="primary"
+              dense
+              class="q-mr-sm"
+              :disable="updatingStatus"
+              @update:model-value="newStatus = option.value"
+            />
+            <div class="col">
+              <div class="text-body2 text-weight-medium text-grey-9">{{ option.label }}</div>
+              <div class="text-caption text-grey-6">{{ option.description }}</div>
+            </div>
+            <q-badge
+              :color="option.color"
+              :label="option.label"
+              class="q-px-sm q-py-xs col-auto"
+              style="border-radius: 4px; font-size: 11px"
+            />
+          </div>
+
+          <div v-if="!availableStatusOptions.length" class="text-caption text-grey-6 q-pa-sm">
+            No status transitions available for the current status.
+          </div>
+        </div>
+
+        <!-- Remarks -->
+        <div class="q-mt-md">
+          <div class="row items-center q-mb-xs">
+            <div class="text-subtitle2 text-weight-medium text-grey-8">Remarks</div>
+            <div class="text-caption text-grey-6 q-ml-sm">(Optional)</div>
+          </div>
+          <q-input
+            v-model="statusRemarks"
+            type="textarea"
+            outlined
+            dense
+            placeholder="Add any comments or notes about this status change..."
+            :maxlength="500"
+            :rows="2"
+            :disable="updatingStatus"
+          >
+            <template v-slot:counter>
+              <span class="text-caption text-grey-6">{{ statusRemarks.length }}/500</span>
+            </template>
+          </q-input>
+        </div>
+
+        <!-- Error Alert -->
         <q-banner
           v-if="monitorStore.error"
           dense
           rounded
-          class="text-white q-mb-md"
+          class="text-white q-mt-md"
           style="background: #c62828"
         >
           <template v-slot:avatar><q-icon name="error" /></template>
           {{ monitorStore.error }}
         </q-banner>
       </q-card-section>
+
+      <!-- Modal Actions -->
       <q-card-actions align="right" class="q-px-lg q-pb-lg q-pt-none">
         <q-btn
           flat
           label="Cancel"
           color="grey-7"
-          :disable="monitorStore.loading"
-          @click="closeStatusModal"
-          style="border-radius: 8px; padding: 8px 20px"
+          :disable="updatingStatus"
+          @click="closeUpdateModal"
         />
         <q-btn
-          :label="getButtonLabel()"
-          :icon="getButtonIcon()"
-          :color="getButtonColor()"
           unelevated
-          :loading="monitorStore.loading"
-          :disable="monitorStore.loading"
-          @click="confirmDiscussTarget"
-          style="border-radius: 8px; padding: 8px 20px"
+          label="Apply Update"
+          color="primary"
+          :loading="updatingStatus"
+          :disable="updatingStatus || !newStatus"
+          @click="handleUpdateStatus"
         />
       </q-card-actions>
     </q-card>
@@ -2459,6 +2535,54 @@ import { useIPCRStatus } from 'src/composables/ipcr_status'
 import { useIpcrStore } from 'src/stores/office/IpcrStore'
 import { useMonitorStatusStore } from 'src/stores/monitorStatusStore'
 import AbsentLateInputModal from './AbsentLateInputModal.vue'
+
+// Add this after the imports
+const STATUS_TRANSITIONS = {
+  'approved target': [
+    {
+      label: 'Received Target',
+      value: 'Received Target',
+      color: 'indigo-6',
+      description: 'Accept the approved target submission.',
+    },
+    {
+      label: 'Returned Target',
+      value: 'Returned Target',
+      color: 'red-6',
+      description: 'Send the target back to the employee for revision.',
+    },
+  ],
+  'returned target': [
+    {
+      label: 'Received Target',
+      value: 'Received Target',
+      color: 'indigo-6',
+      description: 'Accept the resubmitted target.',
+    },
+  ],
+  'approved accomplishment': [
+    {
+      label: 'Received Accomplishment',
+      value: 'Received Accomplishment',
+      color: 'indigo-6',
+      description: 'Accept the approved accomplishment submission.',
+    },
+    {
+      label: 'Returned Accomplishment',
+      value: 'Returned Accomplishment',
+      color: 'red-6',
+      description: 'Send the accomplishment back for revision.',
+    },
+  ],
+  'returned accomplishment': [
+    {
+      label: 'Received Accomplishment',
+      value: 'Received Accomplishment',
+      color: 'indigo-6',
+      description: 'Accept the resubmitted accomplishment report.',
+    },
+  ],
+}
 
 // ── PDF Make ────────────────────────────────────────────────────────────────
 let pdfMake = null
@@ -2507,9 +2631,13 @@ const emit = defineEmits(['close', 'discussed-target', 'status-updated'])
 // ── State ───────────────────────────────────────────────────────────────────
 const activeTab = ref('ipcr')
 const isPrinting = ref(false)
-const showStatusModal = ref(false)
 const attendanceModalRef = ref(null)
 const existingAttendanceData = ref({})
+const showUpdateModal = ref(false)
+const selectedRecord = ref(null)
+const newStatus = ref(null)
+const statusRemarks = ref('')
+const updatingStatus = ref(false)
 
 // ── Signatory Helpers ──────────────────────────────────────────────────────
 
@@ -2580,8 +2708,40 @@ const mpoApprovedFinalRatingSignatory = computed(
   () => getSignatory('mpoApprovedFinalRatingBy') || props.managerialSignatory,
 )
 
+// ── Computed ─────────────────────────────────────────────────────────────────
+const availableStatusOptions = computed(() => {
+  const status = selectedRecord.value?.status
+  if (!status) return []
+  const statusKey = status.toLowerCase().trim()
+  return STATUS_TRANSITIONS[statusKey] || []
+})
+
 // ── Composables ──────────────────────────────────────────────────────────────
 const { getStatusColor, getStatusTextColor, getStatusIcon } = useIPCRStatus()
+
+// ── Helper Functions ─────────────────────────────────────────────────────────
+const formatStatus = (status) => {
+  if (!status) return 'Pending'
+  return status.charAt(0).toUpperCase() + status.slice(1)
+}
+
+const statusColor = (status) => {
+  const colorMap = {
+    draft: 'grey-6',
+    'discussed target': 'blue-6',
+    'approved target': 'cyan-7',
+    'approved accomplishment': 'cyan-7',
+    'received target': 'indigo-6',
+    'received accomplishment': 'indigo-6',
+    'returned target': 'red-6',
+    'returned accomplishment': 'red-6',
+    'reviewed target': 'purple-6',
+    'reviewed accomplishment': 'purple-6',
+    'calibrated/validated target': 'green-7',
+    'calibrated/validated accomplishment': 'green-7',
+  }
+  return colorMap[status?.toLowerCase()?.trim()] || 'blue-grey-4'
+}
 
 // ── Computed: Basic ──────────────────────────────────────────────────────────
 const controlNo = computed(
@@ -2643,14 +2803,20 @@ const currentData = computed(() => {
 const isStatusCompleted = computed(() => {
   const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
 
-  const enabledStatuses = [
+  // These statuses should not show the update button
+  const disabledStatuses = [
     'draft',
-    'returned target',
+    'discussed target',
+    'received target',
+    'reviewed target',
     'calibrated/validated target',
-    'returned accomplishment',
+    'final rating accomplishment',
+    'received accomplishment',
+    'reviewed accomplishment',
+    'calibrated/validated accomplishment',
   ]
 
-  return !enabledStatuses.includes(currentStatus)
+  return disabledStatuses.includes(currentStatus)
 })
 
 const hasData = computed(() => !!currentData.value)
@@ -2669,35 +2835,6 @@ const isFirstSemester = computed(() => {
   return s.includes('first') || s.includes('1st') || s.includes('jan')
 })
 
-// ── Helper Methods for Modal ──────────────────────────────────────────────
-const getNewStatus = () => {
-  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
-
-  const isTargetStatus =
-    currentStatus === 'draft' ||
-    currentStatus === 'discussed target' ||
-    currentStatus === 'approved target' ||
-    currentStatus === 'received target' ||
-    currentStatus === 'reviewed target' ||
-    currentStatus === 'calibrated/validated target' ||
-    currentStatus === 'returned target'
-
-  const isAccomplishmentStatus =
-    currentStatus === 'approved accomplishment' ||
-    currentStatus === 'received accomplishment' ||
-    currentStatus === 'reviewed accomplishment' ||
-    currentStatus === 'calibrated/validated accomplishment' ||
-    currentStatus === 'returned accomplishment' ||
-    currentStatus === 'final rating accomplishment'
-
-  if (isTargetStatus) {
-    return 'Discussed Target'
-  } else if (isAccomplishmentStatus) {
-    return 'Assessed Accomplishment'
-  }
-  return 'Discussed Target' // Default
-}
-
 // ── Helper: Should show status button ─────────────────────────────────────
 const shouldShowStatusButton = (status) => {
   if (!status) return false
@@ -2706,88 +2843,41 @@ const shouldShowStatusButton = (status) => {
 
   // Only show for these specific statuses
   const visibleStatuses = [
-    'draft',
+    'approved target',
     'returned target',
-    'calibrated/validated target',
+    'approved accomplishment',
     'returned accomplishment',
   ]
 
   return visibleStatuses.includes(s)
 }
 
-const getNewStatusColor = () => {
-  const newStatus = getNewStatus()
-  const colorMap = {
-    'Discussed Target': 'blue-6',
-    'Assessed Accomplishment': 'green-7',
-  }
-  return colorMap[newStatus] || 'blue-6'
-}
-
-const getModalGradient = () => {
-  const newStatus = getNewStatus()
-  if (newStatus === 'Assessed Accomplishment') {
-    return '#2e7d32, #388e3c' // Green gradient
-  }
-  return '#0d47a1, #1565c0' // Blue gradient
-}
-
-const getModalIcon = () => {
-  const newStatus = getNewStatus()
-  if (newStatus === 'Assessed Accomplishment') {
-    return 'assignment_turned_in'
-  }
-  return 'chat'
-}
-
-const getModalSubtitle = () => {
-  const newStatus = getNewStatus()
-  if (newStatus === 'Assessed Accomplishment') {
-    return 'Assess Accomplishment Period'
-  }
-  return 'Discuss Target Period'
-}
-
 const getButtonLabel = () => {
   const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
 
-  if (currentStatus === 'draft' || currentStatus === 'returned target') {
-    return 'Discussed Target'
+  if (currentStatus === 'approved target' || currentStatus === 'returned target') {
+    return 'Update Target Status'
   }
 
-  if (
-    currentStatus === 'calibrated/validated target' ||
-    currentStatus === 'returned accomplishment'
-  ) {
-    return 'Assessed Accomplishment'
+  if (currentStatus === 'approved accomplishment' || currentStatus === 'returned accomplishment') {
+    return 'Update Accomplishment Status'
   }
 
   return 'Update Status'
 }
 
-const getButtonIcon = () => {
-  const newStatus = getNewStatus()
-  if (newStatus === 'Assessed Accomplishment') {
-    return 'assignment_turned_in'
-  }
-  return 'chat'
-}
-
 const getButtonColor = () => {
   const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
 
-  if (currentStatus === 'draft' || currentStatus === 'returned target') {
-    return 'blue-6' // Blue for Discussed Target
+  if (currentStatus === 'approved target' || currentStatus === 'returned target') {
+    return 'blue-6'
   }
 
-  if (
-    currentStatus === 'calibrated/validated target' ||
-    currentStatus === 'returned accomplishment'
-  ) {
-    return 'green-7' // Green for Assessed Accomplishment
+  if (currentStatus === 'approved accomplishment' || currentStatus === 'returned accomplishment') {
+    return 'green-7'
   }
 
-  return 'orange'
+  return 'primary'
 }
 
 const getButtonTooltip = () => {
@@ -3156,84 +3246,67 @@ const processStandardsData = (standards) => {
 }
 
 // ── Modal Methods ────────────────────────────────────────────────────────────
-const openStatusModal = () => {
-  showStatusModal.value = true
+const openUpdateModal = () => {
+  selectedRecord.value = {
+    name: props.employee?.label || props.employee?.name || 'N/A',
+    position: props.employee?.position || 'N/A',
+    office: props.employee?.office || props.levels?.office || 'N/A',
+    status: props.employee?.ipcrStatus || props.employee?.status || null,
+    id: targetPeriodId.value,
+    controlNo: controlNo.value,
+  }
+
+  const options = availableStatusOptions.value
+  newStatus.value = options[0]?.value ?? null
+  statusRemarks.value = ''
+  showUpdateModal.value = true
 }
 
-const closeStatusModal = () => {
-  showStatusModal.value = false
+const closeUpdateModal = () => {
+  showUpdateModal.value = false
+  selectedRecord.value = null
+  newStatus.value = null
+  statusRemarks.value = ''
   monitorStore.error = ''
+  updatingStatus.value = false
 }
 
-const confirmDiscussTarget = async () => {
-  const tpId = targetPeriodId.value
-  if (!tpId) {
-    $q.notify({ type: 'negative', message: 'Target period ID not found.', position: 'top' })
+const handleUpdateStatus = async () => {
+  if (!selectedRecord.value || !newStatus.value) {
+    $q.notify({ type: 'warning', message: 'Please select a status', position: 'top' })
     return
   }
 
-  // Determine the new status based on current status
-  const currentStatus = props.employee?.ipcrStatus?.toLowerCase() || ''
-  let newStatus = ''
-
-  // Check if the current status is a "Target" type status
-  const isTargetStatus =
-    currentStatus === 'draft' ||
-    currentStatus === 'discussed target' ||
-    currentStatus === 'approved target' ||
-    currentStatus === 'received target' ||
-    currentStatus === 'reviewed target' ||
-    currentStatus === 'calibrated/validated target' ||
-    currentStatus === 'returned target'
-
-  // Check if the current status is an "Accomplishment" type status
-  const isAccomplishmentStatus =
-    currentStatus === 'approved accomplishment' ||
-    currentStatus === 'received accomplishment' ||
-    currentStatus === 'reviewed accomplishment' ||
-    currentStatus === 'calibrated/validated accomplishment' ||
-    currentStatus === 'returned accomplishment' ||
-    currentStatus === 'final rating accomplishment'
-
-  // Set the new status based on the current status
-  if (isTargetStatus) {
-    newStatus = 'Discussed Target'
-  } else if (isAccomplishmentStatus) {
-    newStatus = 'Assessed Accomplishment'
-  } else {
-    // Default fallback
-    newStatus = 'Discussed Target'
-  }
-
+  updatingStatus.value = true
   try {
-    // Use the updated function with the determined new status
-    await monitorStore.updateIPCRStatus(tpId, newStatus)
+    const tpId = targetPeriodId.value
+    if (!tpId) {
+      throw new Error('Target period ID not found')
+    }
+
+    await monitorStore.updateIPCRStatus(tpId, newStatus.value)
 
     // Emit status-updated event with the new status
     emit('status-updated', {
       ...props.employee,
-      ipcrStatus: newStatus,
+      ipcrStatus: newStatus.value,
       controlNo: controlNo.value,
     })
 
-    // Emit discussed-target event
     emit('discussed-target')
 
-    $q.notify({
-      type: 'positive',
-      message: `Status updated to ${newStatus} successfully!`,
-      position: 'top',
-      timeout: 2000,
-    })
-    closeStatusModal()
+    closeUpdateModal()
     emit('close')
   } catch (error) {
     console.error('Error updating status:', error)
     $q.notify({
       type: 'negative',
-      message: monitorStore.error || 'Failed to update status',
+      message: 'Failed to update status',
+      caption: monitorStore.error || error.message,
       position: 'top',
     })
+  } finally {
+    updatingStatus.value = false
   }
 }
 
@@ -5704,7 +5777,7 @@ watch(
 }
 
 .app-header {
-  background-color: #00703c;
+  background-color: #722b2b;
   color: white;
   padding: 12px 16px;
   display: flex;

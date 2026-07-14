@@ -456,7 +456,6 @@ import { useQuasar } from 'quasar'
 import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
 import { useReceivingIPCRStore } from 'src/stores/receivingIPCRStore'
 import { useUserManageStore } from 'src/stores/hr_Store/account_manage_Store'
-
 import ipcr_Report from 'src/components/IPCRReportHR.vue'
 
 const $q = useQuasar()

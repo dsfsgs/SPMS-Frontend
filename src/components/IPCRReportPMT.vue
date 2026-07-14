@@ -58,20 +58,18 @@
           </q-item>
 
           <q-separator class="q-my-md" />
-          <q-item>
-            <!-- <q-btn
-              color="orange"
-              label="Update Status"
-              class="full-width"
-              :disable="employee?.ipcrStatus === 'Approved'"
-              @click="openStatusModal"
-            /> -->
+          <q-item v-if="shouldShowStatusButton(employee?.ipcrStatus)">
             <q-btn
-              color="orange"
-              label="Update Status"
+              :color="getStatusButtonColor(employee?.ipcrStatus)"
+              :label="getStatusButtonLabel(employee?.ipcrStatus)"
               class="full-width"
+              :disable="isStatusActionDisabled(employee?.ipcrStatus)"
               @click="openStatusModal"
-            />
+            >
+              <q-tooltip>
+                {{ getStatusButtonTooltip(employee?.ipcrStatus) }}
+              </q-tooltip>
+            </q-btn>
           </q-item>
         </q-list>
       </div>
@@ -151,7 +149,7 @@
 
           <!-- Tab Panels -->
           <q-tab-panels v-else v-model="activeTab" animated>
-            <!-- IPCR Tab -->
+            <!-- ===================== IPCR TAB ===================== -->
             <q-tab-panel name="ipcr">
               <div class="report-content">
                 <!-- Header with Logo -->
@@ -159,9 +157,7 @@
                   <img src="/tagumlogo.png" alt="City of Tagum Logo" class="logo" />
                   <div class="center-text">
                     <div class="title">INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)</div>
-                    <div class="title">
-                      {{ levels?.office || 'N/A' }}
-                    </div>
+                    <div class="title">{{ levels?.office || 'N/A' }}</div>
                   </div>
                   <img src="/rotp.png" alt="Republic of the Philippines Logo" class="logo" />
                 </div>
@@ -244,17 +240,11 @@
                               >
                                 <div style="font-size: 11px">
                                   <strong
-                                    ><u>
-                                      {{
-                                        supervisorySignatory?.name || managerialSignatory?.name
-                                      }}</u
-                                    ></strong
+                                    ><u>{{ ipcrReviewerSignatory?.name || '' }}</u></strong
                                   >
                                 </div>
                                 <div style="font-size: 11px">
-                                  {{
-                                    supervisorySignatory?.position || managerialSignatory?.position
-                                  }}
+                                  {{ ipcrReviewerSignatory?.position || '' }}
                                 </div>
                                 <div style="font-size: 11px">
                                   Date:<u> {{ formatDate(new Date()) }}</u>
@@ -270,11 +260,13 @@
                               >
                                 <div style="font-size: 11px">
                                   <strong
-                                    ><u>{{ managerialSignatory?.name }}</u></strong
+                                    ><u>{{ ipcrApproverSignatory?.name || '' }}</u></strong
                                   >
                                 </div>
                                 <div style="font-size: 11px">
-                                  {{ managerialSignatory?.position }}
+                                  {{
+                                    ipcrApproverSignatory?.position || managerialSignatory?.position
+                                  }}
                                 </div>
                                 <div style="font-size: 11px">
                                   Date:<u> {{ formatDate(new Date()) }}</u>
@@ -296,7 +288,6 @@
                         gap: 30px;
                       "
                     >
-                      <!-- First Stamp -->
                       <div
                         style="
                           border: 3px double navy;
@@ -308,8 +299,7 @@
                         <div style="font-size: 10px; font-weight: bold">
                           LOCAL GOVERNMENT OF TAGUM CITY
                         </div>
-
-                        <div style="font-size: 11px">IPCR Accomplishment</div>
+                        <div style="font-size: 11px">IPCR Target</div>
                         <div style="font-size: 11px; font-weight: bold">RECEIVED</div>
                         <div style="text-align: left; padding-left: 10px; font-size: 10px">
                           By:
@@ -332,8 +322,6 @@
                           ></span>
                         </div>
                       </div>
-
-                      <!-- Second Stamp -->
                       <div
                         style="
                           border: 3px double navy;
@@ -374,7 +362,6 @@
 
                 <!-- Performance Management and Rating Legend -->
                 <div style="display: flex; gap: 20px; align-items: flex-start; margin-top: 20px">
-                  <!-- Stamp Box -->
                   <div
                     style="
                       border: 3px double navy;
@@ -414,8 +401,6 @@
                       ></span>
                     </div>
                   </div>
-
-                  <!-- Rating Table -->
                   <table style="border-collapse: collapse; border: 1px solid black; width: 250px">
                     <tbody>
                       <tr>
@@ -526,33 +511,25 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <!-- Display performance standards data -->
                         <template v-if="ipcrPerformanceData?.length">
-                          <!-- Group by category -->
                           <template
                             v-for="(categoryGroup, catIndex) in groupedIpcrData"
                             :key="`cat-${catIndex}`"
                           >
-                            <!-- Category Header -->
                             <tr>
                               <td colspan="10" class="section-header">
                                 {{ categoryGroup.category }}
                               </td>
                             </tr>
-
-                            <!-- Group by MFO -->
                             <template
                               v-for="(mfoGroup, mfoIndex) in categoryGroup.mfos"
                               :key="`mfo-${catIndex}-${mfoIndex}`"
                             >
-                              <!-- MFO Header -->
                               <tr>
                                 <td colspan="10" class="section-mfo">
                                   MFO {{ mfoIndex + 1 }} - {{ mfoGroup.mfo }}
                                 </td>
                               </tr>
-
-                              <!-- Outputs -->
                               <template
                                 v-for="(standard, stdIndex) in mfoGroup.standards"
                                 :key="`std-${catIndex}-${mfoIndex}-${stdIndex}`"
@@ -564,7 +541,6 @@
                                   </td>
                                   <td>
                                     <div class="competency-list">
-                                      <!-- Combined Competencies -->
                                       <template v-if="getAllCompetencies(standard).length > 0">
                                         <div
                                           v-for="(comp, idx) in getAllCompetencies(standard)"
@@ -576,39 +552,34 @@
                                           }})
                                         </div>
                                       </template>
-                                      <template v-else>
-                                        <span class="text-grey-7">No competencies specified</span>
-                                      </template>
+                                      <template v-else
+                                        ><span class="text-grey-7"
+                                          >No competencies specified</span
+                                        ></template
+                                      >
                                     </div>
                                   </td>
                                   <td>{{ standard.success_indicator }}</td>
                                   <td>
-                                    <!-- Show actual accomplishment if available -->
-                                    <span v-if="standard.accomplishment?.actual_accomplishment">
-                                      {{ standard.accomplishment.actual_accomplishment }}
-                                    </span>
+                                    <span v-if="standard.accomplishment?.actual_accomplishment">{{
+                                      standard.accomplishment.actual_accomplishment
+                                    }}</span>
                                     <span v-else>-</span>
                                   </td>
                                   <td class="text-center">
-                                    <!-- Quantity Rating -->
                                     {{ standard.ratings?.quantity_rating || '-' }}
                                   </td>
                                   <td class="text-center">
-                                    <!-- Effectiveness Rating -->
                                     {{ standard.ratings?.effectiveness_rating || '-' }}
                                   </td>
                                   <td class="text-center">
-                                    <!-- Timeliness Rating -->
                                     {{ standard.ratings?.timeliness_rating || '-' }}
                                   </td>
                                   <td class="text-center">
-                                    <!-- Average Rating -->
                                     {{ standard.ratings?.average_rating || '-' }}
                                   </td>
                                   <td class="text-center">
-                                    <!-- Proficiency Result -->
                                     <div class="competency-list">
-                                      <!-- Combined Competencies -->
                                       <template v-if="getAllCompetencies(standard).length > 0">
                                         <div
                                           v-for="(comp, idx) in getAllCompetencies(standard)"
@@ -618,23 +589,20 @@
                                           {{ idx + 1 }}. {{ getProficiencyLevel(comp.level) }}
                                         </div>
                                       </template>
-                                      <template v-else>
-                                        <span class="text-grey-7">Not Applicable</span>
-                                      </template>
+                                      <template v-else
+                                        ><span class="text-grey-7">Not Applicable</span></template
+                                      >
                                     </div>
                                   </td>
                                   <td>
-                                    <!-- Show remarks if available -->
-                                    <template v-if="standard.monthly_ratings?.remarks">
-                                      {{ standard.monthly_ratings.remarks }}
-                                    </template>
+                                    <template v-if="standard.monthly_ratings?.remarks">{{
+                                      standard.monthly_ratings.remarks
+                                    }}</template>
                                     <span v-else>-</span>
                                   </td>
                                 </tr>
                               </template>
                             </template>
-
-                            <!-- Category Average -->
                             <tr>
                               <td colspan="7" class="text-right text-weight-bold">
                                 {{ categoryGroup.category }} Average Rating
@@ -645,15 +613,11 @@
                               <td colspan="2"></td>
                             </tr>
                           </template>
-
-                          <!-- Final Rating -->
                           <tr>
                             <td colspan="7" class="text-right text-weight-bold">
                               Final Average Rating
                             </td>
-                            <td class="text-center text-weight-bold">
-                              {{ finalAverageRating }}
-                            </td>
+                            <td class="text-center text-weight-bold">{{ finalAverageRating }}</td>
                             <td colspan="2"></td>
                           </tr>
                         </template>
@@ -666,7 +630,6 @@
                         </template>
                       </tbody>
                       <tfoot>
-                        <!-- Category Calculations -->
                         <tr>
                           <td></td>
                           <td style="text-align: center; font-weight: bold">Performance Results</td>
@@ -678,9 +641,7 @@
                         <template v-if="categoryCalculations.length">
                           <tr v-for="(calc, index) in categoryCalculations" :key="`calc-${index}`">
                             <td>{{ calc.category }}</td>
-                            <td>
-                              {{ calc.weightedAverage }}
-                            </td>
+                            <td>{{ calc.weightedAverage }}</td>
                             <td
                               v-if="index === 0"
                               :rowspan="categoryCalculations.length + 2"
@@ -710,7 +671,7 @@
                                     margin-top: 15px;
                                   "
                                 >
-                                  Target Calibrated by:
+                                  Accomplishment Validated by:
                                   <span
                                     style="
                                       border-bottom: 1px solid #000;
@@ -739,45 +700,29 @@
                               </div>
                             </td>
                           </tr>
-
-                          <!-- Total Row -->
                           <tr>
                             <td>Total</td>
                             <td colspan="4">{{ finalAverageRating }}</td>
                           </tr>
-
-                          <!-- Adjectival Rating Row -->
                           <tr>
                             <td>ADJECTIVAL RATING</td>
                             <td colspan="4">{{ adjectivalRating }}</td>
                           </tr>
                         </template>
-
-                        <!-- Comments Section -->
                         <tr>
                           <td colspan="10">
                             <strong>Comments and Recommendations for Development Purposes</strong>
                           </td>
                         </tr>
                         <tr>
-                          <td colspan="10">
-                            <div style="height: 50px"></div>
-                          </td>
+                          <td colspan="10"><div style="height: 50px"></div></td>
                         </tr>
-
-                        <!-- Signatures Section - Using nested table for better control -->
                         <tr>
                           <td colspan="10" style="padding: 0">
                             <table
-                              style="
-                                width: 100%;
-                                border-collapse: collapse;
-
-                                table-layout: fixed;
-                              "
+                              style="width: 100%; border-collapse: collapse; table-layout: fixed"
                             >
                               <tbody>
-                                <!-- Header Row -->
                                 <tr>
                                   <td style="width: 30%; text-align: left; padding: 10px 5px">
                                     <strong>Discussed with:</strong>
@@ -798,10 +743,7 @@
                                     <strong>Date:</strong>
                                   </td>
                                 </tr>
-
-                                <!-- Signature Row -->
                                 <tr style="height: 80px">
-                                  <!-- Employee -->
                                   <td
                                     style="
                                       vertical-align: bottom;
@@ -816,16 +758,13 @@
                                           border-bottom: 1px solid #000;
                                           padding-bottom: 2px;
                                         "
+                                        >{{ employee?.label || employee?.name }}</strong
                                       >
-                                        {{ employee?.label || employee?.name }}
-                                      </strong>
                                     </div>
                                     <div style="margin-top: 5px; font-size: 11px">
                                       {{ employee?.position }}
                                     </div>
                                   </td>
-
-                                  <!-- Employee Date -->
                                   <td
                                     style="
                                       vertical-align: bottom;
@@ -845,14 +784,11 @@
                                     </div>
                                     <div style="margin-top: 5px; font-size: 11px">Date</div>
                                   </td>
-
-                                  <!-- Supervisor -->
                                   <td style="vertical-align: top; text-align: center">
                                     <div style="text-align: left; font-size: 10px">
                                       I certify that I discussed my assessment of the performance
                                       with the employee
                                     </div>
-
                                     <strong
                                       style="
                                         display: inline-block;
@@ -861,21 +797,14 @@
                                         min-height: 25px;
                                         margin-top: 35px;
                                       "
+                                      >{{ ipcrAssessorSignatory?.name || '' }}</strong
                                     >
-                                      {{ supervisorySignatory?.name || managerialSignatory?.name }}
-                                    </strong>
-
                                     <div
                                       style="margin-top: 5px; font-size: 11px; padding-bottom: 5px"
                                     >
-                                      {{
-                                        supervisorySignatory?.position ||
-                                        managerialSignatory?.position
-                                      }}
+                                      {{ ipcrAssessorSignatory?.position || '' }}
                                     </div>
                                   </td>
-
-                                  <!-- Supervisor Date -->
                                   <td
                                     style="
                                       vertical-align: bottom;
@@ -895,8 +824,6 @@
                                     </div>
                                     <div style="margin-top: 5px; font-size: 11px">Date</div>
                                   </td>
-
-                                  <!-- Department Head -->
                                   <td
                                     style="
                                       vertical-align: bottom;
@@ -911,16 +838,13 @@
                                           border-bottom: 1px solid #000;
                                           padding-bottom: 2px;
                                         "
+                                        >{{ ipcrFinalRatingSignatory?.name || '' }}</strong
                                       >
-                                        {{ managerialSignatory?.name }}
-                                      </strong>
                                     </div>
                                     <div style="margin-top: 5px; font-size: 11px">
-                                      {{ managerialSignatory?.position }}
+                                      {{ ipcrFinalRatingSignatory?.position || '' }}
                                     </div>
                                   </td>
-
-                                  <!-- Department Date -->
                                   <td
                                     style="
                                       vertical-align: bottom;
@@ -1036,23 +960,19 @@
               </div>
             </q-tab-panel>
 
-            <!-- Performance Standard Tab -->
+            <!-- ===================== PERFORMANCE STANDARD TAB ===================== -->
             <q-tab-panel name="ps">
               <div class="report-content">
                 <div class="header">
                   <img src="/rotp.png" alt="City of Tagum Logo" class="logo" />
                   <img src="/tagumlogo.png" alt="City of Tagum Logo" class="logo" />
-
                   <div class="center-text">
-                    <div class="title">
-                      {{ levels.office || 'N/A' }}
-                    </div>
+                    <div class="title">{{ levels.office || 'N/A' }}</div>
                     <div class="title">
                       PERFORMANCE STANDARDS FOR RATING PERIOD
                       <u>{{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}</u>
                     </div>
                   </div>
-
                   <div
                     style="
                       border: 7px double #bf9000;
@@ -1126,7 +1046,6 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <!-- Group performance standards by category -->
                         <template v-if="groupedPerformanceStandards.length">
                           <template
                             v-for="(
@@ -1134,31 +1053,24 @@
                             ) in groupedPerformanceStandardsByCategory"
                             :key="`cat-${catIndex}`"
                           >
-                            <!-- Category Header Row -->
                             <tr class="category-row">
                               <td colspan="9" class="category-header">
                                 {{ categoryGroup.category }}
                               </td>
                             </tr>
-
-                            <!-- Group by MFO within category -->
                             <template
                               v-for="(mfoGroup, mfoIndex) in categoryGroup.mfos"
                               :key="`mfo-${catIndex}-${mfoIndex}`"
                             >
-                              <!-- MFO Header Row -->
                               <tr class="mfo-row">
                                 <td colspan="9" class="mfo-header">
                                   MFO {{ mfoIndex + 1 }} - {{ mfoGroup.mfo }}
                                 </td>
                               </tr>
-
-                              <!-- Output rows -->
                               <template
                                 v-for="(standard, stdIndex) in mfoGroup.standards"
                                 :key="`std-${catIndex}-${mfoIndex}-${stdIndex}`"
                               >
-                                <!-- If there are standard outcomes, show each rating level as a separate row -->
                                 <template
                                   v-if="
                                     standard.standard_outcomes &&
@@ -1167,51 +1079,44 @@
                                 >
                                   <tr
                                     v-for="(outcome, outcomeIndex) in standard.standard_outcomes"
-                                    :key="`outcome-${index}-${outcomeIndex}`"
+                                    :key="`outcome-${stdIndex}-${outcomeIndex}`"
                                   >
-                                    <!-- Output cell - show only for first row of each standard -->
                                     <td
                                       v-if="outcomeIndex === 0"
                                       :rowspan="standard.standard_outcomes.length"
                                     >
                                       Output {{ stdIndex + 1 }} - {{ standard.mfo }}
                                     </td>
-
-                                    <!-- Required Competency cell - show only for first row -->
                                     <td
                                       v-if="outcomeIndex === 0"
                                       :rowspan="standard.standard_outcomes.length"
                                     >
-                                      <!-- Combined Competencies as numbered list -->
                                       <div class="competency-list">
-                                        <!-- Get all competencies as a flat array -->
                                         <template v-if="getAllCompetencies(standard).length > 0">
                                           <div
                                             v-for="(comp, idx) in getAllCompetencies(standard)"
                                             :key="`comp-${idx}`"
                                             class="competency-item"
                                           >
-                                            {{ idx + 1 }}. {{ comp.description }}
-                                            <span v-if="comp.level" class="text-weight-light">
-                                              ({{ getProficiencyLevel(comp.level) }})
-                                            </span>
+                                            {{ idx + 1 }}. {{ comp.description
+                                            }}<span v-if="comp.level" class="text-weight-light">
+                                              ({{ getProficiencyLevel(comp.level) }})</span
+                                            >
                                           </div>
                                         </template>
-                                        <template v-else>
-                                          <span class="text-grey-7">No competencies specified</span>
-                                        </template>
+                                        <template v-else
+                                          ><span class="text-grey-7"
+                                            >No competencies specified</span
+                                          ></template
+                                        >
                                       </div>
                                     </td>
-
-                                    <!-- Success Indicator cell - show only for first row -->
                                     <td
                                       v-if="outcomeIndex === 0"
                                       :rowspan="standard.standard_outcomes.length"
                                     >
                                       {{ standard.success_indicator }}
                                     </td>
-
-                                    <!-- Rating columns (always shown) -->
                                     <td style="text-align: center">{{ outcome.rating || '-' }}</td>
                                     <td style="text-align: center">
                                       {{ outcome.quantity || '-' }}
@@ -1222,8 +1127,6 @@
                                     <td style="text-align: center">
                                       {{ outcome.timeliness || '-' }}
                                     </td>
-
-                                    <!-- Mode of Verification cell - show only for first row -->
                                     <td
                                       v-if="outcomeIndex === 0"
                                       :rowspan="standard.standard_outcomes.length"
@@ -1231,8 +1134,6 @@
                                     >
                                       {{ standard.required_output || '-' }}
                                     </td>
-
-                                    <!-- Remarks cell - show only for first row -->
                                     <td
                                       v-if="outcomeIndex === 0"
                                       :rowspan="standard.standard_outcomes.length"
@@ -1241,29 +1142,28 @@
                                     </td>
                                   </tr>
                                 </template>
-                                <!-- If no standard outcomes, show a single row -->
                                 <template v-else>
                                   <tr>
                                     <td>Output {{ stdIndex + 1 }} - {{ standard.mfo }}</td>
                                     <td>
-                                      <!-- Combined Competencies as numbered list -->
                                       <div class="competency-list">
-                                        <!-- Get all competencies as a flat array -->
                                         <template v-if="getAllCompetencies(standard).length > 0">
                                           <div
                                             v-for="(comp, idx) in getAllCompetencies(standard)"
                                             :key="`comp-${idx}`"
                                             class="competency-item"
                                           >
-                                            {{ idx + 1 }}. {{ comp.description }}
-                                            <span v-if="comp.level" class="text-weight-light">
-                                              ({{ getProficiencyLevel(comp.level) }})
-                                            </span>
+                                            {{ idx + 1 }}. {{ comp.description
+                                            }}<span v-if="comp.level" class="text-weight-light">
+                                              ({{ getProficiencyLevel(comp.level) }})</span
+                                            >
                                           </div>
                                         </template>
-                                        <template v-else>
-                                          <span class="text-grey-7">No competencies specified</span>
-                                        </template>
+                                        <template v-else
+                                          ><span class="text-grey-7"
+                                            >No competencies specified</span
+                                          ></template
+                                        >
                                       </div>
                                     </td>
                                     <td>{{ standard.success_indicator }}</td>
@@ -1420,16 +1320,13 @@
                                   border-bottom: 1px solid black;
                                   width: 80%;
                                   margin: 0 auto;
-
                                   padding-top: 5px;
                                 "
                               >
-                                {{ supervisorySignatory?.name || managerialSignatory?.name }}
+                                {{ psDiscussantSignatory?.name || '' }}
                               </div>
                               <div style="font-size: 11px; margin-top: 5px">
-                                {{
-                                  supervisorySignatory?.position || managerialSignatory?.position
-                                }}
+                                {{ psDiscussantSignatory?.position || '' }}
                               </div>
                               <div style="font-size: 11px; font-style: italic">
                                 Office Head/Rater
@@ -1451,15 +1348,14 @@
                                   display: inline;
                                   border-bottom: 1px solid black;
                                   width: 80%;
-
                                   margin: 0 auto;
                                   padding-top: 5px;
                                 "
                               >
-                                {{ managerialSignatory?.name }}
+                                {{ psApproverSignatory?.name || '' }}
                               </div>
                               <div style="font-size: 11px; margin-top: 5px">
-                                {{ managerialSignatory?.position }}
+                                {{ psApproverSignatory?.position || managerialSignatory?.position }}
                               </div>
                               <div style="font-size: 11px; font-style: italic">
                                 Office Head/Rater
@@ -1469,23 +1365,22 @@
                         </tbody>
                       </table>
                     </div>
-                    <!-- END SIGNATORY SECTION -->
                   </div>
                 </div>
               </div>
             </q-tab-panel>
 
-            <!-- Monthly Performance Output Tab -->
+            <!-- ===================== MONTHLY PERFORMANCE OUTPUT TAB ===================== -->
             <q-tab-panel name="mpo">
               <div class="report-content">
-                <!-- Loop through each month -->
+                <!-- Has data: render each month -->
                 <template v-if="groupedMonthlyData.length > 0">
                   <div
                     v-for="(monthData, monthIndex) in groupedMonthlyData"
                     :key="`month-${monthIndex}`"
                     :class="{ 'page-break': monthIndex > 0 }"
                   >
-                    <!-- Header for each month -->
+                    <!-- Month Header -->
                     <div class="header-container">
                       <div class="header-text">
                         <div class="padded-text">Republic of the Philippines</div>
@@ -1547,8 +1442,7 @@
                             </tr>
                           </thead>
                           <tbody>
-                            <!-- Group by category and MFO -->
-                            <template v-if="monthData.categories?.length">
+                            <template v-if="monthData.categories?.length > 0">
                               <template
                                 v-for="(categoryGroup, catIndex) in monthData.categories"
                                 :key="`cat-${monthIndex}-${catIndex}`"
@@ -1560,7 +1454,6 @@
                                   </td>
                                 </tr>
 
-                                <!-- Group by MFO -->
                                 <template
                                   v-for="(mfoGroup, mfoIndex) in categoryGroup.mfos"
                                   :key="`mfo-${monthIndex}-${catIndex}-${mfoIndex}`"
@@ -1572,84 +1465,54 @@
                                     </td>
                                   </tr>
 
-                                  <!-- Outputs -->
-                                  <template
+                                  <!-- Output Rows -->
+                                  <tr
                                     v-for="(output, outputIndex) in mfoGroup.outputs"
                                     :key="`output-${monthIndex}-${catIndex}-${mfoIndex}-${outputIndex}`"
                                   >
-                                    <tr>
-                                      <td>
-                                        Output {{ outputIndex + 1 }} - {{ output.outputName }}
-                                      </td>
-
-                                      <!-- Quantity -->
-                                      <td class="text-center">
-                                        {{ output.quantity.week1 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.quantity.week2 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.quantity.week3 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.quantity.week4 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.quantity.week5 }}
-                                      </td>
-
-                                      <td class="text-center total-cell">
-                                        {{ calculateTotal(output.quantity) }}
-                                      </td>
-
-                                      <!-- Effectiveness -->
-                                      <td class="text-center">
-                                        {{ output.effectiveness.week1 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.effectiveness.week2 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.effectiveness.week3 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.effectiveness.week4 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.effectiveness.week5 }}
-                                      </td>
-
-                                      <td class="text-center total-cell">
-                                        {{ calculateTotal(output.effectiveness) }}
-                                      </td>
-
-                                      <!-- Timeliness -->
-                                      <td class="text-center">
-                                        {{ output.timeliness.week1 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.timeliness.week2 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.timeliness.week3 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.timeliness.week4 }}
-                                      </td>
-                                      <td class="text-center">
-                                        {{ output.timeliness.week5 }}
-                                      </td>
-
-                                      <td class="text-center total-cell">
-                                        {{ calculateTotal(output.timeliness) }}
-                                      </td>
-                                    </tr>
-                                  </template>
+                                    <td>Output {{ outputIndex + 1 }} - {{ output.outputName }}</td>
+                                    <!-- Quantity -->
+                                    <td class="text-center">{{ output.quantity.week1 || '' }}</td>
+                                    <td class="text-center">{{ output.quantity.week2 || '' }}</td>
+                                    <td class="text-center">{{ output.quantity.week3 || '' }}</td>
+                                    <td class="text-center">{{ output.quantity.week4 || '' }}</td>
+                                    <td class="text-center">{{ output.quantity.week5 || '' }}</td>
+                                    <td class="text-center total-cell">
+                                      {{ calculateTotal(output.quantity) }}
+                                    </td>
+                                    <!-- Effectiveness -->
+                                    <td class="text-center">
+                                      {{ output.effectiveness.week1 || '' }}
+                                    </td>
+                                    <td class="text-center">
+                                      {{ output.effectiveness.week2 || '' }}
+                                    </td>
+                                    <td class="text-center">
+                                      {{ output.effectiveness.week3 || '' }}
+                                    </td>
+                                    <td class="text-center">
+                                      {{ output.effectiveness.week4 || '' }}
+                                    </td>
+                                    <td class="text-center">
+                                      {{ output.effectiveness.week5 || '' }}
+                                    </td>
+                                    <td class="text-center total-cell">
+                                      {{ calculateTotal(output.effectiveness) }}
+                                    </td>
+                                    <!-- Timeliness -->
+                                    <td class="text-center">{{ output.timeliness.week1 || '' }}</td>
+                                    <td class="text-center">{{ output.timeliness.week2 || '' }}</td>
+                                    <td class="text-center">{{ output.timeliness.week3 || '' }}</td>
+                                    <td class="text-center">{{ output.timeliness.week4 || '' }}</td>
+                                    <td class="text-center">{{ output.timeliness.week5 || '' }}</td>
+                                    <td class="text-center total-cell">
+                                      {{ calculateTotal(output.timeliness) }}
+                                    </td>
+                                  </tr>
                                 </template>
                               </template>
 
-                              <!-- Additional Rows -->
+                              <!-- Attendance section header -->
                               <tr>
                                 <td colspan="13"></td>
                                 <td>Wk 1</td>
@@ -1660,7 +1523,7 @@
                                 <td>TOTAL</td>
                               </tr>
 
-                              <!-- MAN DAY(S) LOST THRU ABSENCE - FIXED with correct colspan -->
+                              <!-- Absences row -->
                               <tr>
                                 <td colspan="13">MAN DAY(S) LOST THRU ABSENCE</td>
                                 <td
@@ -1675,11 +1538,11 @@
                                   :key="week"
                                   style="text-align: center"
                                 >
-                                  {{ attendanceByMonth[monthData.month]?.absents[week] || '' }}
+                                  {{ getMonthAttendance(monthData.month, 'absents', week) }}
                                 </td>
                               </tr>
 
-                              <!-- MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME - FIXED with correct colspan -->
+                              <!-- Tardiness row -->
                               <tr>
                                 <td colspan="13">MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME</td>
                                 <td
@@ -1694,9 +1557,11 @@
                                   :key="week"
                                   style="text-align: center"
                                 >
-                                  {{ attendanceByMonth[monthData.month]?.lates[week] || '' }}
+                                  {{ getMonthAttendance(monthData.month, 'lates', week) }}
                                 </td>
                               </tr>
+
+                              <!-- Remarks -->
                               <tr>
                                 <td colspan="19" style="height: 80px; position: relative">
                                   <div style="position: absolute; top: 4px; left: 4px">
@@ -1705,6 +1570,8 @@
                                 </td>
                               </tr>
                             </template>
+
+                            <!-- No data fallback -->
                             <tr v-else>
                               <td colspan="19" class="text-center text-grey-7">
                                 No data available for {{ monthData.month }}
@@ -1713,14 +1580,13 @@
                           </tbody>
                         </table>
 
-                        <!-- Signature Table - Independent Widths -->
+                        <!-- Signature Table -->
                         <div style="display: flex; padding-bottom: 30px; justify-content: center">
                           <table
                             style="width: 100%; border-collapse: collapse; border: 1px solid #ddd"
                           >
                             <tbody>
                               <tr>
-                                <!-- Employee Declaration -->
                                 <td
                                   style="
                                     width: 35%;
@@ -1732,7 +1598,6 @@
                                 >
                                   Above entries are true & correct:
                                 </td>
-                                <!-- Employee Date -->
                                 <td
                                   style="
                                     width: 15%;
@@ -1744,7 +1609,6 @@
                                 >
                                   Date:
                                 </td>
-                                <!-- Confirmer Title -->
                                 <td
                                   style="
                                     width: 35%;
@@ -1756,7 +1620,6 @@
                                 >
                                   Confirmed:
                                 </td>
-                                <!-- Confirmer Date -->
                                 <td
                                   style="
                                     width: 15%;
@@ -1770,7 +1633,6 @@
                                 </td>
                               </tr>
                               <tr>
-                                <!-- Employee Signature Cell -->
                                 <td
                                   style="
                                     vertical-align: bottom;
@@ -1789,16 +1651,13 @@
                                         width: 90%;
                                         max-width: 250px;
                                       "
+                                      >{{ employee?.label || employee?.name }}</strong
                                     >
-                                      {{ employee?.label || employee?.name }}
-                                    </strong>
                                   </div>
                                   <div style="margin-top: 5px; font-size: 11px">
                                     {{ employee?.position }}
                                   </div>
                                 </td>
-
-                                <!-- Employee Date Cell -->
                                 <td
                                   style="
                                     vertical-align: bottom;
@@ -1822,8 +1681,6 @@
                                   </div>
                                   <div style="margin-top: 5px; font-size: 11px">Date</div>
                                 </td>
-
-                                <!-- Confirmer Signature Cell -->
                                 <td
                                   style="
                                     vertical-align: bottom;
@@ -1842,16 +1699,13 @@
                                         width: 90%;
                                         max-width: 250px;
                                       "
+                                      >{{ mpoConfirmedSignatory?.name || '' }}</strong
                                     >
-                                      {{ managerialSignatory?.name }}
-                                    </strong>
                                   </div>
                                   <div style="margin-top: 5px; font-size: 11px">
-                                    {{ managerialSignatory?.position }}
+                                    {{ mpoConfirmedSignatory?.position || '' }}
                                   </div>
                                 </td>
-
-                                <!-- Confirmer Date Cell -->
                                 <td
                                   style="
                                     vertical-align: bottom;
@@ -1883,13 +1737,16 @@
                     </div>
                   </div>
                 </template>
+
+                <!-- No data fallback -->
                 <div v-else class="q-pa-xl text-center text-grey-7">
-                  No monthly performance data available
+                  <q-icon name="info" size="3em" color="grey-5" />
+                  <div class="q-mt-md">No monthly performance data available</div>
                 </div>
               </div>
             </q-tab-panel>
 
-            <!-- Summary Monthly Performance Report Tab -->
+            <!-- ===================== SUMMARY MONTHLY PERFORMANCE REPORT TAB ===================== -->
             <q-tab-panel name="smpr">
               <div class="report-content">
                 <div class="header-container">
@@ -1933,27 +1790,6 @@
                           <th colspan="8" class="text-center">TIMELINESS</th>
                         </tr>
                         <tr>
-                          <!-- First Semester (Jan-Jun) -->
-                          <template v-if="isFirstSemester">
-                            <th>Jan</th>
-                            <th>Feb</th>
-                            <th>Mar</th>
-                            <th>Apr</th>
-                            <th>May</th>
-                            <th>Jun</th>
-                          </template>
-                          <!-- Second Semester (Jul-Dec) -->
-                          <template v-else>
-                            <th>Jul</th>
-                            <th>Aug</th>
-                            <th>Sep</th>
-                            <th>Oct</th>
-                            <th>Nov</th>
-                            <th>Dec</th>
-                          </template>
-                          <th>TOTAL</th>
-                          <th>RATING</th>
-                          <!-- Effectiveness columns -->
                           <template v-if="isFirstSemester">
                             <th>Jan</th>
                             <th>Feb</th>
@@ -1972,7 +1808,24 @@
                           </template>
                           <th>TOTAL</th>
                           <th>RATING</th>
-                          <!-- Timeliness columns -->
+                          <template v-if="isFirstSemester">
+                            <th>Jan</th>
+                            <th>Feb</th>
+                            <th>Mar</th>
+                            <th>Apr</th>
+                            <th>May</th>
+                            <th>Jun</th>
+                          </template>
+                          <template v-else>
+                            <th>Jul</th>
+                            <th>Aug</th>
+                            <th>Sep</th>
+                            <th>Oct</th>
+                            <th>Nov</th>
+                            <th>Dec</th>
+                          </template>
+                          <th>TOTAL</th>
+                          <th>RATING</th>
                           <template v-if="isFirstSemester">
                             <th>Jan</th>
                             <th>Feb</th>
@@ -1999,191 +1852,169 @@
                             v-for="(categoryData, catIndex) in processedSummaryData"
                             :key="`cat-${catIndex}`"
                           >
-                            <!-- Category Header -->
                             <tr>
                               <td colspan="25" class="category-header">
                                 {{ categoryData.category }}
                               </td>
                             </tr>
-
                             <template
                               v-for="(mfoData, mfoIndex) in categoryData.mfos"
                               :key="`mfo-${catIndex}-${mfoIndex}`"
                             >
-                              <!-- MFO Header -->
                               <tr>
                                 <td colspan="25" class="mfo-header">
                                   MFO {{ mfoIndex + 1 }} - {{ mfoData.mfo }}
                                 </td>
                               </tr>
-
-                              <!-- Output Rows -->
-                              <template
+                              <tr
                                 v-for="(output, outputIndex) in mfoData.outputs"
                                 :key="`output-${catIndex}-${mfoIndex}-${outputIndex}`"
                               >
-                                <tr>
-                                  <td>Output {{ outputIndex + 1 }}: {{ output.outputName }}</td>
-
-                                  <!-- Quantity Data - First Semester -->
-                                  <template v-if="isFirstSemester">
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.jan || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.feb || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.mar || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.apr || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.may || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.jun || '0' }}
-                                    </td>
-                                  </template>
-                                  <!-- Quantity Data - Second Semester -->
-                                  <template v-else>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.jul || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.aug || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.sep || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.oct || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.nov || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.quantity.dec || '0' }}
-                                    </td>
-                                  </template>
-
-                                  <!-- TOTAL column -->
-                                  <td class="text-center total-cell">
-                                    {{ output.totals.quantity.total || '0' }}
+                                <td>Output {{ outputIndex + 1 }}: {{ output.outputName }}</td>
+                                <template v-if="isFirstSemester">
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.jan || '0' }}
                                   </td>
-                                  <!-- RATING column -->
-                                  <td class="text-center total-cell">
-                                    {{ output.totals.quantity.rating || '0' }}
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.feb || '0' }}
                                   </td>
-
-                                  <!-- Effectiveness Data - First Semester -->
-                                  <template v-if="isFirstSemester">
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.jan || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.feb || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.mar || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.apr || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.may || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.jun || '0' }}
-                                    </td>
-                                  </template>
-                                  <!-- Effectiveness Data - Second Semester -->
-                                  <template v-else>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.jul || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.aug || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.sep || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.oct || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.nov || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.effectiveness.dec || '0' }}
-                                    </td>
-                                  </template>
-
-                                  <td class="text-center total-cell">
-                                    {{ output.totals.effectiveness.total || '0' }}
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.mar || '0' }}
                                   </td>
-                                  <td class="text-center total-cell">
-                                    {{ output.totals.effectiveness.rating || '0' }}
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.apr || '0' }}
                                   </td>
-
-                                  <!-- Timeliness Data - First Semester -->
-                                  <template v-if="isFirstSemester">
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.jan || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.feb || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.mar || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.apr || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.may || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.jun || '0' }}
-                                    </td>
-                                  </template>
-                                  <!-- Timeliness Data - Second Semester -->
-                                  <template v-else>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.jul || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.aug || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.sep || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.oct || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.nov || '0' }}
-                                    </td>
-                                    <td class="text-center">
-                                      {{ output.monthly.timeliness.dec || '0' }}
-                                    </td>
-                                  </template>
-
-                                  <td class="text-center total-cell">
-                                    {{ output.totals.timeliness.total || '0' }}
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.may || '0' }}
                                   </td>
-                                  <td class="text-center total-cell">
-                                    {{ output.totals.timeliness.rating || '0' }}
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.jun || '0' }}
                                   </td>
-                                </tr>
-                              </template>
+                                </template>
+                                <template v-else>
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.jul || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.aug || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.sep || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.oct || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.nov || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.quantity.dec || '0' }}
+                                  </td>
+                                </template>
+                                <td class="text-center total-cell">
+                                  {{ output.totals.quantity.total || '0' }}
+                                </td>
+                                <td class="text-center total-cell">
+                                  {{ output.totals.quantity.rating || '0' }}
+                                </td>
+                                <template v-if="isFirstSemester">
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.jan || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.feb || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.mar || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.apr || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.may || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.jun || '0' }}
+                                  </td>
+                                </template>
+                                <template v-else>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.jul || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.aug || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.sep || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.oct || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.nov || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.effectiveness.dec || '0' }}
+                                  </td>
+                                </template>
+                                <td class="text-center total-cell">
+                                  {{ output.totals.effectiveness.total || '0' }}
+                                </td>
+                                <td class="text-center total-cell">
+                                  {{ output.totals.effectiveness.rating || '0' }}
+                                </td>
+                                <template v-if="isFirstSemester">
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.jan || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.feb || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.mar || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.apr || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.may || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.jun || '0' }}
+                                  </td>
+                                </template>
+                                <template v-else>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.jul || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.aug || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.sep || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.oct || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.nov || '0' }}
+                                  </td>
+                                  <td class="text-center">
+                                    {{ output.monthly.timeliness.dec || '0' }}
+                                  </td>
+                                </template>
+                                <td class="text-center total-cell">
+                                  {{ output.totals.timeliness.total || '0' }}
+                                </td>
+                                <td class="text-center total-cell">
+                                  {{ output.totals.timeliness.rating || '0' }}
+                                </td>
+                              </tr>
                             </template>
 
-                            <!-- Attendance Data Row -->
+                            <!-- Attendance Header -->
                             <tr>
                               <td colspan="18"></td>
-                              <!-- Month columns based on semester -->
                               <template v-if="isFirstSemester">
                                 <td>Jan</td>
                                 <td>Feb</td>
@@ -2203,7 +2034,7 @@
                               <td>TOTAL</td>
                             </tr>
 
-                            <!-- MAN DAY(S) LOST THRU ABSENCE - Dynamic attendance data -->
+                            <!-- Absences -->
                             <tr>
                               <td colspan="18">MAN DAY(S) LOST THRU ABSENCE</td>
                               <template v-if="isFirstSemester">
@@ -2249,7 +2080,7 @@
                               <td class="text-center">{{ getTotalAbsences() }}</td>
                             </tr>
 
-                            <!-- MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME - Dynamic attendance data -->
+                            <!-- Lates -->
                             <tr>
                               <td colspan="18">MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME</td>
                               <template v-if="isFirstSemester">
@@ -2295,7 +2126,7 @@
                               <td class="text-center">{{ getTotalLates() }}</td>
                             </tr>
 
-                            <!-- OBSERVATIONS/REMARKS -->
+                            <!-- Remarks -->
                             <tr>
                               <td colspan="25" style="height: 80px; position: relative">
                                 <div style="position: absolute; top: 4px; left: 4px">
@@ -2306,20 +2137,223 @@
                           </template>
                         </template>
                         <tr v-else>
-                          <td :colspan="getDynamicColspan" class="text-center text-grey-7">
-                            <template v-if="ipcrStore.loadingSummaryMonthlyPerformance">
-                              <q-spinner color="green-8" size="1.5em" />
-                              <div class="q-mt-sm">Loading summary data...</div>
-                            </template>
-                            <template v-else> No summary performance data available </template>
+                          <td colspan="25" class="text-center text-grey-7">
+                            No summary performance data available
                           </td>
                         </tr>
                       </tbody>
                     </table>
-                  </div>
 
-                  <!-- Signature Section - Keep as is -->
-                  <!-- ... rest of the signature section ... -->
+                    <!-- Signature Table - SMPR -->
+                    <div style="display: flex; padding-bottom: 30px; justify-content: center">
+                      <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd">
+                        <tbody>
+                          <tr>
+                            <!-- First Signatory (Employee/Ratee) -->
+                            <td
+                              style="
+                                width: 25%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                position: relative;
+                              "
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Above entries are true & correct:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0; text-align: center">
+                                  <div style="margin: 0 auto; width: 90%; max-width: 200px">
+                                    <strong>{{ employee?.label || employee?.name }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- First Date -->
+                            <td
+                              style="
+                                width: 8.33%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                text-align: center;
+                              "
+                              rowspan="2"
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Date:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0">
+                                  <div
+                                    style="
+                                      border-bottom: 1px solid #000;
+                                      padding-bottom: 2px;
+                                      width: 90%;
+                                      margin: 0 auto;
+                                    "
+                                  >
+                                    {{ formatDate(new Date()) }}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Second Signatory (Supervisor - Confirmed by) -->
+                            <td
+                              style="
+                                width: 25%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Confirmed:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0; text-align: center">
+                                  <div style="margin: 0 auto; width: 90%; max-width: 200px">
+                                    <strong>{{ mpoConfirmedSignatory?.name || '' }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Second Date -->
+                            <td
+                              style="
+                                width: 8.33%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                text-align: center;
+                              "
+                              rowspan="2"
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Date:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0">
+                                  <div
+                                    style="
+                                      border-bottom: 1px solid #000;
+                                      padding-bottom: 2px;
+                                      width: 90%;
+                                      margin: 0 auto;
+                                    "
+                                  >
+                                    {{ formatDate(new Date()) }}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Third Signatory (Department Head - Approved for Final Rating) -->
+                            <td
+                              style="
+                                width: 25%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Approved for Final Rating:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0; text-align: center">
+                                  <div style="margin: 0 auto; width: 90%; max-width: 200px">
+                                    <strong>{{
+                                      mpoApprovedFinalRatingSignatory?.name || ''
+                                    }}</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <!-- Third Date -->
+                            <td
+                              style="
+                                width: 8.33%;
+                                vertical-align: top;
+                                padding: 8px;
+                                border: 1px solid #ddd;
+                                text-align: center;
+                              "
+                              rowspan="2"
+                            >
+                              <div style="height: 120px; display: flex; flex-direction: column">
+                                <div style="flex-shrink: 0; padding-bottom: 10px; font-size: 11px">
+                                  Date:
+                                </div>
+                                <div style="flex: 1"></div>
+                                <div style="flex-shrink: 0">
+                                  <div
+                                    style="
+                                      border-bottom: 1px solid #000;
+                                      padding-bottom: 2px;
+                                      width: 90%;
+                                      margin: 0 auto;
+                                    "
+                                  >
+                                    {{ formatDate(new Date()) }}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+
+                          <!-- Row for position labels -->
+                          <tr>
+                            <!-- Employee Position -->
+                            <td
+                              style="
+                                text-align: center;
+                                font-size: 11px;
+                                padding: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              {{ employee?.position }}
+                            </td>
+
+                            <!-- Supervisor Position -->
+                            <td
+                              style="
+                                text-align: center;
+                                font-size: 11px;
+                                padding: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              {{ mpoConfirmedSignatory?.position || '' }}
+                            </td>
+
+                            <!-- Department Head Position -->
+                            <td
+                              style="
+                                text-align: center;
+                                font-size: 11px;
+                                padding: 5px;
+                                border: 1px solid #ddd;
+                              "
+                            >
+                              {{ mpoApprovedFinalRatingSignatory?.position || '' }}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
             </q-tab-panel>
@@ -2566,6 +2600,75 @@ const selectedStatus = ref(null)
 
 const attendanceModalRef = ref(null)
 const existingAttendanceData = ref({})
+
+// ── Signatory Helpers ──────────────────────────────────────────────────────
+
+/**
+ * Get signatory from the employee data based on the signatory type
+ */
+const getSignatory = (signatoryType) => {
+  if (!props.employee?.signatories) return null
+
+  const signatoryMap = {
+    // IPCR Signatories
+    ipcrReviewedBy: 'ipcr_reviewed_by_control_no',
+    ipcrApprovedBy: 'ipcr_approved_by_control_no',
+    ipcrAssessedBy: 'ipcr_assessed_by_control_no',
+    ipcrFinalRatingBy: 'ipcr_final_rating_by_control_no',
+
+    // Performance Standard Signatories
+    psDiscussedBy: 'performance_standard_discussed_by_control_no',
+    psApprovedBy: 'performance_standard_approved_by_control_no',
+
+    // Monthly Performance Output Signatories
+    mpoConfirmedBy: 'por_confirmed_control_no',
+    mpoApprovedFinalRatingBy: 'por_approved_final_rating_control_no',
+  }
+
+  const key = signatoryMap[signatoryType]
+  if (!key) return null
+
+  const signatory = props.employee.signatories[key]
+  if (!signatory) return null
+
+  return {
+    name: signatory.name || signatory.ControlNo || '_______________________',
+    position: signatory.job_title || signatory.rank || 'Office Head/Rater',
+  }
+}
+
+// ── Computed: Signatories ──────────────────────────────────────────────────
+
+// IPCR Signatories
+const ipcrReviewerSignatory = computed(
+  () => getSignatory('ipcrReviewedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+const ipcrApproverSignatory = computed(
+  () => getSignatory('ipcrApprovedBy') || props.managerialSignatory,
+)
+const ipcrAssessorSignatory = computed(
+  () => getSignatory('ipcrAssessedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+const ipcrFinalRatingSignatory = computed(
+  () => getSignatory('ipcrFinalRatingBy') || props.managerialSignatory,
+)
+
+// Performance Standard Signatories
+const psDiscussantSignatory = computed(
+  () => getSignatory('psDiscussedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+const psApproverSignatory = computed(
+  () => getSignatory('psApprovedBy') || props.managerialSignatory,
+)
+
+// Monthly Performance Output Signatories
+const mpoConfirmedSignatory = computed(
+  () => getSignatory('mpoConfirmedBy') || props.supervisorySignatory || props.managerialSignatory,
+)
+
+const mpoApprovedFinalRatingSignatory = computed(
+  () => getSignatory('mpoApprovedFinalRatingBy') || props.managerialSignatory,
+)
 
 // Status helpers
 const { getStatusColor, getStatusTextColor, getStatusIcon } = useIPCRStatus()
@@ -3119,11 +3222,42 @@ const getTotalLates = () => {
   return total.toString()
 }
 
-// Dynamic colspan based on semester
-const getDynamicColspan = computed(() => {
-  // Base columns + 6 months + 2 for each section (total, rating)
-  return 25 // This is fixed for both semesters now
-})
+// ─── Monthly Attendance Helper ───────────────────────────────────────────
+
+/**
+ * Get attendance data for a specific month (used in MPO tab)
+ */
+const getMonthAttendance = (monthName, type, weekKey) => {
+  if (!ipcrStore.monthlyPerformance?.attendance) {
+    return '0'
+  }
+
+  // Find attendance record for this month
+  const attendanceRecord = ipcrStore.monthlyPerformance.attendance.find(
+    (item) => item.month === monthName,
+  )
+
+  if (!attendanceRecord) {
+    return '0'
+  }
+
+  // Get the appropriate data (absents or lates)
+  const data = attendanceRecord[type]
+  if (!data || !data.length) {
+    return '0'
+  }
+
+  // Get the value for the specific week
+  const weekData = data[0]
+
+  // Handle total fields
+  if (weekKey === 'total_absent' || weekKey === 'total_late') {
+    return weekData[weekKey] || '0'
+  }
+
+  // Handle individual weeks (week1, week2, etc.)
+  return weekData[weekKey] || '0'
+}
 
 const targetPeriodId = computed(() => {
   // Try multiple sources for target period ID
@@ -3358,20 +3492,9 @@ const confirmApprove = async () => {
       return
     }
 
-    await monitorStore.ipcrApproveStatus({
-      targetperiodId: targetPeriodId,
-      status: selectedStatus.value,
-    })
+    await monitorStore.updateIPCRStatus(targetPeriodId, selectedStatus.value)
 
     emit('status-updated', { ...props.employee, ipcrStatus: selectedStatus.value })
-
-    $q.notify({
-      type: 'positive',
-      message: 'Status updated successfully!',
-      caption: `Changed to "${selectedStatus.value}"`,
-      position: 'top',
-      timeout: 2000,
-    })
 
     closeStatusModal()
     emit('close')
@@ -3456,6 +3579,115 @@ const getAllCompetencies = (standard) => {
   }
 
   return competencies
+}
+
+// ─── Status Button Helpers ──────────────────────────────────────────────────
+
+/**
+ * Determine if the status button should be shown
+ */
+const shouldShowStatusButton = (status) => {
+  if (!status) return false
+  const s = status.toLowerCase().trim()
+
+  // ONLY show for Reviewed Target and Reviewed Accomplishment
+  return s === 'reviewed target' || s === 'reviewed accomplishment'
+}
+
+/**
+ * Get the button label based on current status
+ */
+const getStatusButtonLabel = (status) => {
+  if (!status) return 'Update Status'
+  const s = status.toLowerCase().trim()
+
+  const labelMap = {
+    draft: 'Discuss Target',
+    'discussed target': 'Approve Target',
+    'returned target': 'Update & Resubmit',
+    'calibrated/validated target': 'Submit Accomplishment',
+    'reviewed target': 'Review Accomplishment',
+    'prevalidated accomplishment': 'Validate Accomplishment',
+    'assessed accomplishment': 'Final Rating',
+    'returned accomplishment': 'Update & Resubmit',
+    'calibrated/validated accomplishment': 'Final Approval',
+  }
+
+  return labelMap[s] || 'Update Status'
+}
+
+/**
+ * Get the button color based on current status
+ */
+const getStatusButtonColor = (status) => {
+  if (!status) return 'orange'
+  const s = status.toLowerCase().trim()
+
+  const colorMap = {
+    draft: 'blue-7',
+    'discussed target': 'cyan-7',
+    'returned target': 'red-6',
+    'calibrated/validated target': 'green-7',
+    'reviewed target': 'purple-6',
+    'prevalidated accomplishment': 'orange-7',
+    'assessed accomplishment': 'teal-7',
+    'returned accomplishment': 'red-6',
+    'calibrated/validated accomplishment': 'green-9',
+  }
+
+  return colorMap[s] || 'orange'
+}
+
+/**
+ * Get tooltip text for the button
+ */
+const getStatusButtonTooltip = (status) => {
+  if (!status) return 'Update the status of this target period'
+  const s = status.toLowerCase().trim()
+
+  const tooltipMap = {
+    draft: 'Discuss the targets with the employee',
+    'discussed target': 'Approve the targets for this employee',
+    'returned target': 'Update the targets and resubmit for approval',
+    'calibrated/validated target': 'Submit the accomplishment report',
+    'reviewed target': 'Review the accomplishment report',
+    'prevalidated accomplishment': 'Validate the accomplishment report',
+    'assessed accomplishment': 'Submit the final rating',
+    'returned accomplishment': 'Update the accomplishment and resubmit',
+    'calibrated/validated accomplishment': 'Approve the final rating',
+  }
+
+  return tooltipMap[s] || 'Update the status of this target period'
+}
+
+/**
+ * Determine if the status button should be disabled
+ */
+const isStatusActionDisabled = (status) => {
+  if (!status) return false
+  const s = status.toLowerCase().trim()
+
+  // Disable for completed/final statuses
+  const disabledStatuses = ['approved accomplishment', 'completed', 'closed', 'finalized']
+
+  if (disabledStatuses.some((ds) => s.includes(ds))) {
+    return true
+  }
+
+  // Enable for these statuses
+  const enabledStatuses = [
+    'draft',
+    'discussed target',
+    'returned target',
+    'calibrated/validated target',
+    'reviewed target',
+    'prevalidated accomplishment',
+    'assessed accomplishment',
+    'returned accomplishment',
+    'calibrated/validated accomplishment',
+  ]
+
+  return !enabledStatuses.includes(s)
 }
 
 const formatCategoryName = (category) => {
@@ -3672,124 +3904,50 @@ const createSvgPlaceholder = (text, width = 80, height = 80) => {
   return `data:image/svg+xml;base64,${btoa(svg)}`
 }
 
-// PDF Printing Functions
+// ── PDF Print ────────────────────────────────────────────────────────────────
 const printPdf = async () => {
   if (!hasData.value) {
-    $q.notify({
-      type: 'warning',
-      message: 'No data available to print',
-      position: 'top',
-    })
+    $q.notify({ type: 'warning', message: 'No data available to print', position: 'top' })
     return
   }
-
   isPrinting.value = true
-
   try {
     const pdfMakeInstance = await initPdfMake()
-
-    if (!pdfMakeInstance) {
-      throw new Error('Failed to load pdfMake')
-    }
-
-    // Load images as base64 data URLs
-    let tagumLogoBase64 = null
-    let rotpLogoBase64 = null
-    let stamp1 = null
-    let stamp2 = null
-    let pmt1 = null
-    let pmt2 = null
-    let pmt3 = null
-
+    let tagumLogoBase64, rotpLogoBase64, stamp1, stamp2, pmt1, pmt2, pmt3
     try {
-      // Try to load images from your server/public folder
-      tagumLogoBase64 = await convertImageToBase64('/tagumlogo.png')
-      rotpLogoBase64 = await convertImageToBase64('/rotp.png')
-      stamp1 = await convertImageToBase64('/ipcrstamp.png')
-      stamp2 = await convertImageToBase64('/accstamp.png')
-      pmt1 = await convertImageToBase64('/pmtstamp.png')
-      pmt2 = await convertImageToBase64('/pmt2stamp.png')
-      pmt3 = await convertImageToBase64('/pmt3.png')
-    } catch (error) {
-      console.warn('Could not load images, using SVG placeholders:', error)
-      // Use SVG placeholders as fallback
-      tagumLogoBase64 = createSvgPlaceholder('TAGUM LOGO')
-      rotpLogoBase64 = createSvgPlaceholder('ROTP LOGO')
-      stamp1 = createSvgPlaceholder('STAMP LOGO')
-      stamp2 = createSvgPlaceholder('STAMP LOGO')
-      pmt1 = createSvgPlaceholder('STAMP LOGO')
-      pmt2 = createSvgPlaceholder('STAMP LOGO')
-      pmt3 = createSvgPlaceholder('STAMP LOGO')
-
-      $q.notify({
-        type: 'warning',
-        message: 'Using placeholder images for PDF',
-        position: 'top',
-        timeout: 2000,
-      })
+      ;[tagumLogoBase64, rotpLogoBase64, stamp1, stamp2, pmt1, pmt2, pmt3] = await Promise.all([
+        convertImageToBase64('/tagumlogo.png'),
+        convertImageToBase64('/rotp.png'),
+        convertImageToBase64('/ipcrstamp.png'),
+        convertImageToBase64('/accstamp.png'),
+        convertImageToBase64('/pmtstamp.png'),
+        convertImageToBase64('/pmt2stamp.png'),
+        convertImageToBase64('/pmt3.png'),
+      ])
+    } catch {
+      tagumLogoBase64 = createSvgPlaceholder('TAGUM')
+      rotpLogoBase64 = createSvgPlaceholder('ROTP')
+      stamp1 = stamp2 = pmt1 = pmt2 = pmt3 = createSvgPlaceholder('STAMP')
     }
 
-    // Generate content based on active tab
-    let docDefinition
-    switch (activeTab.value) {
-      case 'ipcr':
-        docDefinition = generateIpcrPdfContent(
-          tagumLogoBase64,
-          rotpLogoBase64,
-          stamp1,
-          stamp2,
-          pmt1,
-          pmt2,
-          pmt3,
-        )
-        break
-      case 'ps':
-        docDefinition = generatePerformanceStandardPdfContent(tagumLogoBase64, rotpLogoBase64, pmt3)
-        break
-      case 'mpo':
-        docDefinition = generateMonthlyPerformancePdfContent(
-          tagumLogoBase64,
-          rotpLogoBase64,
-          stamp1,
-          stamp2,
-          pmt1,
-          pmt2,
-          pmt3,
-        )
-        break
-      case 'smpr':
-        docDefinition = generateSummaryMonthlyPdfContent(
-          tagumLogoBase64,
-          rotpLogoBase64,
-          stamp1,
-          stamp2,
-          pmt1,
-          pmt2,
-          pmt3,
-        )
-        break
-      default:
-        docDefinition = generateIpcrPdfContent(
-          tagumLogoBase64,
-          rotpLogoBase64,
-          stamp1,
-          stamp2,
-          pmt1,
-          pmt2,
-          pmt3,
-        )
+    const generators = {
+      ipcr: generateIpcrPdfContent,
+      ps: generatePerformanceStandardPdfContent,
+      mpo: generateMonthlyPerformancePdfContent,
+      smpr: generateSummaryMonthlyPdfContent,
     }
-
-    // Open in new window
-    pdfMakeInstance.createPdf(docDefinition).open()
-
-    $q.notify({
-      type: 'positive',
-      message: 'PDF generated successfully',
-      position: 'top',
-    })
+    const docDef = (generators[activeTab.value] || generators.ipcr)(
+      tagumLogoBase64,
+      rotpLogoBase64,
+      stamp1,
+      stamp2,
+      pmt1,
+      pmt2,
+      pmt3,
+    )
+    pdfMakeInstance.createPdf(docDef).open()
+    $q.notify({ type: 'positive', message: 'PDF generated successfully', position: 'top' })
   } catch (error) {
-    console.error('Error generating PDF:', error)
     $q.notify({
       type: 'negative',
       message: `Failed to generate PDF: ${error.message}`,
@@ -3800,2077 +3958,25 @@ const printPdf = async () => {
   }
 }
 
-// Summary Monthly Performance Report PDF Content
-const generateSummaryMonthlyPdfContent = () => {
-  const employeeName = props.employee?.label || props.employee?.name || 'N/A'
-  const position = props.employee?.position || 'N/A'
-  const office = props.levels?.office || 'N/A'
-  const division = props.levels?.division || 'N/A'
-  const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
-
-  // Determine if first or second semester
-  const isFirstSem = isFirstSemester.value
-
-  // Define month columns based on semester
-  const monthColumns = isFirstSem
-    ? [
-        { key: 'jan', label: 'Jan' },
-        { key: 'feb', label: 'Feb' },
-        { key: 'mar', label: 'Mar' },
-        { key: 'apr', label: 'Apr' },
-        { key: 'may', label: 'May' },
-        { key: 'jun', label: 'Jun' },
-      ]
-    : [
-        { key: 'jul', label: 'Jul' },
-        { key: 'aug', label: 'Aug' },
-        { key: 'sep', label: 'Sep' },
-        { key: 'oct', label: 'Oct' },
-        { key: 'nov', label: 'Nov' },
-        { key: 'dec', label: 'Dec' },
-      ]
-
-  const content = []
-
-  // Header - Centered and properly spaced
-  content.push({
-    stack: [
-      {
-        text: 'Republic of the Philippines',
-        alignment: 'center',
-        fontSize: 9,
-        margin: [0, 5, 0, 2],
-      },
-      {
-        text: 'Province of Davao del Norte',
-        alignment: 'center',
-        fontSize: 9,
-        margin: [0, 0, 0, 2],
-      },
-      {
-        text: 'CITY OF TAGUM',
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        margin: [0, 0, 0, 5],
-      },
-      {
-        text: 'SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT',
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        margin: [0, 0, 0, 5],
-      },
-      {
-        text: period,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        margin: [0, 0, 0, 15],
-      },
-    ],
-    margin: [0, 0, 0, 10],
-  })
-
-  // Employee Info Table - Fixed layout
-  content.push({
-    table: {
-      widths: ['25%', '25%', '25%', '25%'],
-      body: [
-        [
-          { text: `EMPLOYEE: ${employeeName}`, fontSize: 9, border: true, margin: [40, 2, 2, 2] },
-          { text: `POSITION: ${position}`, fontSize: 9, border: true, margin: [0, 2, 2, 2] },
-          { text: `OFFICE: ${office}`, fontSize: 9, border: true, margin: [20, 2, 2, 2] },
-          { text: `DIVISION: ${division}`, fontSize: 9, border: true, margin: [40, 2, 2, 2] },
-        ],
-      ],
-    },
-    layout: {
-      hLineWidth: () => 0,
-      vLineWidth: () => 0,
-    },
-    margin: [0, 0, 0, 10],
-  })
-
-  // Main Performance Table - Dynamic based on semester
-  if (processedSummaryData.value.length > 0) {
-    const columnWidths = [
-      '15%', // Column 0: MAJOR FINAL OUTPUT
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*', // Quantity (6 months + total + rating)
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*', // Effectiveness (6 months + total + rating)
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*',
-      '*', // Timeliness (6 months + total + rating)
-    ]
-
-    const tableBody = []
-
-    // Header rows
-    tableBody.push(
-      [
-        {
-          text: 'MAJOR FINAL OUTPUT',
-          rowSpan: 3,
-          alignment: 'center',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          border: [true, true, true, true],
-        },
-        {
-          text: 'ACCOMPLISHMENT',
-          colSpan: 24,
-          alignment: 'center',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          border: [true, true, true, true],
-        },
-        ...Array(23).fill({}),
-      ],
-      [
-        {},
-        {
-          text: 'QUANTITY',
-          colSpan: 8,
-          alignment: 'center',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          border: [true, true, true, true],
-        },
-        ...Array(7).fill({}),
-        {
-          text: 'EFFECTIVENESS',
-          colSpan: 8,
-          alignment: 'center',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          border: [true, true, true, true],
-        },
-        ...Array(7).fill({}),
-        {
-          text: 'TIMELINESS',
-          colSpan: 8,
-          alignment: 'center',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          border: [true, true, true, true],
-        },
-        ...Array(7).fill({}),
-      ],
-      [
-        {},
-        // Quantity columns - DYNAMIC
-        ...monthColumns.map((month) => ({
-          text: month.label,
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        })),
-        {
-          text: 'TOTAL',
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        },
-        {
-          text: 'RATING',
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        },
-        // Effectiveness columns - DYNAMIC
-        ...monthColumns.map((month) => ({
-          text: month.label,
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        })),
-        {
-          text: 'TOTAL',
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        },
-        {
-          text: 'RATING',
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        },
-        // Timeliness columns - DYNAMIC
-        ...monthColumns.map((month) => ({
-          text: month.label,
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        })),
-        {
-          text: 'TOTAL',
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        },
-        {
-          text: 'RATING',
-          fontSize: 8,
-          alignment: 'center',
-          bold: true,
-          border: [true, true, true, true],
-        },
-      ],
-    )
-
-    // Add data rows
-    processedSummaryData.value.forEach((categoryData) => {
-      // Category Header
-      tableBody.push([
-        {
-          text: categoryData.category,
-          colSpan: 25,
-          fontSize: 8,
-          bold: true,
-          fillColor: '#92d050',
-          alignment: 'left',
-          border: [true, true, true, true],
-        },
-        ...Array(24).fill({}),
-      ])
-
-      categoryData.mfos.forEach((mfoData, mfoIndex) => {
-        // MFO Header
-        tableBody.push([
-          {
-            text: `MFO ${mfoIndex + 1} - ${mfoData.mfo}`,
-            colSpan: 25,
-            fontSize: 8,
-            bold: true,
-            fillColor: '#aeaaaa',
-            alignment: 'left',
-            border: [true, true, true, true],
-          },
-          ...Array(24).fill({}),
-        ])
-
-        mfoData.outputs.forEach((output, outputIndex) => {
-          const row = []
-
-          // Output name
-          row.push({
-            text: `Output ${outputIndex + 1}: ${output.outputName}`,
-            fontSize: 8,
-            border: [true, true, true, true],
-          })
-
-          // Quantity data - DYNAMIC
-          monthColumns.forEach((month) => {
-            const value = output.monthly.quantity[month.key]
-            row.push({
-              text: value !== undefined && value !== null ? value.toString() : '-',
-              fontSize: 7,
-              alignment: 'center',
-              border: [true, true, true, true],
-            })
-          })
-          row.push({
-            text: output.totals.quantity.total?.toString() || '0.00',
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
-          })
-          row.push({
-            text: output.totals.quantity.rating?.toString() || '0.00',
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
-          })
-
-          // Effectiveness data - DYNAMIC
-          monthColumns.forEach((month) => {
-            const value = output.monthly.effectiveness[month.key]
-            row.push({
-              text: value !== undefined && value !== null ? value.toString() : '-',
-              fontSize: 7,
-              alignment: 'center',
-              border: [true, true, true, true],
-            })
-          })
-          row.push({
-            text: output.totals.effectiveness.total?.toString() || '0.00',
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
-          })
-          row.push({
-            text: output.totals.effectiveness.rating?.toString() || '0.00',
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
-          })
-
-          // Timeliness data - DYNAMIC
-          monthColumns.forEach((month) => {
-            const value = output.monthly.timeliness[month.key]
-            row.push({
-              text: value !== undefined && value !== null ? value.toString() : '-',
-              fontSize: 7,
-              alignment: 'center',
-              border: [true, true, true, true],
-            })
-          })
-          row.push({
-            text: output.totals.timeliness.total?.toString() || '0.00',
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
-          })
-          row.push({
-            text: output.totals.timeliness.rating?.toString() || '0.00',
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
-          })
-
-          tableBody.push(row)
-        })
-      })
-    })
-
-    // Additional rows at the bottom - DYNAMIC month headers
-    tableBody.push(
-      [
-        { text: '', colSpan: 18, border: [true, true, true, true] },
-        ...Array(17).fill({}),
-        ...monthColumns.map((month) => ({
-          text: month.label,
-          fontSize: 8,
-          alignment: 'center',
-          border: [true, true, true, true],
-        })),
-        { text: 'TOTAL', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-      ],
-      [
-        {
-          text: 'MAN DAY(S) LOST THRU ABSENCE',
-          colSpan: 18,
-          fontSize: 8,
-          bold: true,
-          border: [true, true, true, true],
-        },
-        ...Array(17).fill({}),
-        // DYNAMIC absence values
-        ...monthColumns.map((month) => ({
-          text: getSemesterAttendance('absents', month.key),
-          fontSize: 8,
-          alignment: 'center',
-          border: [true, true, true, true],
-        })),
-        {
-          text: getTotalAbsences(),
-          fontSize: 8,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-      ],
-      [
-        {
-          text: 'MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME',
-          colSpan: 18,
-          fontSize: 8,
-          bold: true,
-          border: [true, true, true, true],
-        },
-        ...Array(17).fill({}),
-        // DYNAMIC late values
-        ...monthColumns.map((month) => ({
-          text: getSemesterAttendance('lates', month.key),
-          fontSize: 8,
-          alignment: 'center',
-          border: [true, true, true, true],
-        })),
-        {
-          text: getTotalLates(),
-          fontSize: 8,
-          alignment: 'center',
-          border: [true, true, true, true],
-        },
-      ],
-      [
-        {
-          text: 'OBSERVATIONS/REMARKS',
-          colSpan: 25,
-          fontSize: 8,
-          bold: true,
-          border: [true, true, true, true],
-          margin: [0, 0, 0, 15],
-        },
-        ...Array(24).fill({}),
-      ],
-    )
-
-    // Add the main table to content
-    content.push({
-      table: {
-        headerRows: 3,
-        widths: columnWidths,
-        body: tableBody,
-      },
-      layout: {
-        hLineWidth: (i) => (i < 3 ? 1 : 0.5),
-        vLineWidth: () => 0.5,
-        hLineColor: () => '#000000',
-        vLineColor: () => '#000000',
-        paddingLeft: () => 2,
-        paddingRight: () => 2,
-        paddingTop: () => 2,
-        paddingBottom: () => 2,
-      },
-      margin: [0, 0, 0, 0],
-    })
-  } else {
-    content.push({
-      text: 'No summary performance data available',
-      alignment: 'center',
-      italics: true,
-      margin: [0, 20, 0, 20],
-    })
-  }
-
-  // Signature Section - Simplified with proper spacing
-  content.push({
-    table: {
-      widths: ['25%', '8.33%', '25%', '8.33%', '25%', '8.33%'],
-      body: [
-        [
-          {
-            text: 'Above entries are true & correct:',
-            fontSize: 8,
-            margin: [0, 0, 0, 5],
-            alignment: 'center',
-          },
-          {
-            text: 'Date:',
-            fontSize: 8,
-            margin: [0, 0, 0, 5],
-            alignment: 'center',
-          },
-          {
-            text: 'Confirmed:',
-            fontSize: 9,
-            margin: [0, 0, 0, 5],
-            alignment: 'center',
-          },
-          {
-            text: 'Date:',
-            fontSize: 8,
-            margin: [0, 0, 0, 5],
-            alignment: 'center',
-          },
-          {
-            text: 'Approved for Final Rating:',
-            fontSize: 9,
-            margin: [0, 0, 0, 5],
-            alignment: 'center',
-          },
-          {
-            text: 'Date:',
-            fontSize: 8,
-            margin: [0, 0, 0, 5],
-            alignment: 'center',
-          },
-        ],
-        [
-          {
-            text: employeeName,
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            margin: [0, 20, 0, 2],
-          },
-          {
-            text: formatDate(new Date()),
-            fontSize: 8,
-            alignment: 'center',
-            margin: [0, 20, 0, 2],
-          },
-          {
-            text:
-              props.supervisorySignatory?.name ||
-              props.managerialSignatory?.name ||
-              '___________________',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            margin: [0, 20, 0, 2],
-          },
-          {
-            text: formatDate(new Date()),
-            fontSize: 8,
-            alignment: 'center',
-            margin: [0, 20, 0, 2],
-          },
-          {
-            text: props.managerialSignatory?.name || '___________________',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            margin: [0, 20, 0, 2],
-          },
-          {
-            text: formatDate(new Date()),
-            fontSize: 8,
-            alignment: 'center',
-            margin: [0, 20, 0, 2],
-          },
-        ],
-        [
-          {
-            text: position,
-            fontSize: 8,
-            alignment: 'center',
-          },
-          {
-            text: '',
-            fontSize: 8,
-            alignment: 'center',
-          },
-          {
-            text:
-              props.supervisorySignatory?.position ||
-              props.managerialSignatory?.position ||
-              'Supervisor',
-            fontSize: 8,
-            alignment: 'center',
-          },
-          {
-            text: '',
-            fontSize: 8,
-            alignment: 'center',
-          },
-          {
-            text: props.managerialSignatory?.position || 'Department Head',
-            fontSize: 8,
-            alignment: 'center',
-          },
-          {
-            text: '',
-            fontSize: 8,
-            alignment: 'center',
-          },
-        ],
-      ],
-    },
-    layout: {
-      hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
-      hLineColor: () => '#000000',
-      vLineColor: () => '#000000',
-    },
-    margin: [0, 10, 0, 0],
-  })
-
-  return {
-    pageSize: 'LEGAL',
-    pageOrientation: 'landscape',
-    pageMargins: [36, 36, 36, 36],
-    content: content,
-    defaultStyle: {
-      fontSize: 10,
-    },
-    compress: true,
-  }
-}
-const generateMonthlyPerformancePdfContent = () => {
-  const employeeName = props.employee?.label || props.employee?.name || 'N/A'
-  const position = props.employee?.position || 'N/A'
-  const office = props.levels?.office || 'N/A'
-  const division = props.levels?.division || 'N/A'
-
-  const content = []
-
-  if (groupedMonthlyData.value.length > 0) {
-    groupedMonthlyData.value.forEach((monthData, monthIndex) => {
-      // Page break for months after the first
-      if (monthIndex > 0) {
-        content.push({ text: '', pageBreak: 'before' })
-      }
-
-      // Header
-      content.push({
-        stack: [
-          {
-            text: 'Republic of the Philippines',
-            alignment: 'center',
-            fontSize: 10,
-            margin: [0, 5, 0, 2],
-          },
-          {
-            text: 'Province of Davao del Norte',
-            alignment: 'center',
-            fontSize: 10,
-            margin: [0, 0, 0, 2],
-          },
-          {
-            text: 'CITY OF TAGUM',
-            alignment: 'center',
-            fontSize: 10,
-            bold: true,
-            margin: [0, 0, 0, 5],
-          },
-          {
-            columns: [
-              { width: '*', text: '' },
-              {
-                width: 300,
-                table: {
-                  widths: ['*'],
-                  body: [
-                    [
-                      {
-                        text: 'MONTHLY PERFORMANCE OUTPUT REPORT',
-                        alignment: 'center',
-                        fontSize: 10,
-                        bold: true,
-                        margin: [10, 5, 10, 5],
-                      },
-                    ],
-                  ],
-                },
-                layout: {
-                  hLineWidth: () => 1,
-                  vLineWidth: () => 1,
-                  hLineColor: () => '#000000',
-                  vLineColor: () => '#000000',
-                },
-              },
-              { width: '*', text: '' },
-            ],
-          },
-        ],
-        margin: [0, 0, 0, 10],
-      })
-
-      // Employee Info
-      content.push({
-        table: {
-          widths: ['25%', '25%', '25%', '25%'],
-          body: [
-            [
-              { text: `EMPLOYEE: ${employeeName}`, fontSize: 9, bold: true },
-              { text: `OFFICE: ${office}`, fontSize: 9, bold: true },
-              { text: `DIVISION: ${division}`, fontSize: 9, bold: true },
-              { text: `MONTH: ${monthData.month}`, fontSize: 9, bold: true },
-            ],
-          ],
-        },
-        layout: 'noBorders',
-        margin: [0, 0, 0, 5],
-      })
-
-      // Monthly Performance Table
-      if (monthData.categories?.length) {
-        const tableBody = []
-
-        const columnWidths = [
-          '15%', // MAJOR FINAL OUTPUT
-          '*',
-          '*',
-          '*',
-          '*',
-          '*',
-          '*', // Quantity (5 weeks + total)
-          '*',
-          '*',
-          '*',
-          '*',
-          '*',
-          '*', // Effectiveness (5 weeks + total)
-          '*',
-          '*',
-          '*',
-          '*',
-          '*',
-          '*', // Timeliness (5 weeks + total)
-        ]
-
-        // Header rows (same as before)
-        tableBody.push([
-          {
-            text: 'MAJOR FINAL OUTPUT',
-            rowSpan: 3,
-            alignment: 'center',
-            fontSize: 9,
-            bold: true,
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'ACCOMPLISHMENTS',
-            colSpan: 18,
-            alignment: 'center',
-            fontSize: 9,
-            bold: true,
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-        ])
-
-        tableBody.push([
-          {},
-          {
-            text: 'QUANTITY',
-            colSpan: 6,
-            alignment: 'center',
-            fontSize: 9,
-            bold: true,
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            text: 'EFFECTIVENESS',
-            colSpan: 6,
-            alignment: 'center',
-            fontSize: 9,
-            bold: true,
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            text: 'TIMELINESS',
-            colSpan: 6,
-            alignment: 'center',
-            fontSize: 9,
-            bold: true,
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-        ])
-
-        tableBody.push([
-          {},
-          {
-            text: 'Wk 1',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 2',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 3',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 4',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 5',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'TOTAL',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 1',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 2',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 3',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 4',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 5',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'TOTAL',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 1',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 2',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 3',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 4',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'Wk 5',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-          {
-            text: 'TOTAL',
-            fontSize: 8,
-            bold: true,
-            alignment: 'center',
-            fillColor: '#f2f2f2',
-            border: [true, true, true, true],
-          },
-        ])
-
-        // Add data rows (category, MFO, outputs)
-        monthData.categories.forEach((category) => {
-          tableBody.push([
-            {
-              text: category.category,
-              colSpan: 19,
-              alignment: 'left',
-              fontSize: 9,
-              bold: true,
-              fillColor: '#92d050',
-              border: [true, true, true, true],
-            },
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-            {},
-          ])
-
-          category.mfos.forEach((mfoGroup, mfoIndex) => {
-            tableBody.push([
-              {
-                text: `MFO ${mfoIndex + 1} - ${mfoGroup.mfo}`,
-                colSpan: 19,
-                alignment: 'left',
-                fontSize: 9,
-                bold: true,
-                fillColor: '#aeaaaa',
-                border: [true, true, true, true],
-              },
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-              {},
-            ])
-
-            mfoGroup.outputs.forEach((output, outputIndex) => {
-              const row = [
-                {
-                  text: `Output ${outputIndex + 1} - ${output.outputName}`,
-                  fontSize: 8,
-                  border: [true, true, true, true],
-                },
-              ]
-
-              // Quantity columns
-              ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((week) => {
-                const value = output.quantity[week]
-                const displayValue = value === 0 || value === '0' ? '0' : value || ''
-                row.push({
-                  text: displayValue,
-                  fontSize: 8,
-                  alignment: 'center',
-                  border: [true, true, true, true],
-                })
-              })
-              row.push({
-                text: output.quantityTotal || '0.00',
-                fontSize: 8,
-                alignment: 'center',
-                bold: true,
-                fillColor: '#d9d9d9',
-                border: [true, true, true, true],
-              })
-
-              // Effectiveness columns
-              ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((week) => {
-                const value = output.effectiveness[week]
-                const displayValue = value === 0 || value === '0' ? '0' : value || ''
-                row.push({
-                  text: displayValue,
-                  fontSize: 8,
-                  alignment: 'center',
-                  border: [true, true, true, true],
-                })
-              })
-              row.push({
-                text: output.effectivenessTotal || '0.00',
-                fontSize: 8,
-                alignment: 'center',
-                bold: true,
-                fillColor: '#d9d9d9',
-                border: [true, true, true, true],
-              })
-
-              // Timeliness columns
-              ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((week) => {
-                const value = output.timeliness[week]
-                const displayValue = value === 0 || value === '0' ? '0' : value || ''
-                row.push({
-                  text: displayValue,
-                  fontSize: 8,
-                  alignment: 'center',
-                  border: [true, true, true, true],
-                })
-              })
-              row.push({
-                text: output.timelinessTotal || '0.00',
-                fontSize: 8,
-                alignment: 'center',
-                bold: true,
-                fillColor: '#d9d9d9',
-                border: [true, true, true, true],
-              })
-
-              tableBody.push(row)
-            })
-          })
-        })
-
-        // ============ FIXED: Get attendance data for this specific month ============
-        const monthAttendance = attendanceByMonth.value[monthData.month] || {
-          absents: {},
-          lates: {},
-        }
-
-        // Additional Rows header
-        tableBody.push([
-          { text: '', colSpan: 13, border: [true, true, true, true] },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          { text: 'Wk 1', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-          { text: 'Wk 2', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-          { text: 'Wk 3', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-          { text: 'Wk 4', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-          { text: 'Wk 5', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-          { text: 'TOTAL', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-        ])
-
-        // MAN DAY(S) LOST THRU ABSENCE - with actual data
-        tableBody.push([
-          {
-            text: 'MAN DAY(S) LOST THRU ABSENCE',
-            colSpan: 13,
-            fontSize: 8,
-            bold: true,
-            border: [true, true, true, true],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            text: monthAttendance.absents.week1 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.absents.week2 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.absents.week3 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.absents.week4 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.absents.week5 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.absents.total_absent || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-        ])
-
-        // MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME - with actual data
-        tableBody.push([
-          {
-            text: 'MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME',
-            colSpan: 13,
-            fontSize: 8,
-            bold: true,
-            border: [true, true, true, true],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {
-            text: monthAttendance.lates.week1 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.lates.week2 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.lates.week3 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.lates.week4 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.lates.week5 || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-          {
-            text: monthAttendance.lates.total_late || '0',
-            fontSize: 8,
-            alignment: 'center',
-            border: [true, true, true, true],
-          },
-        ])
-
-        // Observations/Remarks row
-        tableBody.push([
-          {
-            text: 'OBSERVATIONS/REMARKS',
-            colSpan: 19,
-            fontSize: 8,
-            bold: true,
-            border: [true, true, true, true],
-            margin: [0, 0, 0, 30],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-        ])
-
-        // Add the table
-        content.push({
-          table: {
-            headerRows: 3,
-            widths: columnWidths,
-            body: tableBody,
-          },
-          layout: {
-            hLineWidth: (i) => (i === 0 || i === 3 ? 1 : 0.5),
-            vLineWidth: () => 0.5,
-            hLineColor: () => '#000000',
-            vLineColor: () => '#000000',
-          },
-          margin: [0, 10, 0, 0],
-        })
-      } else {
-        content.push({
-          text: `No data available for ${monthData.month}`,
-          alignment: 'center',
-          italics: true,
-          margin: [0, 20, 0, 0],
-        })
-      }
-
-      // Signature Table (same as before)
-      const signatureTable = {
-        table: {
-          widths: ['35%', '15%', '35%', '15%'],
-          body: [
-            [
-              {
-                text: 'Above entries are true & correct:',
-                fontSize: 8,
-                border: [true, true, true, true],
-              },
-              {
-                text: 'Date:',
-                fontSize: 8,
-                border: [true, true, true, true],
-              },
-              {
-                text: 'Confirmed:',
-                fontSize: 8,
-                border: [true, true, true, true],
-              },
-              {
-                text: 'Date:',
-                fontSize: 8,
-                border: [true, true, true, true],
-              },
-            ],
-            [
-              {
-                text: employeeName,
-                fontSize: 8,
-                bold: true,
-                alignment: 'center',
-                margin: [0, 30, 0, 0],
-                border: [true, true, true, true],
-              },
-              {
-                text: formatDate(new Date()),
-                fontSize: 8,
-                alignment: 'center',
-                margin: [0, 30, 0, 0],
-                border: [true, true, true, true],
-              },
-              {
-                text: props.managerialSignatory?.name || '___________________',
-                fontSize: 8,
-                bold: true,
-                alignment: 'center',
-                margin: [0, 30, 0, 0],
-                border: [true, true, true, true],
-              },
-              {
-                text: formatDate(new Date()),
-                fontSize: 8,
-                alignment: 'center',
-                margin: [0, 30, 0, 0],
-                border: [true, true, true, true],
-              },
-            ],
-            [
-              {
-                text: position,
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-              },
-              {
-                text: '',
-                border: [true, true, true, true],
-              },
-              {
-                text: props.managerialSignatory?.position || 'Department Head',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-              },
-              {
-                text: '',
-                border: [true, true, true, true],
-              },
-            ],
-          ],
-        },
-        layout: {
-          hLineWidth: () => 0.5,
-          vLineWidth: () => 0.5,
-          hLineColor: () => '#000000',
-          vLineColor: () => '#000000',
-        },
-        margin: [0, 20, 0, 0],
-      }
-
-      content.push(signatureTable)
-    })
-  } else {
-    content.push({
-      text: 'No monthly performance data available',
-      alignment: 'center',
-      italics: true,
-      margin: [0, 100, 0, 0],
-    })
-  }
-
-  return {
-    pageSize: 'LEGAL',
-    pageOrientation: 'landscape',
-    pageMargins: [36, 36, 36, 36],
-    content: content,
-    defaultStyle: {
-      fontSize: 10,
-    },
-  }
-}
-
-// Performance Standard PDF Content
-const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, pmt3) => {
-  const employeeName = props.employee?.label || props.employee?.name || 'N/A'
-  const position = props.employee?.position || 'N/A'
-  const office = props.levels?.office || 'N/A'
-  const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
-
-  const content = []
-
-  // Header with logos
-  content.push({
-    columns: [
-      {
-        width: '10%',
-        stack: rotpLogoBase64
-          ? [
-              {
-                image: rotpLogoBase64,
-                width: 50,
-                alignment: 'center',
-                margin: [0, 0, 0, 10],
-              },
-            ]
-          : [
-              {
-                text: 'ROTP LOGO',
-                alignment: 'center',
-                italics: true,
-                margin: [0, 20, 0, 10],
-              },
-            ],
-      },
-      {
-        width: '10%',
-        stack: tagumLogoBase64
-          ? [
-              {
-                image: tagumLogoBase64,
-                width: 55,
-                alignment: 'center',
-                margin: [0, 0, 0, 10],
-              },
-            ]
-          : [
-              {
-                text: 'TAGUM LOGO',
-                alignment: 'center',
-                italics: true,
-                margin: [0, 20, 0, 10],
-              },
-            ],
-      },
-      {
-        width: '60%',
-        stack: [
-          {
-            text: office,
-            style: 'reportTitle',
-            alignment: 'center',
-            margin: [0, 20, 0, 5],
-          },
-          {
-            text: [
-              { text: 'PERFORMANCE STANDARDS FOR RATING PERIOD ', style: 'reportTitle' },
-              { text: period, style: 'reportTitle', decoration: 'underline' },
-            ],
-            alignment: 'center',
-            margin: [0, 0, 0, 10],
-          },
-        ],
-      },
-
-      {
-        width: '20%',
-        stack: pmt3
-          ? [
-              {
-                image: pmt3,
-                width: 180,
-                alignment: 'center',
-                margin: [0, 0, 0, 10],
-              },
-            ]
-          : [
-              {
-                text: 'STAMP LOGO',
-                alignment: 'center',
-                italics: true,
-                margin: [0, 0, 0, 10],
-              },
-            ],
-      },
-    ],
-    margin: [0, 0, 0, 0],
-  })
-
-  // Employee Info Table
-  const infoTable = {
-    table: {
-      widths: ['50%', '50%'],
-      body: [
-        [
-          { text: `Employee: ${employeeName}`, fontSize: 10 },
-          { text: `Position: ${position}`, fontSize: 10 },
-        ],
-      ],
-    },
-    layout: 'noBorders',
-    margin: [0, 10, 0, 0],
-  }
-
-  content.push(infoTable)
-
-  // Main Performance Standards Table
-  if (groupedPerformanceStandardsByCategory.value.length > 0) {
-    const tableBody = [
-      // Header row
-      [
-        {
-          text: 'MAJOR FINAL OUTPUT (MFO)',
-          fontSize: 9,
-          bold: true,
-          fillColor: '#f2f2f2',
-          alignment: 'center',
-        },
-        {
-          text: 'REQUIRED COMPETENCY',
-          fontSize: 9,
-          bold: true,
-          fillColor: '#f2f2f2',
-          alignment: 'center',
-        },
-        {
-          text: 'SUCCESS INDICATOR',
-          fontSize: 9,
-          bold: true,
-          fillColor: '#f2f2f2',
-          alignment: 'center',
-        },
-        { text: 'RATING', fontSize: 9, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
-        {
-          text: 'Q\n(Quantity)',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          alignment: 'center',
-        },
-        {
-          text: 'E\n(Effectiveness)',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          alignment: 'center',
-        },
-        {
-          text: 'T\n(Timeliness)',
-          fontSize: 8,
-          bold: true,
-          fillColor: '#f2f2f2',
-          alignment: 'center',
-        },
-        {
-          text: 'Mode of Verification',
-          fontSize: 9,
-          bold: true,
-          fillColor: '#f2f2f2',
-          alignment: 'center',
-        },
-        { text: 'Remarks', fontSize: 9, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
-      ],
-    ]
-
-    // Add data with category and MFO headers
-    groupedPerformanceStandardsByCategory.value.forEach((categoryGroup) => {
-      // Category Header Row
-      tableBody.push([
-        {
-          text: categoryGroup.category,
-          colSpan: 9,
-          alignment: 'left',
-          fontSize: 10,
-          bold: true,
-          fillColor: '#dbdbdb', // Grey color for category
-          border: [true, true, true, true],
-        },
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-      ])
-
-      categoryGroup.mfos.forEach((mfoGroup, mfoIndex) => {
-        // MFO Header Row
-        tableBody.push([
-          {
-            text: `MFO ${mfoIndex + 1} - ${mfoGroup.mfo}`,
-            colSpan: 9,
-            alignment: 'left',
-            fontSize: 10,
-            bold: true,
-            fillColor: '#dbdbdb', // Lighter grey for MFO
-            border: [true, true, true, true],
-          },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-        ])
-
-        mfoGroup.standards.forEach((standard, stdIndex) => {
-          const competencies = getAllCompetencies(standard)
-          let competencyText = ''
-          if (competencies.length > 0) {
-            competencies.forEach((comp, idx) => {
-              competencyText += `${idx + 1}. ${comp.description}`
-              if (comp.level) {
-                competencyText += ` (${getProficiencyLevel(comp.level)})`
-              }
-              competencyText += '\n'
-            })
-          } else {
-            competencyText = 'No competencies specified'
-          }
-
-          if (standard.standard_outcomes && standard.standard_outcomes.length > 0) {
-            standard.standard_outcomes.forEach((outcome, outcomeIndex) => {
-              const row = []
-
-              if (outcomeIndex === 0) {
-                row.push(
-                  {
-                    text: `Output ${stdIndex + 1} - ${standard.mfo}`,
-                    fontSize: 9,
-                    rowSpan: standard.standard_outcomes.length,
-                    border: [true, true, true, true],
-                  },
-                  {
-                    text: competencyText,
-                    fontSize: 8,
-                    rowSpan: standard.standard_outcomes.length,
-                    border: [true, true, true, true],
-                  },
-                  {
-                    text: standard.success_indicator,
-                    fontSize: 9,
-                    rowSpan: standard.standard_outcomes.length,
-                    border: [true, true, true, true],
-                  },
-                )
-              } else {
-                row.push({}, {}, {})
-              }
-
-              row.push(
-                {
-                  text: outcome.rating || '-',
-                  fontSize: 8,
-                  alignment: 'center',
-                  border: [true, true, true, true],
-                },
-                {
-                  text: outcome.quantity || '-',
-                  fontSize: 8,
-                  alignment: 'center',
-                  border: [true, true, true, true],
-                },
-                {
-                  text: outcome.effectiveness || '-',
-                  fontSize: 8,
-                  alignment: 'center',
-                  border: [true, true, true, true],
-                },
-                {
-                  text: outcome.timeliness || '-',
-                  fontSize: 8,
-                  alignment: 'center',
-                  border: [true, true, true, true],
-                },
-              )
-
-              if (outcomeIndex === 0) {
-                row.push(
-                  {
-                    text: standard.required_output || '-',
-                    fontSize: 9,
-                    rowSpan: standard.standard_outcomes.length,
-                    alignment: 'center',
-                    border: [true, true, true, true],
-                  },
-                  {
-                    text: standard.remarks || '-',
-                    fontSize: 9,
-                    rowSpan: standard.standard_outcomes.length,
-                    border: [true, true, true, true],
-                  },
-                )
-              } else {
-                row.push({}, {})
-              }
-
-              tableBody.push(row)
-            })
-          } else {
-            tableBody.push([
-              {
-                text: `Output ${stdIndex + 1} - ${standard.mfo}`,
-                fontSize: 9,
-                border: [true, true, true, true],
-              },
-              {
-                text: competencyText,
-                fontSize: 8,
-                border: [true, true, true, true],
-              },
-              {
-                text: standard.success_indicator,
-                fontSize: 9,
-                border: [true, true, true, true],
-              },
-              {
-                text: '-',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-              },
-              {
-                text: '-',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-              },
-              {
-                text: '-',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-              },
-              {
-                text: '-',
-                fontSize: 8,
-                alignment: 'center',
-                border: [true, true, true, true],
-              },
-              {
-                text: standard.required_output || '-',
-                fontSize: 9,
-                alignment: 'center',
-                border: [true, true, true, true],
-              },
-              {
-                text: standard.remarks || '-',
-                fontSize: 9,
-                border: [true, true, true, true],
-              },
-            ])
-          }
-        })
-      })
-    })
-
-    content.push({
-      table: {
-        headerRows: 1,
-        widths: ['15%', '19%', '15%', '6%', '7%', '7%', '7%', '12%', '12%'],
-        body: tableBody,
-      },
-      layout: {
-        hLineWidth: () => 0.5,
-        vLineWidth: () => 0.5,
-        hLineColor: () => '#000000',
-        vLineColor: () => '#000000',
-        fillColor: (rowIndex, node, columnIndex) => {
-          // Apply grey background to category and MFO rows
-          if (rowIndex > 0) {
-            const cell = node.table.body[rowIndex][columnIndex]
-            if (cell.fillColor) {
-              return cell.fillColor
-            }
-          }
-          return null
-        },
-      },
-      margin: [0, 0, 0, 20],
-    })
-  } else {
-    content.push({
-      text: 'No performance standard data',
-      alignment: 'center',
-      italics: true,
-      margin: [0, 20, 0, 20],
-    })
-  }
-
-  // ... rest of the PDF content (proficiency table and signatures) remains the same
-  // Proficiency Levels table
-  const proficiencyBody = [
-    [
-      {
-        text: 'Proficiency Levels of Competency:',
-        colSpan: 2,
-        bold: true,
-        alignment: 'center',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-      {},
-    ],
-    [
-      {
-        text: 'Basic',
-        bold: true,
-        alignment: 'center',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'Understands basic principles; Can perform task with assistance or direction',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-    ],
-    [
-      {
-        text: 'Advanced',
-        bold: true,
-        alignment: 'center',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'Performs routine task with reliable results; Works with minimal supervision',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-    ],
-    [
-      {
-        text: 'Intermediate',
-        bold: true,
-        alignment: 'center',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'Performs complex and multiple tasks; Can coach and teach others',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-    ],
-    [
-      {
-        text: 'Superior',
-        bold: true,
-        alignment: 'center',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'Considered as an expert in this task; Can describe, teach and lead others',
-        fontSize: 9,
-        border: [true, true, true, true],
-      },
-    ],
-  ]
-
-  content.push({
-    table: {
-      widths: ['25%', '75%'],
-      body: proficiencyBody,
-    },
-    layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
-      hLineColor: () => '#000000',
-      vLineColor: () => '#000000',
-    },
-    margin: [150, 20, 150, 20],
-  })
-
-  // Signature Section
-  const signatureContent = {
-    table: {
-      widths: ['33%', '34%', '33%'],
-      body: [
-        // Header row
-        [
-          {
-            text: 'Conformed:',
-            fontSize: 9,
-            bold: true,
-            alignment: 'left',
-            border: [false, false, false, false],
-          },
-          {
-            text: 'Discussed With:',
-            fontSize: 9,
-            bold: true,
-            alignment: 'left',
-            border: [false, false, false, false],
-          },
-          {
-            text: 'Approved by:',
-            fontSize: 9,
-            bold: true,
-            alignment: 'left',
-            border: [false, false, false, false],
-          },
-        ],
-        // Signature row
-        [
-          {
-            text: employeeName,
-            fontSize: 9,
-            bold: true,
-            decoration: 'underline',
-            alignment: 'center',
-            margin: [0, 40, 0, 0],
-          },
-          {
-            text:
-              props.supervisorySignatory?.name ||
-              props.managerialSignatory?.name ||
-              '___________________',
-            fontSize: 9,
-            bold: true,
-            decoration: 'underline',
-            alignment: 'center',
-            margin: [0, 40, 0, 0],
-            border: [false, false, false, true],
-          },
-          {
-            text: props.managerialSignatory?.name || '___________________',
-            fontSize: 9,
-            bold: true,
-            decoration: 'underline',
-            alignment: 'center',
-            margin: [0, 40, 0, 0],
-            border: [false, false, false, true],
-          },
-        ],
-        // Position row
-        [
-          {
-            text: position,
-            fontSize: 9,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-          {
-            text:
-              props.supervisorySignatory?.position ||
-              props.managerialSignatory?.position ||
-              'Office Head/Rater',
-            fontSize: 9,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-          {
-            text: props.managerialSignatory?.position || 'Office Head/Rater',
-            fontSize: 9,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-        ],
-        // Label row
-        [
-          {
-            text: 'Employee/Ratee',
-            fontSize: 9,
-            italics: true,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-          {
-            text: 'Office Head/Rater',
-            fontSize: 9,
-            italics: true,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-          {
-            text: 'Office Head/Rater',
-            fontSize: 9,
-            italics: true,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-        ],
-      ],
-    },
-    layout: 'noBorders',
-    margin: [0, 0, 0, 0],
-  }
-
-  content.push(signatureContent)
-
-  return {
-    pageSize: 'LEGAL',
-    pageOrientation: 'landscape',
-    pageMargins: [20, 30, 20, 30],
-    content: content,
-    styles: {
-      reportTitle: {
-        fontSize: 11,
-        bold: true,
-      },
-    },
-    defaultStyle: {
-      fontSize: 10,
-    },
-  }
-}
-
+// ── PDF Content Generators ───────────────────────────────────────────────────
 const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2, pmt1, pmt2) => {
   const employeeName = props.employee?.label || props.employee?.name || 'N/A'
   const position = props.employee?.position || 'N/A'
   const office =
     currentData.value?.office || props.employee?.office || props.levels?.office || 'N/A'
   const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
-
   const content = []
 
-  // Header with logos - CENTERED
   content.push({
     columns: [
-      {
-        width: '*',
-        text: '',
-      },
+      { width: '*', text: '' },
       {
         width: 'auto',
         columns: [
           {
             width: 'auto',
             stack: tagumLogoBase64
-              ? [
-                  {
-                    image: tagumLogoBase64,
-                    width: 55,
-                    alignment: 'center',
-                    margin: [0, 20, 0, 10],
-                  },
-                ]
+              ? [{ image: tagumLogoBase64, width: 55, alignment: 'center', margin: [0, 20, 0, 10] }]
               : [
                   {
                     text: 'TAGUM LOGO',
@@ -5889,46 +3995,23 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
                 alignment: 'center',
                 margin: [0, 20, 0, 5],
               },
-              {
-                text: office,
-                style: 'reportTitle',
-                alignment: 'center',
-                margin: [0, 0, 0, 10],
-              },
+              { text: office, style: 'reportTitle', alignment: 'center', margin: [0, 0, 0, 10] },
             ],
             margin: [20, 0, 20, 0],
           },
           {
             width: 'auto',
             stack: rotpLogoBase64
-              ? [
-                  {
-                    image: rotpLogoBase64,
-                    width: 55,
-                    alignment: 'center',
-                    margin: [0, 20, 0, 10],
-                  },
-                ]
-              : [
-                  {
-                    text: 'ROTP LOGO',
-                    alignment: 'center',
-                    italics: true,
-                    margin: [0, 20, 0, 10],
-                  },
-                ],
+              ? [{ image: rotpLogoBase64, width: 55, alignment: 'center', margin: [0, 20, 0, 10] }]
+              : [{ text: 'ROTP LOGO', alignment: 'center', italics: true, margin: [0, 20, 0, 10] }],
           },
         ],
         alignment: 'center',
       },
-      {
-        width: '*',
-        text: '',
-      },
+      { width: '*', text: '' },
     ],
   })
 
-  // Commitment signature section
   content.push({
     columns: [
       {
@@ -5941,17 +4024,14 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
               { text: ', of ' },
               { text: office, decoration: 'underline', bold: true },
               {
-                text: ', commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measure for the period ',
+                text: `, commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measure for the period `,
               },
               { text: period, bold: true },
               { text: '.' },
             ],
             fontSize: 9,
             lineHeight: 1.5,
-            margin: [0, 0, 0, 0],
           },
-
-          // Employee signature
           {
             columns: [
               { width: '80%', text: '' },
@@ -5966,22 +4046,12 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
                     alignment: 'center',
                     margin: [0, 20, 0, 2],
                   },
-                  {
-                    text: position,
-                    fontSize: 8,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 2],
-                  },
-                  {
-                    text: `Date: ${formatDate(new Date())}`,
-                    fontSize: 9,
-                    alignment: 'center',
-                  },
+                  { text: position, fontSize: 8, alignment: 'center', margin: [0, 0, 0, 2] },
+                  { text: `Date: ${formatDate(new Date())}`, fontSize: 9, alignment: 'center' },
                 ],
               },
             ],
           },
-          // Signatures table
           {
             table: {
               widths: ['50%', '50%'],
@@ -6023,11 +4093,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
                         alignment: 'center',
                         margin: [0, 0, 0, 2],
                       },
-                      {
-                        text: `Date: ${formatDate(new Date())}`,
-                        fontSize: 9,
-                        alignment: 'center',
-                      },
+                      { text: `Date: ${formatDate(new Date())}`, fontSize: 9, alignment: 'center' },
                     ],
                     border: [true, true, true, true],
                   },
@@ -6047,11 +4113,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
                         alignment: 'center',
                         margin: [0, 0, 0, 2],
                       },
-                      {
-                        text: `Date: ${formatDate(new Date())}`,
-                        fontSize: 9,
-                        alignment: 'center',
-                      },
+                      { text: `Date: ${formatDate(new Date())}`, fontSize: 9, alignment: 'center' },
                     ],
                     border: [true, true, true, true],
                   },
@@ -6071,44 +4133,12 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
       {
         width: '25%',
         stack: [
-          {
-            stack: stamp1
-              ? [
-                  {
-                    image: stamp1,
-                    width: 180,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 10],
-                  },
-                ]
-              : [
-                  {
-                    text: 'STAMP LOGO',
-                    alignment: 'center',
-                    italics: true,
-                    margin: [0, 0, 0, 10],
-                  },
-                ],
-          },
-          {
-            stack: stamp2
-              ? [
-                  {
-                    image: stamp2,
-                    width: 180,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 0],
-                  },
-                ]
-              : [
-                  {
-                    text: 'STAMP LOGO',
-                    alignment: 'center',
-                    italics: true,
-                    margin: [0, 0, 0, 0],
-                  },
-                ],
-          },
+          stamp1
+            ? { image: stamp1, width: 180, alignment: 'center', margin: [0, 0, 0, 10] }
+            : { text: 'STAMP', alignment: 'center', italics: true },
+          stamp2
+            ? { image: stamp2, width: 180, alignment: 'center' }
+            : { text: 'STAMP', alignment: 'center', italics: true },
         ],
         margin: [10, 0, 0, 0],
       },
@@ -6116,31 +4146,14 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     margin: [0, 10, 0, 10],
   })
 
-  // Performance Management Team and Rating Legend
   content.push({
     columns: [
       {
         width: '35%',
         stack: [
-          {
-            stack: pmt1
-              ? [
-                  {
-                    image: pmt1,
-                    width: 280,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 0],
-                  },
-                ]
-              : [
-                  {
-                    text: 'STAMP LOGO',
-                    alignment: 'center',
-                    italics: true,
-                    margin: [0, 0, 0, 0],
-                  },
-                ],
-          },
+          pmt1
+            ? { image: pmt1, width: 280, alignment: 'center' }
+            : { text: 'PMT STAMP', alignment: 'center', italics: true },
         ],
       },
       {
@@ -6182,9 +4195,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     margin: [0, 0, 0, 10],
   })
 
-  // Main Performance Table - CENTERED with proper widths
   const mainTableBody = [
-    // First header row
     [
       {
         text: 'MAJOR FINAL OUTPUT',
@@ -6246,7 +4257,6 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         border: [true, true, true, true],
       },
     ],
-    // Second header row
     [
       {},
       {},
@@ -6261,13 +4271,11 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     ],
   ]
 
-  // Add data rows
   if (groupedIpcrData.value.length > 0) {
-    groupedIpcrData.value.forEach((categoryGroup) => {
-      // Category Header
+    groupedIpcrData.value.forEach((catGroup) => {
       mainTableBody.push([
         {
-          text: categoryGroup.category,
+          text: catGroup.category,
           colSpan: 10,
           alignment: 'left',
           fontSize: 9,
@@ -6275,19 +4283,9 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           fillColor: '#e8f5e9',
           border: [true, true, true, true],
         },
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
+        ...Array(9).fill({}),
       ])
-
-      categoryGroup.mfos.forEach((mfoGroup, mfoIndex) => {
-        // MFO Header
+      catGroup.mfos.forEach((mfoGroup, mfoIndex) => {
         mainTableBody.push([
           {
             text: `MFO ${mfoIndex + 1} - ${mfoGroup.mfo}`,
@@ -6298,93 +4296,53 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
             fillColor: '#f7f7f7',
             border: [true, true, true, true],
           },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
+          ...Array(9).fill({}),
         ])
-
-        mfoGroup.standards.forEach((standard, stdIndex) => {
-          const monthlyRatings = standard.monthly_ratings || {}
-          // const average = monthlyRatings.average || {}
-
-          // Format competencies
-          let competenciesText = ''
-          const allComp = getAllCompetencies(standard)
-          if (allComp.length > 0) {
-            allComp.forEach((comp, idx) => {
-              competenciesText += `${idx + 1}. ${comp.description} (${getProficiencyLevel(comp.level)})\n`
-            })
-          } else {
-            competenciesText = 'No competencies specified'
-          }
-
-          // Format proficiency result
-          let proficiencyText = ''
-          if (allComp.length > 0) {
-            allComp.forEach((comp, idx) => {
-              proficiencyText += `${idx + 1}. ${getProficiencyLevel(comp.level)}\n`
-            })
-          } else {
-            proficiencyText = 'Not Applicable'
-          }
-
-          // FIX: Get ratings from standard.ratings instead of monthly_ratings.average
-          const ratings = standard.ratings || {}
-
+        mfoGroup.standards.forEach((s, si) => {
+          const allComp = getAllCompetencies(s)
+          const competenciesText =
+            allComp.length > 0
+              ? allComp
+                  .map((c, i) => `${i + 1}. ${c.description} (${getProficiencyLevel(c.level)})`)
+                  .join('\n')
+              : 'No competencies specified'
+          const proficiencyText =
+            allComp.length > 0
+              ? allComp.map((c, i) => `${i + 1}. ${getProficiencyLevel(c.level)}`).join('\n')
+              : 'Not Applicable'
+          const ratings = s.ratings || {}
           mainTableBody.push([
             {
-              text: `Output ${stdIndex + 1} - ${standard.output || standard.mfo}`,
+              text: `Output ${si + 1} - ${s.output || s.mfo}`,
               fontSize: 8,
-              alignment: 'left',
+              border: [true, true, true, true],
+            },
+            { text: competenciesText, fontSize: 8, border: [true, true, true, true] },
+            { text: s.success_indicator || '-', fontSize: 8, border: [true, true, true, true] },
+            {
+              text: s.monthly_ratings?.actual_accomplishment || s.actual_accomplishment || '',
+              fontSize: 8,
               border: [true, true, true, true],
             },
             {
-              text: competenciesText,
-              fontSize: 8,
-              alignment: 'left',
-              border: [true, true, true, true],
-            },
-            {
-              text: standard.success_indicator || '-',
-              fontSize: 8,
-              alignment: 'left',
-              border: [true, true, true, true],
-            },
-            {
-              text: monthlyRatings.actual_accomplishment || standard.actual_accomplishment || '',
-              fontSize: 8,
-              alignment: 'left',
-              border: [true, true, true, true],
-            },
-            {
-              // FIX: Use quantity_rating from standard.ratings
               text: ratings.quantity_rating || '-',
               alignment: 'center',
               fontSize: 8,
               border: [true, true, true, true],
             },
             {
-              // FIX: Use effectiveness_rating from standard.ratings
               text: ratings.effectiveness_rating || '-',
               alignment: 'center',
               fontSize: 8,
               border: [true, true, true, true],
             },
             {
-              // FIX: Use timeliness_rating from standard.ratings
               text: ratings.timeliness_rating || '-',
               alignment: 'center',
               fontSize: 8,
               border: [true, true, true, true],
             },
             {
-              // FIX: Use average_rating from standard.ratings
               text: ratings.average_rating || '-',
               alignment: 'center',
               fontSize: 8,
@@ -6397,47 +4355,34 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
               border: [true, true, true, true],
             },
             {
-              text: monthlyRatings.remarks || '-',
+              text: s.monthly_ratings?.remarks || '-',
               fontSize: 8,
               border: [true, true, true, true],
             },
           ])
         })
       })
-
-      // Category Average
       mainTableBody.push([
         {
-          text: `${categoryGroup.category} Average Rating`,
+          text: `${catGroup.category} Average Rating`,
           colSpan: 7,
           alignment: 'left',
           bold: true,
           fontSize: 8,
           border: [true, true, true, true],
         },
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
+        ...Array(6).fill({}),
         {
-          text: categoryGroup.averageRating,
+          text: catGroup.averageRating,
           alignment: 'center',
           bold: true,
           fontSize: 8,
           border: [true, true, true, true],
         },
-        {
-          text: '',
-          colSpan: 2,
-          border: [true, true, true, true],
-        },
+        { text: '', colSpan: 2, border: [true, true, true, true] },
         {},
       ])
     })
-
-    // Final Average
     mainTableBody.push([
       {
         text: 'Final Average Rating',
@@ -6447,12 +4392,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         fontSize: 8,
         border: [true, true, true, true],
       },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
+      ...Array(6).fill({}),
       {
         text: finalAverageRating.value,
         alignment: 'center',
@@ -6460,21 +4400,11 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         fontSize: 8,
         border: [true, true, true, true],
       },
-      {
-        text: '',
-        colSpan: 2,
-        border: [true, true, true, true],
-      },
+      { text: '', colSpan: 2, border: [true, true, true, true] },
       {},
     ])
-
-    // Performance Results section
     mainTableBody.push([
-      {
-        text: '',
-        fontSize: 8,
-        border: [true, true, true, true],
-      },
+      { text: '', fontSize: 8, border: [true, true, true, true] },
       {
         text: 'Performance Results',
         colSpan: 2,
@@ -6500,125 +4430,86 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         rowSpan: categoryCalculations.value.length + 3,
         border: [true, true, true, true],
         stack: [
-          {
-            stack: pmt2
-              ? [
-                  {
-                    image: pmt2,
-                    width: 250,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 0],
-                  },
-                ]
-              : [
-                  {
-                    text: 'STAMP LOGO',
-                    alignment: 'center',
-                    italics: true,
-                    margin: [0, 0, 0, 0],
-                  },
-                ],
-          },
+          pmt2
+            ? { image: pmt2, width: 250, alignment: 'center' }
+            : { text: 'PMT STAMP', alignment: 'center', italics: true },
         ],
       },
       {},
       {},
     ])
-
-    // Category calculations
-    if (categoryCalculations.value.length) {
-      categoryCalculations.value.forEach((calc, index) => {
-        const row = [
+    categoryCalculations.value.forEach((calc, i) => {
+      const row = [
+        { text: calc.category, fontSize: 8, alignment: 'left', border: [true, true, true, true] },
+        { text: calc.weightedAverage, colSpan: 2, fontSize: 8, border: [true, true, true, true] },
+        {},
+      ]
+      if (i === 0) {
+        row.push(
           {
-            text: calc.category,
-            fontSize: 8,
-            alignment: 'left',
-            border: [true, true, true, true],
-          },
-          {
-            text: calc.weightedAverage,
-            colSpan: 2,
-            fontSize: 8,
-            border: [true, true, true, true],
-          },
-          {},
-        ]
-
-        if (index === 0) {
-          row.push({
             text: '',
             colSpan: 4,
             rowSpan: categoryCalculations.value.length + 2,
             border: [true, true, true, true],
-          })
-        } else {
-          row.push({})
-          row.push({})
-          row.push({})
-          row.push({})
-        }
-
-        row.push({})
-        row.push({})
-        row.push({})
-
-        mainTableBody.push(row)
-      })
-
-      // Total Row
-      mainTableBody.push([
-        {
-          text: 'Total',
-          alignment: 'left',
-          fontSize: 8,
-          bold: true,
-          border: [true, true, true, true],
-        },
-        {
-          text: finalAverageRating.value,
-          colSpan: 2,
-          fontSize: 8,
-          bold: true,
-          border: [true, true, true, true],
-        },
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-      ])
-
-      // Adjectival Rating Row
-      mainTableBody.push([
-        {
-          text: 'ADJECTIVAL RATING',
-          fontSize: 8,
-          alignment: 'left',
-          bold: true,
-          border: [true, true, true, true],
-        },
-        {
-          text: adjectivalRating.value,
-          colSpan: 2,
-          fontSize: 8,
-          bold: true,
-          border: [true, true, true, true],
-        },
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-        {},
-      ])
-    }
-
-    // Comments section in main table
+          },
+          {},
+          {},
+          {},
+        )
+      } else {
+        row.push({}, {}, {}, {})
+      }
+      row.push({}, {}, {})
+      mainTableBody.push(row)
+    })
+    mainTableBody.push([
+      {
+        text: 'Total',
+        alignment: 'left',
+        fontSize: 8,
+        bold: true,
+        border: [true, true, true, true],
+      },
+      {
+        text: finalAverageRating.value,
+        colSpan: 2,
+        fontSize: 8,
+        bold: true,
+        border: [true, true, true, true],
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+    ])
+    mainTableBody.push([
+      {
+        text: 'ADJECTIVAL RATING',
+        fontSize: 8,
+        alignment: 'left',
+        bold: true,
+        border: [true, true, true, true],
+      },
+      {
+        text: adjectivalRating.value,
+        colSpan: 2,
+        fontSize: 8,
+        bold: true,
+        border: [true, true, true, true],
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+    ])
     mainTableBody.push([
       {
         text: 'Comments and Recommendations for Development Purposes',
@@ -6628,33 +4519,11 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         fontSize: 9,
         border: [true, true, true, true],
       },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
+      ...Array(9).fill({}),
     ])
-
     mainTableBody.push([
-      {
-        text: '\n\n\n\n\n',
-        colSpan: 10,
-
-        border: [true, true, true, true],
-      },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
+      { text: '\n\n\n\n\n', colSpan: 10, border: [true, true, true, true] },
+      ...Array(9).fill({}),
     ])
   } else {
     mainTableBody.push([
@@ -6666,19 +4535,10 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         fontSize: 9,
         border: [true, true, true, true],
       },
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
+      ...Array(9).fill({}),
     ])
   }
 
-  // Add main performance table (without signatures)
   content.push({
     table: {
       headerRows: 2,
@@ -6694,8 +4554,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     margin: [0, 0, 0, 0],
   })
 
-  // SEPARATE SIGNATURE TABLE WITH EQUAL WIDTHS
-  const signatureTableBody = [
+  const sigBody = [
     [
       {
         text: 'Discussed with:',
@@ -6751,11 +4610,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
             alignment: 'center',
             margin: [0, 40, 0, 2],
           },
-          {
-            text: position,
-            fontSize: 8,
-            alignment: 'center',
-          },
+          { text: position, fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
         alignment: 'center',
@@ -6769,11 +4624,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
             alignment: 'center',
             margin: [0, 40, 0, 2],
           },
-          {
-            text: 'Date',
-            fontSize: 8,
-            alignment: 'center',
-          },
+          { text: 'Date', fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
         alignment: 'center',
@@ -6816,11 +4667,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
             alignment: 'center',
             margin: [0, 40, 0, 2],
           },
-          {
-            text: 'Date',
-            fontSize: 8,
-            alignment: 'center',
-          },
+          { text: 'Date', fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
         alignment: 'center',
@@ -6853,24 +4700,18 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
             alignment: 'center',
             margin: [0, 40, 0, 2],
           },
-          {
-            text: 'Date',
-            fontSize: 8,
-            alignment: 'center',
-          },
+          { text: 'Date', fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
         alignment: 'center',
       },
     ],
   ]
-
   content.push({
     table: {
-      pageBreak: 'before',
       headerRows: 0,
       widths: ['20%', '13.33%', '20%', '13.33%', '20%', '13.33%'],
-      body: signatureTableBody,
+      body: sigBody,
     },
     layout: {
       hLineWidth: () => 1,
@@ -6882,8 +4723,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     unbreakable: true,
   })
 
-  // Proficiency Levels table
-  const proficiencyBody = [
+  const profBody = [
     [
       {
         text: 'Proficiency Levels of Competency:',
@@ -6906,7 +4746,6 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
       {
         text: 'Understands basic principles; Can perform task with assistance or direction',
         fontSize: 8,
-
         border: [true, true, true, true],
       },
     ],
@@ -6953,13 +4792,9 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
       },
     ],
   ]
-
   content.push({
     alignment: 'center',
-    table: {
-      widths: ['10%', '35%'],
-      body: proficiencyBody,
-    },
+    table: { widths: ['10%', '35%'], body: profBody },
     layout: {
       hLineWidth: () => 1,
       vLineWidth: () => 1,
@@ -6969,37 +4804,1424 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     margin: [20, 20, 20, 20],
   })
 
-  // Return the complete document definition
   return {
     pageSize: 'LEGAL',
     pageOrientation: 'landscape',
-    pageMargins: [32, 20, 32, 20], // Equal left and right margins for centering
-    content: content,
-    styles: {
-      reportTitle: {
-        fontSize: 12,
-        bold: true,
+    pageMargins: [32, 20, 32, 20],
+    content,
+    styles: { reportTitle: { fontSize: 12, bold: true } },
+    defaultStyle: { fontSize: 8 },
+  }
+}
+
+const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, pmt3) => {
+  const employeeName = props.employee?.label || props.employee?.name || 'N/A'
+  const position = props.employee?.position || 'N/A'
+  const office = props.levels?.office || 'N/A'
+  const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
+  const content = []
+
+  content.push({
+    columns: [
+      {
+        width: '10%',
+        stack: rotpLogoBase64
+          ? [{ image: rotpLogoBase64, width: 50, alignment: 'center', margin: [0, 0, 0, 10] }]
+          : [{ text: 'ROTP LOGO', alignment: 'center', italics: true }],
       },
-      tableHeader: {
-        bold: true,
+      {
+        width: '10%',
+        stack: tagumLogoBase64
+          ? [{ image: tagumLogoBase64, width: 55, alignment: 'center', margin: [0, 0, 0, 10] }]
+          : [{ text: 'TAGUM LOGO', alignment: 'center', italics: true }],
+      },
+      {
+        width: '60%',
+        stack: [
+          { text: office, style: 'reportTitle', alignment: 'center', margin: [0, 20, 0, 5] },
+          {
+            text: [
+              { text: 'PERFORMANCE STANDARDS FOR RATING PERIOD ', style: 'reportTitle' },
+              { text: period, style: 'reportTitle', decoration: 'underline' },
+            ],
+            alignment: 'center',
+            margin: [0, 0, 0, 10],
+          },
+        ],
+      },
+      {
+        width: '20%',
+        stack: pmt3
+          ? [{ image: pmt3, width: 180, alignment: 'center', margin: [0, 0, 0, 10] }]
+          : [{ text: 'STAMP LOGO', alignment: 'center', italics: true }],
+      },
+    ],
+  })
+
+  content.push({
+    table: {
+      widths: ['50%', '50%'],
+      body: [
+        [
+          { text: `Employee: ${employeeName}`, fontSize: 10 },
+          { text: `Position: ${position}`, fontSize: 10 },
+        ],
+      ],
+    },
+    layout: 'noBorders',
+    margin: [0, 10, 0, 0],
+  })
+
+  const tableBody = [
+    [
+      {
+        text: 'MAJOR FINAL OUTPUT (MFO)',
         fontSize: 9,
+        bold: true,
         fillColor: '#f2f2f2',
+        alignment: 'center',
       },
-      sectionHeader: {
-        bold: true,
+      {
+        text: 'REQUIRED COMPETENCY',
         fontSize: 9,
-        fillColor: '#e8f5e9',
-      },
-      mfoHeader: {
         bold: true,
-        fontSize: 9,
-        fillColor: '#f7f7f7',
+        fillColor: '#f2f2f2',
+        alignment: 'center',
       },
+      {
+        text: 'SUCCESS INDICATOR',
+        fontSize: 9,
+        bold: true,
+        fillColor: '#f2f2f2',
+        alignment: 'center',
+      },
+      { text: 'RATING', fontSize: 9, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
+      { text: 'Q\n(Quantity)', fontSize: 8, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
+      {
+        text: 'E\n(Effectiveness)',
+        fontSize: 8,
+        bold: true,
+        fillColor: '#f2f2f2',
+        alignment: 'center',
+      },
+      {
+        text: 'T\n(Timeliness)',
+        fontSize: 8,
+        bold: true,
+        fillColor: '#f2f2f2',
+        alignment: 'center',
+      },
+      {
+        text: 'Mode of Verification',
+        fontSize: 9,
+        bold: true,
+        fillColor: '#f2f2f2',
+        alignment: 'center',
+      },
+      { text: 'Remarks', fontSize: 9, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
+    ],
+  ]
+
+  groupedPerformanceStandardsByCategory.value.forEach((catGroup) => {
+    tableBody.push([
+      {
+        text: catGroup.category,
+        colSpan: 9,
+        alignment: 'left',
+        fontSize: 10,
+        bold: true,
+        fillColor: '#dbdbdb',
+        border: [true, true, true, true],
+      },
+      ...Array(8).fill({}),
+    ])
+    catGroup.mfos.forEach((mfoGroup, mi) => {
+      tableBody.push([
+        {
+          text: `MFO ${mi + 1} - ${mfoGroup.mfo}`,
+          colSpan: 9,
+          alignment: 'left',
+          fontSize: 10,
+          bold: true,
+          fillColor: '#dbdbdb',
+          border: [true, true, true, true],
+        },
+        ...Array(8).fill({}),
+      ])
+      mfoGroup.standards.forEach((s, si) => {
+        const allComp = getAllCompetencies(s)
+        const compText =
+          allComp.length > 0
+            ? allComp
+                .map(
+                  (c, i) =>
+                    `${i + 1}. ${c.description}${c.level ? ` (${getProficiencyLevel(c.level)})` : ''}`,
+                )
+                .join('\n')
+            : 'No competencies specified'
+        if (s.standard_outcomes?.length > 0) {
+          s.standard_outcomes.forEach((outcome, oi) => {
+            const row = []
+            if (oi === 0) {
+              row.push(
+                {
+                  text: `Output ${si + 1} - ${s.mfo}`,
+                  fontSize: 9,
+                  rowSpan: s.standard_outcomes.length,
+                  border: [true, true, true, true],
+                },
+                {
+                  text: compText,
+                  fontSize: 8,
+                  rowSpan: s.standard_outcomes.length,
+                  border: [true, true, true, true],
+                },
+                {
+                  text: s.success_indicator,
+                  fontSize: 9,
+                  rowSpan: s.standard_outcomes.length,
+                  border: [true, true, true, true],
+                },
+              )
+            } else {
+              row.push({}, {}, {})
+            }
+            row.push(
+              {
+                text: outcome.rating || '-',
+                fontSize: 8,
+                alignment: 'center',
+                border: [true, true, true, true],
+              },
+              {
+                text: outcome.quantity || '-',
+                fontSize: 8,
+                alignment: 'center',
+                border: [true, true, true, true],
+              },
+              {
+                text: outcome.effectiveness || '-',
+                fontSize: 8,
+                alignment: 'center',
+                border: [true, true, true, true],
+              },
+              {
+                text: outcome.timeliness || '-',
+                fontSize: 8,
+                alignment: 'center',
+                border: [true, true, true, true],
+              },
+            )
+            if (oi === 0) {
+              row.push(
+                {
+                  text: s.required_output || '-',
+                  fontSize: 9,
+                  rowSpan: s.standard_outcomes.length,
+                  alignment: 'center',
+                  border: [true, true, true, true],
+                },
+                {
+                  text: s.remarks || '-',
+                  fontSize: 9,
+                  rowSpan: s.standard_outcomes.length,
+                  border: [true, true, true, true],
+                },
+              )
+            } else {
+              row.push({}, {})
+            }
+            tableBody.push(row)
+          })
+        } else {
+          tableBody.push([
+            { text: `Output ${si + 1} - ${s.mfo}`, fontSize: 9, border: [true, true, true, true] },
+            { text: compText, fontSize: 8, border: [true, true, true, true] },
+            { text: s.success_indicator, fontSize: 9, border: [true, true, true, true] },
+            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
+            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
+            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
+            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
+            {
+              text: s.required_output || '-',
+              fontSize: 9,
+              alignment: 'center',
+              border: [true, true, true, true],
+            },
+            { text: s.remarks || '-', fontSize: 9, border: [true, true, true, true] },
+          ])
+        }
+      })
+    })
+  })
+
+  content.push({
+    table: {
+      headerRows: 1,
+      widths: ['15%', '19%', '15%', '6%', '7%', '7%', '7%', '12%', '12%'],
+      body: tableBody,
     },
-    defaultStyle: {
-      fontSize: 8,
-      alignment: 'left', // Default alignment for better control
+    layout: {
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
+      hLineColor: () => '#000000',
+      vLineColor: () => '#000000',
     },
+    margin: [0, 0, 0, 20],
+  })
+
+  const profBody = [
+    [
+      {
+        text: 'Proficiency Levels of Competency:',
+        colSpan: 2,
+        bold: true,
+        alignment: 'center',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+      {},
+    ],
+    [
+      {
+        text: 'Basic',
+        bold: true,
+        alignment: 'center',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+      {
+        text: 'Understands basic principles; Can perform task with assistance or direction',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+    ],
+    [
+      {
+        text: 'Advanced',
+        bold: true,
+        alignment: 'center',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+      {
+        text: 'Performs routine task with reliable results; Works with minimal supervision',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+    ],
+    [
+      {
+        text: 'Intermediate',
+        bold: true,
+        alignment: 'center',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+      {
+        text: 'Performs complex and multiple tasks; Can coach and teach others',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+    ],
+    [
+      {
+        text: 'Superior',
+        bold: true,
+        alignment: 'center',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+      {
+        text: 'Considered as an expert in this task; Can describe, teach and lead others',
+        fontSize: 9,
+        border: [true, true, true, true],
+      },
+    ],
+  ]
+  content.push({
+    table: { widths: ['25%', '75%'], body: profBody },
+    layout: {
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
+      hLineColor: () => '#000000',
+      vLineColor: () => '#000000',
+    },
+    margin: [150, 20, 150, 20],
+  })
+
+  content.push({
+    table: {
+      widths: ['33%', '34%', '33%'],
+      body: [
+        [
+          {
+            text: 'Conformed:',
+            fontSize: 9,
+            bold: true,
+            alignment: 'left',
+            border: [false, false, false, false],
+          },
+          {
+            text: 'Discussed With:',
+            fontSize: 9,
+            bold: true,
+            alignment: 'left',
+            border: [false, false, false, false],
+          },
+          {
+            text: 'Approved by:',
+            fontSize: 9,
+            bold: true,
+            alignment: 'left',
+            border: [false, false, false, false],
+          },
+        ],
+        [
+          {
+            text: employeeName,
+            fontSize: 9,
+            bold: true,
+            decoration: 'underline',
+            alignment: 'center',
+            margin: [0, 40, 0, 0],
+          },
+          {
+            text:
+              props.supervisorySignatory?.name ||
+              props.managerialSignatory?.name ||
+              '___________________',
+            fontSize: 9,
+            bold: true,
+            decoration: 'underline',
+            alignment: 'center',
+            margin: [0, 40, 0, 0],
+            border: [false, false, false, true],
+          },
+          {
+            text: props.managerialSignatory?.name || '___________________',
+            fontSize: 9,
+            bold: true,
+            decoration: 'underline',
+            alignment: 'center',
+            margin: [0, 40, 0, 0],
+            border: [false, false, false, true],
+          },
+        ],
+        [
+          {
+            text: position,
+            fontSize: 9,
+            alignment: 'center',
+            border: [false, false, false, false],
+          },
+          {
+            text:
+              props.supervisorySignatory?.position ||
+              props.managerialSignatory?.position ||
+              'Office Head/Rater',
+            fontSize: 9,
+            alignment: 'center',
+            border: [false, false, false, false],
+          },
+          {
+            text: props.managerialSignatory?.position || 'Office Head/Rater',
+            fontSize: 9,
+            alignment: 'center',
+            border: [false, false, false, false],
+          },
+        ],
+        [
+          {
+            text: 'Employee/Ratee',
+            fontSize: 9,
+            italics: true,
+            alignment: 'center',
+            border: [false, false, false, false],
+          },
+          {
+            text: 'Office Head/Rater',
+            fontSize: 9,
+            italics: true,
+            alignment: 'center',
+            border: [false, false, false, false],
+          },
+          {
+            text: 'Office Head/Rater',
+            fontSize: 9,
+            italics: true,
+            alignment: 'center',
+            border: [false, false, false, false],
+          },
+        ],
+      ],
+    },
+    layout: 'noBorders',
+  })
+
+  return {
+    pageSize: 'LEGAL',
+    pageOrientation: 'landscape',
+    pageMargins: [20, 30, 20, 30],
+    content,
+    styles: { reportTitle: { fontSize: 11, bold: true } },
+    defaultStyle: { fontSize: 10 },
+  }
+}
+
+const generateMonthlyPerformancePdfContent = () => {
+  const employeeName = props.employee?.label || props.employee?.name || 'N/A'
+  const position = props.employee?.position || 'N/A'
+  const office = props.levels?.office || 'N/A'
+  const division = props.levels?.division || 'N/A'
+  const content = []
+
+  if (!groupedMonthlyData.value.length) {
+    content.push({
+      text: 'No monthly performance data available',
+      alignment: 'center',
+      italics: true,
+      margin: [0, 100, 0, 0],
+    })
+  } else {
+    groupedMonthlyData.value.forEach((monthData, monthIndex) => {
+      if (monthIndex > 0) content.push({ text: '', pageBreak: 'before' })
+
+      content.push({
+        stack: [
+          {
+            text: 'Republic of the Philippines',
+            alignment: 'center',
+            fontSize: 10,
+            margin: [0, 5, 0, 2],
+          },
+          {
+            text: 'Province of Davao del Norte',
+            alignment: 'center',
+            fontSize: 10,
+            margin: [0, 0, 0, 2],
+          },
+          {
+            text: 'CITY OF TAGUM',
+            alignment: 'center',
+            fontSize: 10,
+            bold: true,
+            margin: [0, 0, 0, 5],
+          },
+          {
+            columns: [
+              { width: '*', text: '' },
+              {
+                width: 300,
+                table: {
+                  widths: ['*'],
+                  body: [
+                    [
+                      {
+                        text: 'MONTHLY PERFORMANCE OUTPUT REPORT',
+                        alignment: 'center',
+                        fontSize: 10,
+                        bold: true,
+                        margin: [10, 5, 10, 5],
+                      },
+                    ],
+                  ],
+                },
+                layout: { hLineWidth: () => 1, vLineWidth: () => 1 },
+              },
+              { width: '*', text: '' },
+            ],
+          },
+        ],
+        margin: [0, 0, 0, 10],
+      })
+
+      content.push({
+        table: {
+          widths: ['25%', '25%', '25%', '25%'],
+          body: [
+            [
+              { text: `EMPLOYEE: ${employeeName}`, fontSize: 9, bold: true },
+              { text: `OFFICE: ${office}`, fontSize: 9, bold: true },
+              { text: `DIVISION: ${division}`, fontSize: 9, bold: true },
+              { text: `MONTH: ${monthData.month}`, fontSize: 9, bold: true },
+            ],
+          ],
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 5],
+      })
+
+      const colWidths = [
+        '15%',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+        '*',
+      ]
+      const tableBody = [
+        [
+          {
+            text: 'MAJOR FINAL OUTPUT',
+            rowSpan: 3,
+            alignment: 'center',
+            fontSize: 9,
+            bold: true,
+            fillColor: '#f2f2f2',
+            border: [true, true, true, true],
+          },
+          {
+            text: 'ACCOMPLISHMENTS',
+            colSpan: 18,
+            alignment: 'center',
+            fontSize: 9,
+            bold: true,
+            fillColor: '#f2f2f2',
+            border: [true, true, true, true],
+          },
+          ...Array(17).fill({}),
+        ],
+        [
+          {},
+          {
+            text: 'QUANTITY',
+            colSpan: 6,
+            alignment: 'center',
+            fontSize: 9,
+            bold: true,
+            fillColor: '#f2f2f2',
+            border: [true, true, true, true],
+          },
+          ...Array(5).fill({}),
+          {
+            text: 'EFFECTIVENESS',
+            colSpan: 6,
+            alignment: 'center',
+            fontSize: 9,
+            bold: true,
+            fillColor: '#f2f2f2',
+            border: [true, true, true, true],
+          },
+          ...Array(5).fill({}),
+          {
+            text: 'TIMELINESS',
+            colSpan: 6,
+            alignment: 'center',
+            fontSize: 9,
+            bold: true,
+            fillColor: '#f2f2f2',
+            border: [true, true, true, true],
+          },
+          ...Array(5).fill({}),
+        ],
+        [
+          {},
+          ...[
+            'Wk 1',
+            'Wk 2',
+            'Wk 3',
+            'Wk 4',
+            'Wk 5',
+            'TOTAL',
+            'Wk 1',
+            'Wk 2',
+            'Wk 3',
+            'Wk 4',
+            'Wk 5',
+            'TOTAL',
+            'Wk 1',
+            'Wk 2',
+            'Wk 3',
+            'Wk 4',
+            'Wk 5',
+            'TOTAL',
+          ].map((t) => ({
+            text: t,
+            fontSize: 8,
+            bold: true,
+            alignment: 'center',
+            fillColor: '#f2f2f2',
+            border: [true, true, true, true],
+          })),
+        ],
+      ]
+
+      if (monthData.categories?.length) {
+        monthData.categories.forEach((cat) => {
+          tableBody.push([
+            {
+              text: cat.category,
+              colSpan: 19,
+              alignment: 'left',
+              fontSize: 9,
+              bold: true,
+              fillColor: '#92d050',
+              border: [true, true, true, true],
+            },
+            ...Array(18).fill({}),
+          ])
+          cat.mfos.forEach((mfoGroup, mi) => {
+            tableBody.push([
+              {
+                text: `MFO ${mi + 1} - ${mfoGroup.mfo}`,
+                colSpan: 19,
+                alignment: 'left',
+                fontSize: 9,
+                bold: true,
+                fillColor: '#aeaaaa',
+                border: [true, true, true, true],
+              },
+              ...Array(18).fill({}),
+            ])
+            mfoGroup.outputs.forEach((output, oi) => {
+              const row = [
+                {
+                  text: `Output ${oi + 1} - ${output.outputName}`,
+                  fontSize: 8,
+                  border: [true, true, true, true],
+                },
+              ]
+              ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((w) =>
+                row.push({
+                  text: String(output.quantity[w] ?? ''),
+                  fontSize: 8,
+                  alignment: 'center',
+                  border: [true, true, true, true],
+                }),
+              )
+              row.push({
+                text: output.quantityTotal || '0',
+                fontSize: 8,
+                alignment: 'center',
+                bold: true,
+                fillColor: '#d9d9d9',
+                border: [true, true, true, true],
+              })
+              ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((w) =>
+                row.push({
+                  text: String(output.effectiveness[w] ?? ''),
+                  fontSize: 8,
+                  alignment: 'center',
+                  border: [true, true, true, true],
+                }),
+              )
+              row.push({
+                text: output.effectivenessTotal || '0',
+                fontSize: 8,
+                alignment: 'center',
+                bold: true,
+                fillColor: '#d9d9d9',
+                border: [true, true, true, true],
+              })
+              ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((w) =>
+                row.push({
+                  text: String(output.timeliness[w] ?? ''),
+                  fontSize: 8,
+                  alignment: 'center',
+                  border: [true, true, true, true],
+                }),
+              )
+              row.push({
+                text: output.timelinessTotal || '0',
+                fontSize: 8,
+                alignment: 'center',
+                bold: true,
+                fillColor: '#d9d9d9',
+                border: [true, true, true, true],
+              })
+              tableBody.push(row)
+            })
+          })
+        })
+
+        const monthAtt = attendanceByMonth.value[monthData.month] || { absents: {}, lates: {} }
+        tableBody.push([
+          { text: '', colSpan: 13, border: [true, true, true, true] },
+          ...Array(12).fill({}),
+          ...['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'TOTAL'].map((t) => ({
+            text: t,
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          })),
+        ])
+        tableBody.push([
+          {
+            text: 'MAN DAY(S) LOST THRU ABSENCE',
+            colSpan: 13,
+            fontSize: 8,
+            bold: true,
+            border: [true, true, true, true],
+          },
+          ...Array(12).fill({}),
+          {
+            text: String(monthAtt.absents.week1 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.absents.week2 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.absents.week3 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.absents.week4 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.absents.week5 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.absents.total_absent || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+        ])
+        tableBody.push([
+          {
+            text: 'MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME',
+            colSpan: 13,
+            fontSize: 8,
+            bold: true,
+            border: [true, true, true, true],
+          },
+          ...Array(12).fill({}),
+          {
+            text: String(monthAtt.lates.week1 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.lates.week2 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.lates.week3 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.lates.week4 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.lates.week5 || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: String(monthAtt.lates.total_late || ''),
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+        ])
+        tableBody.push([
+          {
+            text: 'OBSERVATIONS/REMARKS',
+            colSpan: 19,
+            fontSize: 8,
+            bold: true,
+            border: [true, true, true, true],
+            margin: [0, 0, 0, 30],
+          },
+          ...Array(18).fill({}),
+        ])
+      } else {
+        tableBody.push([
+          {
+            text: `No data available for ${monthData.month}`,
+            colSpan: 19,
+            alignment: 'center',
+            italics: true,
+            border: [true, true, true, true],
+          },
+          ...Array(18).fill({}),
+        ])
+      }
+
+      content.push({
+        table: { headerRows: 3, widths: colWidths, body: tableBody },
+        layout: {
+          hLineWidth: (i) => (i === 0 || i === 3 ? 1 : 0.5),
+          vLineWidth: () => 0.5,
+          hLineColor: () => '#000000',
+          vLineColor: () => '#000000',
+        },
+        margin: [0, 10, 0, 0],
+      })
+
+      content.push({
+        table: {
+          widths: ['35%', '15%', '35%', '15%'],
+          body: [
+            [
+              {
+                text: 'Above entries are true & correct:',
+                fontSize: 8,
+                border: [true, true, true, true],
+              },
+              { text: 'Date:', fontSize: 8, border: [true, true, true, true] },
+              { text: 'Confirmed:', fontSize: 8, border: [true, true, true, true] },
+              { text: 'Date:', fontSize: 8, border: [true, true, true, true] },
+            ],
+            [
+              {
+                text: employeeName,
+                fontSize: 8,
+                bold: true,
+                alignment: 'center',
+                margin: [0, 30, 0, 0],
+                border: [true, true, true, true],
+              },
+              {
+                text: formatDate(new Date()),
+                fontSize: 8,
+                alignment: 'center',
+                margin: [0, 30, 0, 0],
+                border: [true, true, true, true],
+              },
+              {
+                text: props.managerialSignatory?.name || '___________________',
+                fontSize: 8,
+                bold: true,
+                alignment: 'center',
+                margin: [0, 30, 0, 0],
+                border: [true, true, true, true],
+              },
+              {
+                text: formatDate(new Date()),
+                fontSize: 8,
+                alignment: 'center',
+                margin: [0, 30, 0, 0],
+                border: [true, true, true, true],
+              },
+            ],
+            [
+              {
+                text: position,
+                fontSize: 8,
+                alignment: 'center',
+                border: [true, true, true, true],
+              },
+              { text: '', border: [true, true, true, true] },
+              {
+                text: props.managerialSignatory?.position || 'Department Head',
+                fontSize: 8,
+                alignment: 'center',
+                border: [true, true, true, true],
+              },
+              { text: '', border: [true, true, true, true] },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 0.5,
+          vLineWidth: () => 0.5,
+          hLineColor: () => '#000000',
+          vLineColor: () => '#000000',
+        },
+        margin: [0, 20, 0, 0],
+      })
+    })
+  }
+
+  return {
+    pageSize: 'LEGAL',
+    pageOrientation: 'landscape',
+    pageMargins: [36, 36, 36, 36],
+    content,
+    defaultStyle: { fontSize: 10 },
+  }
+}
+
+const generateSummaryMonthlyPdfContent = () => {
+  const employeeName = props.employee?.label || props.employee?.name || 'N/A'
+  const position = props.employee?.position || 'N/A'
+  const office = props.levels?.office || 'N/A'
+  const division = props.levels?.division || 'N/A'
+  const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
+  const isFirstSem = isFirstSemester.value
+
+  const confirmedBy = mpoConfirmedSignatory.value
+  const approvedFinalRatingBy = mpoApprovedFinalRatingSignatory.value
+
+  const monthColumns = isFirstSem
+    ? [
+        { key: 'jan', label: 'Jan' },
+        { key: 'feb', label: 'Feb' },
+        { key: 'mar', label: 'Mar' },
+        { key: 'apr', label: 'Apr' },
+        { key: 'may', label: 'May' },
+        { key: 'jun', label: 'Jun' },
+      ]
+    : [
+        { key: 'jul', label: 'Jul' },
+        { key: 'aug', label: 'Aug' },
+        { key: 'sep', label: 'Sep' },
+        { key: 'oct', label: 'Oct' },
+        { key: 'nov', label: 'Nov' },
+        { key: 'dec', label: 'Dec' },
+      ]
+
+  const content = []
+
+  content.push({
+    stack: [
+      {
+        text: 'Republic of the Philippines',
+        alignment: 'center',
+        fontSize: 9,
+        margin: [0, 5, 0, 2],
+      },
+      {
+        text: 'Province of Davao del Norte',
+        alignment: 'center',
+        fontSize: 9,
+        margin: [0, 0, 0, 2],
+      },
+      { text: 'CITY OF TAGUM', alignment: 'center', fontSize: 9, bold: true, margin: [0, 0, 0, 5] },
+      {
+        text: 'SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT',
+        alignment: 'center',
+        fontSize: 9,
+        bold: true,
+        margin: [0, 0, 0, 5],
+      },
+      { text: period, alignment: 'center', fontSize: 9, bold: true, margin: [0, 0, 0, 15] },
+    ],
+    margin: [0, 0, 0, 10],
+  })
+
+  content.push({
+    table: {
+      widths: ['25%', '25%', '25%', '25%'],
+      body: [
+        [
+          { text: `EMPLOYEE: ${employeeName}`, fontSize: 9 },
+          { text: `POSITION: ${position}`, fontSize: 9 },
+          { text: `OFFICE: ${office}`, fontSize: 9 },
+          { text: `DIVISION: ${division}`, fontSize: 9 },
+        ],
+      ],
+    },
+    layout: { hLineWidth: () => 0, vLineWidth: () => 0 },
+    margin: [0, 0, 0, 10],
+  })
+
+  const colWidths = ['15%', ...Array(24).fill('*')]
+  const tableBody = [
+    [
+      {
+        text: 'MAJOR FINAL OUTPUT',
+        rowSpan: 3,
+        alignment: 'center',
+        fontSize: 8,
+        bold: true,
+        fillColor: '#f2f2f2',
+        border: [true, true, true, true],
+      },
+      {
+        text: 'ACCOMPLISHMENT',
+        colSpan: 24,
+        alignment: 'center',
+        fontSize: 8,
+        bold: true,
+        fillColor: '#f2f2f2',
+        border: [true, true, true, true],
+      },
+      ...Array(23).fill({}),
+    ],
+    [
+      {},
+      {
+        text: 'QUANTITY',
+        colSpan: 8,
+        alignment: 'center',
+        fontSize: 8,
+        bold: true,
+        fillColor: '#f2f2f2',
+        border: [true, true, true, true],
+      },
+      ...Array(7).fill({}),
+      {
+        text: 'EFFECTIVENESS',
+        colSpan: 8,
+        alignment: 'center',
+        fontSize: 8,
+        bold: true,
+        fillColor: '#f2f2f2',
+        border: [true, true, true, true],
+      },
+      ...Array(7).fill({}),
+      {
+        text: 'TIMELINESS',
+        colSpan: 8,
+        alignment: 'center',
+        fontSize: 8,
+        bold: true,
+        fillColor: '#f2f2f2',
+        border: [true, true, true, true],
+      },
+      ...Array(7).fill({}),
+    ],
+    [
+      {},
+      ...monthColumns.map((m) => ({
+        text: m.label,
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      })),
+      {
+        text: 'TOTAL',
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      },
+      {
+        text: 'RATING',
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      },
+      ...monthColumns.map((m) => ({
+        text: m.label,
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      })),
+      {
+        text: 'TOTAL',
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      },
+      {
+        text: 'RATING',
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      },
+      ...monthColumns.map((m) => ({
+        text: m.label,
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      })),
+      {
+        text: 'TOTAL',
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      },
+      {
+        text: 'RATING',
+        fontSize: 8,
+        alignment: 'center',
+        bold: true,
+        border: [true, true, true, true],
+      },
+    ],
+  ]
+
+  processedSummaryData.value.forEach((catData) => {
+    tableBody.push([
+      {
+        text: catData.category,
+        colSpan: 25,
+        fontSize: 8,
+        bold: true,
+        fillColor: '#92d050',
+        alignment: 'left',
+        border: [true, true, true, true],
+      },
+      ...Array(24).fill({}),
+    ])
+    catData.mfos.forEach((mfoData, mi) => {
+      tableBody.push([
+        {
+          text: `MFO ${mi + 1} - ${mfoData.mfo}`,
+          colSpan: 25,
+          fontSize: 8,
+          bold: true,
+          fillColor: '#aeaaaa',
+          alignment: 'left',
+          border: [true, true, true, true],
+        },
+        ...Array(24).fill({}),
+      ])
+      mfoData.outputs.forEach((output, oi) => {
+        const row = [
+          {
+            text: `Output ${oi + 1}: ${output.outputName}`,
+            fontSize: 8,
+            border: [true, true, true, true],
+          },
+        ]
+        ;['quantity', 'effectiveness', 'timeliness'].forEach((type) => {
+          monthColumns.forEach((m) =>
+            row.push({
+              text: String(output.monthly[type][m.key] ?? '-'),
+              fontSize: 7,
+              alignment: 'center',
+              border: [true, true, true, true],
+            }),
+          )
+          row.push({
+            text: String(output.totals[type].total || '0'),
+            fontSize: 8,
+            alignment: 'center',
+            bold: true,
+            fillColor: '#d9d9d9',
+            border: [true, true, true, true],
+          })
+          row.push({
+            text: String(output.totals[type].rating || '0'),
+            fontSize: 8,
+            alignment: 'center',
+            bold: true,
+            fillColor: '#d9d9d9',
+            border: [true, true, true, true],
+          })
+        })
+        tableBody.push(row)
+      })
+    })
+    tableBody.push([
+      { text: '', colSpan: 18, border: [true, true, true, true] },
+      ...Array(17).fill({}),
+      ...monthColumns.map((m) => ({
+        text: m.label,
+        fontSize: 8,
+        alignment: 'center',
+        border: [true, true, true, true],
+      })),
+      { text: 'TOTAL', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
+    ])
+    tableBody.push([
+      {
+        text: 'MAN DAY(S) LOST THRU ABSENCE',
+        colSpan: 18,
+        fontSize: 8,
+        bold: true,
+        border: [true, true, true, true],
+      },
+      ...Array(17).fill({}),
+      ...monthColumns.map((m) => ({
+        text: getSemesterAttendance('absents', m.key),
+        fontSize: 8,
+        alignment: 'center',
+        border: [true, true, true, true],
+      })),
+      {
+        text: getTotalAbsences(),
+        fontSize: 8,
+        alignment: 'center',
+        border: [true, true, true, true],
+      },
+    ])
+    tableBody.push([
+      {
+        text: 'MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME',
+        colSpan: 18,
+        fontSize: 8,
+        bold: true,
+        border: [true, true, true, true],
+      },
+      ...Array(17).fill({}),
+      ...monthColumns.map((m) => ({
+        text: getSemesterAttendance('lates', m.key),
+        fontSize: 8,
+        alignment: 'center',
+        border: [true, true, true, true],
+      })),
+      { text: getTotalLates(), fontSize: 8, alignment: 'center', border: [true, true, true, true] },
+    ])
+    tableBody.push([
+      {
+        text: 'OBSERVATIONS/REMARKS',
+        colSpan: 25,
+        fontSize: 8,
+        bold: true,
+        border: [true, true, true, true],
+        margin: [0, 0, 0, 15],
+      },
+      ...Array(24).fill({}),
+    ])
+  })
+
+  if (!processedSummaryData.value.length) {
+    tableBody.push([
+      {
+        text: 'No summary performance data available',
+        colSpan: 25,
+        alignment: 'center',
+        italics: true,
+        border: [true, true, true, true],
+      },
+      ...Array(24).fill({}),
+    ])
+  }
+
+  content.push({
+    table: { headerRows: 3, widths: colWidths, body: tableBody },
+    layout: {
+      hLineWidth: (i) => (i < 3 ? 1 : 0.5),
+      vLineWidth: () => 0.5,
+      hLineColor: () => '#000000',
+      vLineColor: () => '#000000',
+      paddingLeft: () => 2,
+      paddingRight: () => 2,
+      paddingTop: () => 2,
+      paddingBottom: () => 2,
+    },
+    margin: [0, 0, 0, 0],
+  })
+
+  content.push({
+    table: {
+      widths: ['25%', '8.33%', '25%', '8.33%', '25%', '8.33%'],
+      body: [
+        [
+          {
+            text: 'Above entries are true & correct:',
+            fontSize: 8,
+            margin: [0, 0, 0, 5],
+            alignment: 'center',
+          },
+          { text: 'Date:', fontSize: 8, margin: [0, 0, 0, 5], alignment: 'center' },
+          { text: 'Confirmed:', fontSize: 9, margin: [0, 0, 0, 5], alignment: 'center' },
+          { text: 'Date:', fontSize: 8, margin: [0, 0, 0, 5], alignment: 'center' },
+          {
+            text: 'Approved for Final Rating:',
+            fontSize: 9,
+            margin: [0, 0, 0, 5],
+            alignment: 'center',
+          },
+          { text: 'Date:', fontSize: 8, margin: [0, 0, 0, 5], alignment: 'center' },
+        ],
+        [
+          {
+            text: employeeName,
+            fontSize: 8,
+            bold: true,
+            alignment: 'center',
+            margin: [0, 20, 0, 2],
+          },
+          { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
+          {
+            // Use confirmedBy computed property
+            text:
+              confirmedBy?.name ||
+              props.supervisorySignatory?.name ||
+              props.managerialSignatory?.name ||
+              '___________________',
+            fontSize: 8,
+            bold: true,
+            alignment: 'center',
+            margin: [0, 20, 0, 2],
+          },
+          { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
+          {
+            // Use approvedFinalRatingBy computed property
+            text:
+              approvedFinalRatingBy?.name ||
+              props.managerialSignatory?.name ||
+              '___________________',
+            fontSize: 8,
+            bold: true,
+            alignment: 'center',
+            margin: [0, 20, 0, 2],
+          },
+          { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
+        ],
+        [
+          { text: position, fontSize: 8, alignment: 'center' },
+          { text: '', fontSize: 8 },
+          {
+            // Use confirmedBy position
+            text:
+              confirmedBy?.position ||
+              props.supervisorySignatory?.position ||
+              props.managerialSignatory?.position ||
+              'Supervisor',
+            fontSize: 8,
+            alignment: 'center',
+          },
+          { text: '', fontSize: 8 },
+          {
+            // Use approvedFinalRatingBy position
+            text:
+              approvedFinalRatingBy?.position ||
+              props.managerialSignatory?.position ||
+              'Department Head',
+            fontSize: 8,
+            alignment: 'center',
+          },
+          { text: '', fontSize: 8 },
+        ],
+      ],
+    },
+    layout: {
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
+      hLineColor: () => '#000000',
+      vLineColor: () => '#000000',
+    },
+    margin: [0, 10, 0, 0],
+  })
+
+  return {
+    pageSize: 'LEGAL',
+    pageOrientation: 'landscape',
+    pageMargins: [36, 36, 36, 36],
+    content,
+    defaultStyle: { fontSize: 10 },
+    compress: true,
   }
 }
 // Lifecycle
