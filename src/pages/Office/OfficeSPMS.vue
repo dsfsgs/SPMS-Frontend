@@ -3,13 +3,13 @@
     <q-page-container>
       <q-page padding class="q-pa-md">
         <!-- Main Content -->
-        <div class="row q-mb-lg">
+        <div class="row q-col-gutter-md q-mb-lg">
           <!-- Left Panel: Organization Tree -->
           <div class="col-12 col-md-4">
             <q-card flat bordered>
               <q-card-section>
                 <!-- Semester and Year Filters -->
-                <div class="row q-gutter-sm items-center q-mb-sm">
+                <div class="row q-col-gutter-sm items-center q-mb-sm">
                   <q-select
                     v-model="selectedSemester"
                     :options="availableSemesters"
@@ -19,7 +19,7 @@
                     emit-value
                     map-options
                     @update:model-value="onSemesterChange"
-                    class="col"
+                    class="col-12 col-sm"
                   >
                     <template v-slot:prepend>
                       <q-icon name="calendar_view_month" size="xs" />
@@ -35,7 +35,7 @@
                     emit-value
                     map-options
                     @update:model-value="onYearChange"
-                    class="col"
+                    class="col-12 col-sm"
                   >
                     <template v-slot:prepend>
                       <q-icon name="event" size="xs" />
@@ -51,6 +51,7 @@
                     v-model="treeFilter"
                     placeholder="Search organization..."
                     class="full-width"
+                    clearable
                   />
                 </div>
 
@@ -124,14 +125,17 @@
             <q-card flat bordered>
               <q-card-section>
                 <!-- Header with Actions -->
-                <div class="row items-center justify-between q-mb-md" v-if="selectedNode">
+                <div
+                  class="row items-center justify-between header-actions-row q-mb-md"
+                  v-if="selectedNode"
+                >
                   <div class="office-title">{{ selectedNodeBreadcrumb }}</div>
                   <div class="row q-gutter-sm button-container">
                     <!-- Show UWP buttons only for valid org node types -->
                     <template v-if="isOrgNode(selectedNode)">
-                      <!-- Create UWP Button -->
+                      <!-- Create UWP Button - hidden when locked, node not editable, or all employees already have targets -->
                       <q-btn
-                        v-if="canCreateUWP"
+                        v-if="canCreateUWP && canEditNode(selectedNode) && !allEmployeesHaveTarget"
                         class="neu-button-rect"
                         flat
                         size="sm"
@@ -158,6 +162,58 @@
                   </div>
                 </div>
 
+                <!-- UWP Lock Status Message - shown when Create UWP is hidden due to a lock -->
+                <div
+                  v-if="selectedNode && isOrgNode(selectedNode) && !canCreateUWP"
+                  class="q-mb-md"
+                >
+                  <q-banner rounded class="bg-warning text-white">
+                    <template v-slot:avatar>
+                      <q-icon name="lock" color="white" />
+                    </template>
+                    {{ uwpBlockedReason }}
+                  </q-banner>
+                </div>
+
+                <!-- All Employees Already Have Targets Message - shown instead of the lock banner -->
+                <div
+                  v-else-if="
+                    selectedNode &&
+                    isOrgNode(selectedNode) &&
+                    canCreateUWP &&
+                    allEmployeesHaveTarget
+                  "
+                  class="q-mb-md"
+                >
+                  <q-banner rounded class="bg-positive text-white">
+                    <template v-slot:avatar>
+                      <q-icon name="check_circle" color="white" />
+                    </template>
+                    All employees in this {{ selectedNode.type }} already have targets for this
+                    period.
+                  </q-banner>
+                </div>
+
+                <!-- Node Status Message - shown when node status prevents UWP creation -->
+                <div
+                  v-if="
+                    selectedNode &&
+                    isOrgNode(selectedNode) &&
+                    canCreateUWP &&
+                    !allEmployeesHaveTarget &&
+                    !canEditNode(selectedNode)
+                  "
+                  class="q-mb-md"
+                >
+                  <q-banner rounded class="bg-info text-white">
+                    <template v-slot:avatar>
+                      <q-icon name="info" color="white" />
+                    </template>
+                    Create UWP is only available when the {{ selectedNode.type }} has "Not Started",
+                    "Draft", or "Returned Target" status.
+                  </q-banner>
+                </div>
+
                 <!-- Employee Search -->
                 <div class="q-mb-md">
                   <q-input
@@ -166,139 +222,149 @@
                     v-model="employeeFilter"
                     placeholder="Search employees..."
                     class="full-width"
+                    clearable
                   />
                 </div>
 
-                <!-- Employee Table (always shown when a node is selected) -->
+                <!-- Employee Table -->
                 <template v-if="selectedNode">
-                  <q-table
-                    :rows="filteredEmployees"
-                    :columns="columns"
-                    row-key="id"
-                    flat
-                    bordered
-                    class="clean-table"
-                    :pagination="{ rowsPerPage: 10 }"
-                    :loading="loading"
-                  >
-                    <template v-slot:body="props">
-                      <q-tr :props="props">
-                        <!-- Name Column -->
-                        <q-td key="name" :props="props">
-                          <div class="row items-center no-wrap full-width">
-                            <q-icon
-                              :name="props.row.isHead ? 'supervisor_account' : 'person'"
-                              :color="props.row.isHead ? 'blue' : 'grey'"
-                              size="sm"
-                              class="q-mr-sm flex-shrink-0"
-                            />
-                            <div class="employee-info full-width">
-                              <div>{{ props.row.label }}</div>
-                              <div class="text-caption text-grey-7">{{ props.row.position }}</div>
+                  <div class="table-scroll-wrapper">
+                    <q-table
+                      :rows="filteredEmployees"
+                      :columns="columns"
+                      row-key="id"
+                      flat
+                      bordered
+                      class="clean-table"
+                      :pagination="{ rowsPerPage: 10 }"
+                      :loading="loading"
+                    >
+                      <template v-slot:body="props">
+                        <q-tr :props="props">
+                          <!-- Name Column -->
+                          <q-td key="name" :props="props">
+                            <div class="row items-center no-wrap full-width">
+                              <q-icon
+                                :name="props.row.isHead ? 'supervisor_account' : 'person'"
+                                :color="props.row.isHead ? 'blue' : 'grey'"
+                                size="sm"
+                                class="q-mr-sm flex-shrink-0"
+                              />
+                              <div class="employee-info full-width">
+                                <div>{{ props.row.label }}</div>
+                                <div class="text-caption text-grey-7">{{ props.row.position }}</div>
+                              </div>
                             </div>
+                          </q-td>
+
+                          <!-- Rank Column -->
+                          <q-td key="rank" :props="props" class="col-rank">
+                            <q-badge
+                              v-if="isHeadRank(props.row.rank)"
+                              color="green"
+                              class="q-mr-xs"
+                            >
+                              {{ props.row.rank || '-' }}
+                            </q-badge>
+                            <span v-else>{{ props.row.rank || '-' }}</span>
+                          </q-td>
+
+                          <!-- Status Column -->
+                          <q-td key="ipcr_status" :props="props">
+                            <q-badge
+                              :color="getStatusColor(props.row)"
+                              :label="props.row.ipcrStatus || '-'"
+                              class="status-badge"
+                            />
+                          </q-td>
+
+                          <!-- Target Period Column -->
+                          <q-td key="target_period" :props="props" class="text-center col-target">
+                            <q-icon
+                              v-if="props.row.hasTargetPeriod"
+                              name="check_circle"
+                              color="positive"
+                              size="sm"
+                            />
+                            <q-icon v-else name="cancel" color="negative" size="sm" />
+                          </q-td>
+
+                          <!-- Actions Column -->
+                          <q-td key="actions" :props="props" class="text-center">
+                            <div class="row justify-center q-gutter-xs">
+                              <!-- QPEF: CASUAL, CONTRACTUAL, HONORARIUM only -->
+                              <q-btn
+                                v-if="canShowQPEF(props.row)"
+                                class="neu-button"
+                                flat
+                                round
+                                color="purple"
+                                icon="assignment_ind"
+                                size="md"
+                                @click="show_qpef_Modal(props.row)"
+                              >
+                                <q-tooltip>QPEF</q-tooltip>
+                              </q-btn>
+
+                              <!-- OPCR: Office Head job_title only -->
+                              <q-btn
+                                v-if="canShowOPCR(props.row)"
+                                class="neu-button"
+                                flat
+                                round
+                                color="red"
+                                icon="assignment_ind"
+                                size="md"
+                                @click="show_opcr_Modal(props.row)"
+                              >
+                                <q-tooltip>OPCR</q-tooltip>
+                              </q-btn>
+
+                              <!-- IPCR: Not CONTRACTUAL/HONORARIUM, not Office Head -->
+                              <q-btn
+                                v-if="canShowIPCR(props.row)"
+                                class="neu-button"
+                                flat
+                                round
+                                color="blue"
+                                icon="assignment_ind"
+                                size="md"
+                                @click="show_ipcr_Modal(props.row)"
+                              >
+                                <q-tooltip>IPCR</q-tooltip>
+                              </q-btn>
+
+                              <!--
+                                Edit: only visible when the employee already has a target
+                                AND their status is Draft, Discussed Target, or Approved Target.
+                              -->
+                              <q-btn
+                                v-if="canShowEdit(props.row)"
+                                class="neu-button"
+                                flat
+                                round
+                                color="amber"
+                                icon="edit"
+                                size="md"
+                                @click="showEditModal(props.row)"
+                              >
+                                <q-tooltip>Edit</q-tooltip>
+                              </q-btn>
+                            </div>
+                          </q-td>
+                        </q-tr>
+                      </template>
+
+                      <template v-slot:no-data>
+                        <div class="text-center q-pa-md col-12">
+                          <q-icon name="error_outline" size="2rem" color="grey" />
+                          <div class="text-grey-7 q-mt-sm">
+                            No employees found in this {{ selectedNode?.type || 'node' }}
                           </div>
-                        </q-td>
-
-                        <!-- Rank Column -->
-                        <q-td key="rank" :props="props">
-                          <q-badge v-if="isHeadRank(props.row.rank)" color="green" class="q-mr-xs">
-                            {{ props.row.rank || '-' }}
-                          </q-badge>
-                          <span v-else>{{ props.row.rank || '-' }}</span>
-                        </q-td>
-
-                        <!-- Status Column -->
-                        <q-td key="ipcr_status" :props="props">
-                          <q-badge
-                            :color="getStatusColor(props.row)"
-                            :label="props.row.ipcrStatus || '-'"
-                            class="status-badge"
-                          />
-                        </q-td>
-
-                        <!-- Target Period Column -->
-                        <q-td key="target_period" :props="props" class="text-center">
-                          <q-icon
-                            v-if="props.row.hasTargetPeriod"
-                            name="check_circle"
-                            color="positive"
-                            size="sm"
-                          />
-                          <q-icon v-else name="cancel" color="negative" size="sm" />
-                        </q-td>
-
-                        <!-- Actions Column -->
-                        <q-td key="actions" :props="props" class="text-center">
-                          <div class="row justify-center q-gutter-xs">
-                            <!-- QPEF: CASUAL, CONTRACTUAL, HONORARIUM only -->
-                            <q-btn
-                              v-if="canShowQPEF(props.row)"
-                              class="neu-button"
-                              flat
-                              round
-                              color="purple"
-                              icon="assignment_ind"
-                              size="md"
-                              @click="show_qpef_Modal(props.row)"
-                            >
-                              <q-tooltip>QPEF</q-tooltip>
-                            </q-btn>
-
-                            <!-- OPCR: Office Head job_title only -->
-                            <q-btn
-                              v-if="canShowOPCR(props.row)"
-                              class="neu-button"
-                              flat
-                              round
-                              color="red"
-                              icon="assignment_ind"
-                              size="md"
-                              @click="show_opcr_Modal(props.row)"
-                            >
-                              <q-tooltip>OPCR</q-tooltip>
-                            </q-btn>
-
-                            <!-- IPCR: Not CONTRACTUAL/HONORARIUM, not Office Head -->
-                            <q-btn
-                              v-if="canShowIPCR(props.row)"
-                              class="neu-button"
-                              flat
-                              round
-                              color="blue"
-                              icon="assignment_ind"
-                              size="md"
-                              @click="show_ipcr_Modal(props.row)"
-                            >
-                              <q-tooltip>IPCR</q-tooltip>
-                            </q-btn>
-
-                            <!-- Edit: Not CONTRACTUAL/HONORARIUM -->
-                            <q-btn
-                              v-if="canShowEdit(props.row)"
-                              class="neu-button"
-                              flat
-                              round
-                              color="amber"
-                              icon="edit"
-                              size="md"
-                              @click="showEditModal(props.row)"
-                            >
-                              <q-tooltip>Edit</q-tooltip>
-                            </q-btn>
-                          </div>
-                        </q-td>
-                      </q-tr>
-                    </template>
-
-                    <template v-slot:no-data>
-                      <div class="text-center q-pa-md col-12">
-                        <q-icon name="error_outline" size="2rem" color="grey" />
-                        <div class="text-grey-7 q-mt-sm">
-                          No employees found in this {{ selectedNode?.type || 'node' }}
                         </div>
-                      </div>
-                    </template>
-                  </q-table>
+                      </template>
+                    </q-table>
+                  </div>
                 </template>
               </q-card-section>
             </q-card>
@@ -444,6 +510,12 @@ const HEAD_RANKS = [
   'unit-head',
 ]
 
+// Required status for Department Head to allow UWP creation (lower levels only)
+const REQUIRED_HEAD_STATUS = 'Calibrated/Validated Target'
+
+// Statuses that keep the Edit button visible (employee must also already have a target)
+const EDIT_VISIBLE_STATUSES = ['draft', 'discussed target', 'approved target']
+
 /**
  * Employee status ordering for display (top to bottom in table).
  * Unknown/missing statuses go to the bottom.
@@ -482,7 +554,14 @@ const UWP_LEVEL_HEAD_JOB_TITLE = {
 
 const columns = ref([
   { name: 'name', align: 'left', label: 'Name', field: 'label', sortable: true },
-  { name: 'rank', align: 'left', label: 'Rank', field: 'rank', sortable: true },
+  {
+    name: 'rank',
+    align: 'left',
+    label: 'Rank',
+    field: 'rank',
+    sortable: true,
+    classes: 'col-rank',
+  },
   { name: 'ipcr_status', align: 'left', label: 'Status', field: 'ipcrStatus', sortable: true },
   {
     name: 'target_period',
@@ -490,6 +569,7 @@ const columns = ref([
     label: 'Targets',
     field: 'hasTargetPeriod',
     sortable: false,
+    classes: 'col-target',
   },
   { name: 'actions', align: 'center', label: 'Actions', field: 'actions' },
 ])
@@ -559,26 +639,44 @@ const getJobTitleLevel = (jobTitle) => {
 }
 
 // ============================================================================
-// HELPER: NODE UTILITIES
+// HELPER: NODE & EMPLOYEE STATUS CHECKS
 // ============================================================================
 
+/**
+ * Check if a node can be edited (used to gate the Create UWP action, not the row-level Edit button)
+ */
+const canEditNode = (node) => {
+  if (!node) return false
+
+  const employees = getNodeEmployees(node.id)
+  if (employees.length === 0) return false
+
+  return employees.every((emp) => canEditEmployee(emp))
+}
+
+/**
+ * Allowed statuses that let a node proceed to Create UWP
+ */
+const ALLOWED_UWP_NODE_STATUSES = ['Not Started', 'Draft', 'Returned Target']
+
+const canEditEmployee = (employee) => {
+  if (!employee) return false
+  const status = employee.ipcrStatus || employee.existing_target_period?.status || ''
+  return ALLOWED_UWP_NODE_STATUSES.includes(status)
+}
+
+/**
+ * Check if a node is a valid organizational node (not an individual employee)
+ */
 const isOrgNode = (node) => node && ORG_NODE_TYPES.includes(node.type)
 
 // ============================================================================
 // UWP CASCADING LOCK LOGIC
 // ============================================================================
 
-const nodeHasCountableEmployees = (nodeId) => {
-  const node = orgStore._findNode(nodeId)
-  if (!node) return false
-  const count = (n) => {
-    if (!n) return 0
-    if (n.type === 'employee') return shouldCountEmployee(n) ? 1 : 0
-    return (n.children || []).reduce((sum, c) => sum + count(c), 0)
-  }
-  return count(node) > 0
-}
-
+/**
+ * Find the head employee of a node based on its type
+ */
 const findNodeHeadEmployee = (node) => {
   if (!node) return null
   const expectedTitle = UWP_LEVEL_HEAD_JOB_TITLE[node.type]
@@ -596,6 +694,9 @@ const findNodeHeadEmployee = (node) => {
   )
 }
 
+/**
+ * Get all ancestors of a node
+ */
 const getAncestorChain = (nodeId, nodes = orgStore.structure, chain = []) => {
   for (const node of nodes) {
     if (node.id === nodeId) return chain
@@ -607,6 +708,60 @@ const getAncestorChain = (nodeId, nodes = orgStore.structure, chain = []) => {
   return null
 }
 
+/**
+ * Get the Department Head for a given office
+ */
+const getDepartmentHead = (officeNode) => {
+  if (!officeNode) return null
+  const directEmployees = (officeNode.children || []).filter((c) => c.type === 'employee')
+  return directEmployees.find((emp) => {
+    const jobTitle =
+      emp.employeeData?.job_title?.toLowerCase().trim() || emp.jobTitle?.toLowerCase().trim() || ''
+    return jobTitle === 'department head'
+  })
+}
+
+/**
+ * Check if a Department Head has the required status
+ */
+const isDepartmentHeadStatusValid = (departmentHead) => {
+  if (!departmentHead) return false
+
+  const status = departmentHead.existing_target_period?.status || departmentHead.ipcrStatus || ''
+  return status === REQUIRED_HEAD_STATUS
+}
+
+/**
+ * Get the Office node from the hierarchy
+ */
+const getOfficeNode = (nodeId) => {
+  const ancestors = getAncestorChain(nodeId)
+  if (!ancestors) return null
+
+  for (const ancestor of ancestors) {
+    if (ancestor.type === 'office') {
+      return ancestor
+    }
+  }
+
+  const node = orgStore._findNode(nodeId)
+  if (node && node.type === 'office') {
+    return node
+  }
+
+  return null
+}
+
+/**
+ * UWP Lock Status - determines if UWP can be created
+ * Rules:
+ * 1. Office level: Always allowed (no parent lock)
+ * 2. Lower levels (office2, group, division, section, unit):
+ *    - Find the parent Office
+ *    - Find the Department Head in that Office
+ *    - Check if Department Head has "Calibrated/Validated Target" status
+ *    - If yes, allow; if no, block with explanation
+ */
 const uwpLockStatus = computed(() => {
   if (!selectedNode.value || !isOrgNode(selectedNode.value)) {
     return { allowed: false, reason: 'Select a valid organizational unit.' }
@@ -614,30 +769,38 @@ const uwpLockStatus = computed(() => {
 
   const currentType = selectedNode.value.type
 
+  // Office level is always allowed (top level)
   if (currentType === 'office') {
     return { allowed: true, reason: '' }
   }
 
-  const ancestors = getAncestorChain(selectedNode.value.id)
+  // For lower levels, check the Department Head status
+  const officeNode = getOfficeNode(selectedNode.value.id)
 
-  if (!ancestors || ancestors.length === 0) {
-    return { allowed: true, reason: '' }
+  if (!officeNode) {
+    return {
+      allowed: false,
+      reason: 'Could not find the parent Office for this unit.',
+    }
   }
 
-  for (const ancestor of ancestors) {
-    if (!ORG_NODE_TYPES.includes(ancestor.type)) continue
-    if (!nodeHasCountableEmployees(ancestor.id)) continue
+  const departmentHead = getDepartmentHead(officeNode)
 
-    const headEmployee = findNodeHeadEmployee(ancestor)
-    if (!headEmployee) continue
+  if (!departmentHead) {
+    return {
+      allowed: false,
+      reason: `No Department Head found for ${officeNode.label || 'this office'}. Please assign a Department Head first.`,
+    }
+  }
 
-    if (!headEmployee.hasTargetPeriod) {
-      const levelLabel = ancestor.label || ancestor.type
-      const headName = headEmployee.label || headEmployee.name || 'Head'
-      return {
-        allowed: false,
-        reason: `"${headName}" (${levelLabel}) has not yet completed their UWP targets. Complete the ${ancestor.type} level first before proceeding to ${currentType}.`,
-      }
+  const headStatus =
+    departmentHead.existing_target_period?.status || departmentHead.ipcrStatus || ''
+  const headName = departmentHead.label || departmentHead.name || 'Department Head'
+
+  if (!isDepartmentHeadStatusValid(departmentHead)) {
+    return {
+      allowed: false,
+      reason: `"${headName}" (Department Head) must have "${REQUIRED_HEAD_STATUS}" status before creating UWP for lower levels. Current status: "${headStatus || 'No status'}"`,
     }
   }
 
@@ -690,6 +853,24 @@ const filteredEmployees = computed(() => {
   })
 })
 
+/**
+ * All countable employees under the selected node, used to determine
+ * whether Create UWP should be hidden because everyone already has a target.
+ */
+const nodeUWPEmployees = computed(() => {
+  if (!selectedNode.value) return []
+  return getNodeEmployees(selectedNode.value.id)
+})
+
+/**
+ * True when every employee under the selected node already has a target
+ * period assigned — in that case there's nothing left to create.
+ */
+const allEmployeesHaveTarget = computed(() => {
+  const emps = nodeUWPEmployees.value
+  return emps.length > 0 && emps.every((e) => e.hasTargetPeriod === true)
+})
+
 // ============================================================================
 // COMPUTED: REPORT DATA
 // ============================================================================
@@ -726,12 +907,9 @@ const firstSubLevel = computed(() => {
   const officeNode = getOfficeNode(orgStore.structure)
   if (!officeNode?.children) return []
 
-  // Filter nodes that have at least one countable employee (Regular, Casual, Coterminous)
   return officeNode.children.filter((c) => {
-    // Skip employee nodes
     if (c.type === 'employee') return false
 
-    // Check if this node has any countable employees
     const hasCountableEmployees = (node) => {
       if (!node) return false
       if (node.type === 'employee') {
@@ -781,10 +959,17 @@ const canShowIPCR = (employee) => {
   return true
 }
 
+/**
+ * Edit button is only shown when:
+ *  1. The employee already has a target period, AND
+ *  2. Their current status is Draft, Discussed Target, or Approved Target.
+ */
 const canShowEdit = (employee) => {
   if (!employee?.employeeData) return false
   if (!employee.hasTargetPeriod) return false
-  return !isExcludedStatus(employee.employeeData.status)
+
+  const status = (employee.ipcrStatus || '').toString().trim().toLowerCase()
+  return EDIT_VISIBLE_STATUSES.includes(status)
 }
 
 // ============================================================================
@@ -969,13 +1154,13 @@ const getNodeEmployees = (nodeId) => {
         isHead: child.isHead,
         hasTargetPeriod: child.hasTargetPeriod,
         employeeData: child.employeeData,
-        // ADD THESE - map sg and level from employeeData to top level
         sg: child.employeeData?.sg || child.sg || '',
         level: child.employeeData?.level || child.level || '',
         salary_grade: child.sg || '',
         employeeStatus: child.employeeData?.employeeStatus || child.employeeData?.level || '',
         designation: child.employeeData?.designation || child.position || '',
         employment_type: child.employeeData?.employment_type || child.rank || '',
+        existing_target_period: child.existing_target_period || null,
       })
     }
   })
@@ -998,9 +1183,9 @@ const getAllEmployeesUnderNode = (nodeId) => {
           isHead: node.isHead,
           hasTargetPeriod: node.hasTargetPeriod,
           employeeData: node.employeeData,
-          // ADD THESE
           sg: node.employeeData?.sg || node.sg || '',
           level: node.employeeData?.level || node.level || '',
+          existing_target_period: node.existing_target_period || null,
         })
     } else {
       ;(node.children || []).forEach(collect)
@@ -1266,6 +1451,25 @@ const createUnitWorkPlan = () => {
     })
   }
 
+  if (allEmployeesHaveTarget.value) {
+    return $q.notify({
+      message: 'All employees in this node already have targets for this period.',
+      color: 'positive',
+      position: 'top',
+      timeout: 4000,
+    })
+  }
+
+  // Check if node has allowed status
+  if (!canEditNode(selectedNode.value)) {
+    return $q.notify({
+      message: `Create UWP is only available when the ${selectedNode.value.type} has "Not Started", "Draft", or "Returned Target" status.`,
+      color: 'warning',
+      position: 'top',
+      timeout: 5000,
+    })
+  }
+
   const type = selectedNode.value.type
   if (!ORG_NODE_TYPES.includes(type)) {
     return $q.notify({ message: 'Please select a valid organizational unit', color: 'negative' })
@@ -1409,6 +1613,12 @@ onMounted(async () => {
   border-radius: 8px;
 }
 
+.table-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .status-badge {
   border-radius: 4px;
   padding: 4px 8px;
@@ -1434,6 +1644,10 @@ onMounted(async () => {
     inset -2px -2px 4px rgba(255, 255, 255, 0.9);
   transform: translateY(2px);
 }
+.neu-button:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
 
 .neu-button-rect {
   border-radius: 8px;
@@ -1456,6 +1670,15 @@ onMounted(async () => {
     inset -2px -2px 4px rgba(255, 255, 255, 0.9);
   transform: translateY(2px);
 }
+.neu-button-rect:focus-visible {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+.header-actions-row {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
 
 .office-title {
   font-size: 10pt;
@@ -1466,8 +1689,7 @@ onMounted(async () => {
 }
 
 .button-container {
-  flex-wrap: nowrap;
-  flex: 0 0 auto;
+  flex-wrap: wrap;
   justify-content: flex-end;
   min-width: fit-content;
 }
@@ -1496,5 +1718,44 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ============================================================================
+   RESPONSIVE BREAKPOINTS
+============================================================================ */
+
+/* Tablet and below: tighten padding, allow the header row to stack */
+@media (max-width: 1023px) {
+  .q-page {
+    padding: 12px !important;
+  }
+}
+
+/* Phones: stack header actions, hide secondary table columns, full-width title */
+@media (max-width: 599px) {
+  .header-actions-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .office-title {
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .button-container {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .button-container .neu-button-rect {
+    flex: 1 1 auto;
+  }
+
+  /* Hide lower-priority columns on very small screens; Name/Status/Actions remain */
+  .clean-table :deep(.col-rank),
+  .clean-table :deep(.col-target) {
+    display: none;
+  }
 }
 </style>

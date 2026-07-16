@@ -265,20 +265,7 @@ const STATUS_TRANSITIONS = {
       description: 'Accept the revised target submission.',
     },
   ],
-  'calibrated/validated target': [
-    {
-      label: 'Received Accomplishment',
-      value: 'Received Accomplishment',
-      color: 'indigo-6',
-      description: 'Mark the accomplishment report as received.',
-    },
-    {
-      label: 'Returned Accomplishment',
-      value: 'Returned Accomplishment',
-      color: 'red-6',
-      description: 'Return the accomplishment report for corrections.',
-    },
-  ],
+
   'returned accomplishment': [
     {
       label: 'Received Accomplishment',
@@ -299,34 +286,6 @@ const STATUS_TRANSITIONS = {
       value: 'Returned Accomplishment',
       color: 'red-6',
       description: 'Return the approved accomplishment report for revisions.',
-    },
-  ],
-  'received target': [
-    {
-      label: 'Calibrated/Validated Target',
-      value: 'Calibrated/Validated Target',
-      color: 'green-7',
-      description: 'Mark the target as calibrated and validated.',
-    },
-    {
-      label: 'Returned Target',
-      value: 'Returned Target',
-      color: 'red-6',
-      description: 'Return the target for revision.',
-    },
-  ],
-  'prevalidated accomplishment': [
-    {
-      label: 'Calibrated/Validated Accomplishment',
-      value: 'Calibrated/Validated Accomplishment',
-      color: 'green-7',
-      description: 'Mark the accomplishment as calibrated and validated.',
-    },
-    {
-      label: 'Returned Accomplishment',
-      value: 'Returned Accomplishment',
-      color: 'red-6',
-      description: 'Return the accomplishment for revision.',
     },
   ],
 }

@@ -774,18 +774,74 @@ export default {
       return null
     },
 
-    findParentByType(nodes, childId, parentType) {
-      for (const node of nodes) {
-        if (node.children) {
-          const directChild = node.children.find((child) => child.id === childId)
-          if (directChild && node.type === parentType) return node.name
-          const found = this.findParentByType(node.children, childId, parentType)
-          if (found) return found
+    // FIXED: This method now properly finds parents at ANY depth
+    findParentByType(childId, parentType) {
+      const searchTree = (nodes, targetId, currentPath = []) => {
+        for (const node of nodes) {
+          // If this node is the target, check the path for the parent
+          if (node.id === targetId) {
+            // Search from the deepest parent upwards
+            for (let i = currentPath.length - 1; i >= 0; i--) {
+              if (currentPath[i].type === parentType) {
+                return currentPath[i].name
+              }
+            }
+            return null
+          }
+
+          // If this node has children, search them
+          if (node.children && node.children.length > 0) {
+            const result = searchTree(node.children, targetId, [...currentPath, node])
+            if (result !== null) return result
+          }
         }
+        return null
+      }
+
+      return searchTree(this.treeNodes, childId)
+    },
+
+    // FIXED: These methods now correctly get all parent levels
+    getOffice2ForSelectedNode() {
+      if (!this.selectedNode) return null
+      if (this.selectedNode.type === 'office2') return this.selectedNode.name
+      if (['group', 'division', 'section', 'unit'].includes(this.selectedNode.type)) {
+        return this.findParentByType(this.selectedNode.id, 'office2')
       }
       return null
     },
 
+    getGroupForSelectedNode() {
+      if (!this.selectedNode) return null
+      if (this.selectedNode.type === 'group') return this.selectedNode.name
+      if (['division', 'section', 'unit'].includes(this.selectedNode.type)) {
+        return this.findParentByType(this.selectedNode.id, 'group')
+      }
+      return null
+    },
+
+    getDivisionForSelectedNode() {
+      if (!this.selectedNode) return null
+      if (this.selectedNode.type === 'division') return this.selectedNode.name
+      if (['section', 'unit'].includes(this.selectedNode.type)) {
+        return this.findParentByType(this.selectedNode.id, 'division')
+      }
+      return null
+    },
+
+    getSectionForSelectedNode() {
+      if (!this.selectedNode) return null
+      if (this.selectedNode.type === 'section') return this.selectedNode.name
+      if (this.selectedNode.type === 'unit') {
+        return this.findParentByType(this.selectedNode.id, 'section')
+      }
+      return null
+    },
+
+    getUnitForSelectedNode() {
+      if (!this.selectedNode) return null
+      return this.selectedNode.type === 'unit' ? this.selectedNode.name : null
+    },
     isHeadOptionDisabled(employee, headType) {
       if (!this.selectedNode) return false
       const existingHead = this.filteredEmployees.find((emp) => {
@@ -1332,42 +1388,6 @@ export default {
       } finally {
         this.showAddModal = false
       }
-    },
-
-    getOffice2ForSelectedNode() {
-      if (this.selectedNode.type === 'office2') return this.selectedNode.name
-      if (['group', 'division', 'section', 'unit'].includes(this.selectedNode.type)) {
-        return this.findParentByType(this.treeNodes, this.selectedNode.id, 'office2')
-      }
-      return null
-    },
-
-    getGroupForSelectedNode() {
-      if (this.selectedNode.type === 'group') return this.selectedNode.name
-      if (['division', 'section', 'unit'].includes(this.selectedNode.type)) {
-        return this.findParentByType(this.treeNodes, this.selectedNode.id, 'group')
-      }
-      return null
-    },
-
-    getDivisionForSelectedNode() {
-      if (this.selectedNode.type === 'division') return this.selectedNode.name
-      if (['section', 'unit'].includes(this.selectedNode.type)) {
-        return this.findParentByType(this.treeNodes, this.selectedNode.id, 'division')
-      }
-      return null
-    },
-
-    getSectionForSelectedNode() {
-      if (this.selectedNode.type === 'section') return this.selectedNode.name
-      if (this.selectedNode.type === 'unit') {
-        return this.findParentByType(this.treeNodes, this.selectedNode.id, 'section')
-      }
-      return null
-    },
-
-    getUnitForSelectedNode() {
-      return this.selectedNode.type === 'unit' ? this.selectedNode.name : null
     },
 
     async updateEmployeeRank(employee, newRank) {

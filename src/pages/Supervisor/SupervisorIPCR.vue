@@ -177,20 +177,38 @@
       <!-- Action column -->
       <template v-slot:body-cell-action="props">
         <q-td :props="props" class="text-center">
-          <q-btn
-            class="neu-button"
-            flat
-            round
-            color="blue"
-            icon="assignment_ind"
-            :disable="!selectedYear || !selectedSemester"
-            @click="openIpcrForEmployee(props.row)"
-          >
-            <q-tooltip v-if="!selectedYear || !selectedSemester">
-              Select a year and semester first
-            </q-tooltip>
-            <q-tooltip v-else>Open IPCR</q-tooltip>
-          </q-btn>
+          <div class="row items-center justify-center no-wrap q-gutter-xs">
+            <q-btn
+              class="neu-button"
+              flat
+              round
+              color="blue"
+              icon="assignment_ind"
+              :disable="!selectedYear || !selectedSemester"
+              @click="openIpcrForEmployee(props.row)"
+            >
+              <q-tooltip v-if="!selectedYear || !selectedSemester">
+                Select a year and semester first
+              </q-tooltip>
+              <q-tooltip v-else>Open IPCR</q-tooltip>
+            </q-btn>
+
+            <!-- View Ratings Button -->
+            <q-btn
+              class="neu-button"
+              flat
+              round
+              color="teal"
+              icon="bar_chart"
+              :disable="!selectedYear || !selectedSemester"
+              @click="openViewRatingModal(props.row)"
+            >
+              <q-tooltip v-if="!selectedYear || !selectedSemester">
+                Select a year and semester first
+              </q-tooltip>
+              <q-tooltip v-else>View Ratings</q-tooltip>
+            </q-btn>
+          </div>
         </q-td>
       </template>
 
@@ -233,6 +251,14 @@
         />
       </q-card>
     </q-dialog>
+
+    <!-- View Rating Modal -->
+    <ViewRatingModal
+      v-if="viewRatingEmployee"
+      v-model="showViewRatingModal"
+      :period="viewRatingPeriod"
+      :user-control-no="viewRatingEmployee.controlNo"
+    />
   </q-page>
 </template>
 
@@ -242,6 +268,7 @@ import { useLibraryStore } from 'src/stores/hr_Store/libraryStore'
 import { useUserStore } from 'src/stores/userStore'
 import IPCRReportSupervisor from 'src/components/IPCRReportSupervisor.vue'
 import EditUWPModal from 'src/components/EditUWPModal.vue'
+import ViewRatingModal from 'src/components/ViewRatingModal.vue'
 
 export default {
   name: 'IPCREmployeeUserPage',
@@ -249,6 +276,7 @@ export default {
   components: {
     IPCRReportSupervisor,
     EditUWPModal,
+    ViewRatingModal,
   },
 
   setup() {
@@ -277,6 +305,9 @@ export default {
 
       showEditModal: false,
       editEmployeeData: null,
+
+      showViewRatingModal: false,
+      viewRatingEmployee: null,
 
       // Statuses for which Create/Edit UWP should still be available.
       // A null/empty status (target period exists but status not yet set) is also treated as editable.
@@ -481,6 +512,17 @@ export default {
 
       return this.editableStatuses.includes(status)
     },
+
+    // Built for the ViewRatingModal — includes the target period `id` the
+    // modal's fetch action requires (semester/year alone is NOT enough,
+    // see ViewRatingModal's fetchForCurrentSelection guard).
+    viewRatingPeriod() {
+      return {
+        semester: this.selectedSemester,
+        year: this.selectedYear,
+        id: this.viewRatingEmployee?.existing_target_period?.id || null,
+      }
+    },
   },
 
   watch: {
@@ -488,6 +530,14 @@ export default {
       if (newYear && this.initialized) {
         this.searchQuery = ''
         this.selectedSemester = null
+      }
+    },
+
+    // Reset the selected employee once the View Rating modal closes so the
+    // next click always starts from a clean state.
+    showViewRatingModal(val) {
+      if (!val) {
+        this.viewRatingEmployee = null
       }
     },
   },
@@ -601,6 +651,21 @@ export default {
       if (this.selectedYear && this.selectedSemester) {
         this.fetchEmployeeData()
       }
+    },
+
+    // ===== VIEW RATING MODAL =====
+    openViewRatingModal(employee) {
+      if (!employee?.existing_target_period?.id) {
+        this.$q.notify({
+          type: 'warning',
+          message: 'No target period found for this employee.',
+          position: 'top',
+        })
+        return
+      }
+
+      this.viewRatingEmployee = employee
+      this.showViewRatingModal = true
     },
 
     handleStatusUpdated(updatedEmployee) {
