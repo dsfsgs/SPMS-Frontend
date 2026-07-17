@@ -7,13 +7,13 @@ export const useRateStore = defineStore('targetPeriod', () => {
   const performanceStandards = ref([])
   const loading = ref(false)
   const error = ref(null)
-  const weekStatus = ref('Pending') // Add this
+  const weekStatus = ref('Pending')
 
   // ===== GETTERS =====
   const getPerformanceStandards = computed(() => performanceStandards.value)
   const getLoading = computed(() => loading.value)
   const getError = computed(() => error.value)
-  const getWeekStatus = computed(() => weekStatus.value) // Add this
+  const getWeekStatus = computed(() => weekStatus.value)
 
   // ===== CONSTANTS =====
   const MONTH_NAMES = [
@@ -58,10 +58,10 @@ export const useRateStore = defineStore('targetPeriod', () => {
             category: std.category || '',
             mfo: std.mfo || '',
             output: std.output || '',
-            outputName: std.output_name || '',
-            indicatorName: std.performance_indicator || '',
-            successIndicator: std.success_indicator || '',
-            requiredOutput: std.required_output || '',
+            output_name: std.output_name || '', // Keep as output_name
+            performance_indicator: std.performance_indicator || [], // KEEP THIS - don't rename to indicatorName
+            success_indicator: std.success_indicator || '',
+            required_output: std.required_output || '',
             standard_outcomes: std.standard_outcomes || [],
             performance_rating: std.performance_rating || [],
             configurations: std.configurations || [],
@@ -107,7 +107,6 @@ export const useRateStore = defineStore('targetPeriod', () => {
       error.value = null
       const response = await api.post(`/supervisor/update/performance-rating`, payload)
 
-      // Update week status after approval
       if (response.data && response.data.week_status) {
         weekStatus.value = response.data.week_status
       } else {
@@ -127,7 +126,7 @@ export const useRateStore = defineStore('targetPeriod', () => {
   const clearPerformanceStandards = () => {
     performanceStandards.value = []
     error.value = null
-    weekStatus.value = 'Pending' // Reset status
+    weekStatus.value = 'Pending'
   }
 
   const clearError = () => {
@@ -140,13 +139,13 @@ export const useRateStore = defineStore('targetPeriod', () => {
     performanceStandards,
     loading,
     error,
-    weekStatus, // Export this
+    weekStatus,
 
     // Getters
     getPerformanceStandards,
     getLoading,
     getError,
-    getWeekStatus, // Export this
+    getWeekStatus,
 
     // Actions
     fetchPerformanceStandards,

@@ -51,7 +51,7 @@
         <q-icon name="check_circle" color="positive" size="64px" />
         <div class="text-h6 text-positive">PDF Generated Successfully!</div>
         <div class="text-grey-7">The PDF has been opened in a new tab/window.</div>
-        <q-btn unelevated color="primary" label="Close" icon="close" @click="closeDialog" />
+        <div class="text-caption text-grey-6">Total slips generated: {{ otsSlipsData.length }}</div>
       </div>
 
       <!-- Default empty state -->
@@ -64,56 +64,205 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { date } from 'quasar'
 
 // ── Props ───────────────────────────────────────────────────────────────────
 const props = defineProps({
-  trackingData: {
+  performanceStandards: {
+    type: Array,
+    default: () => [],
+  },
+  period: {
     type: Object,
-    default: () => ({
-      controlNo: '',
-      employee: '',
-      position: '',
-      department: '',
-      actionTaken: '',
-      remarks: '',
-      date: new Date().toISOString().split('T')[0],
-      preparedBy: '',
-      receivedBy: '',
-      particular1: '',
-      particular2: '',
-      particular3: '',
-      task1: '',
-      task2: '',
-      task3: '',
-      facilitated1: '',
-      facilitated2: '',
-      facilitated3: '',
-      received1: '',
-      received2: '',
-      received3: '',
-      released1: '',
-      released2: '',
-      released3: '',
-      qualityRating: '',
-      qualityRemarks: '',
-      effectivenessRating: '',
-      effectivenessRemarks: '',
-      timelinessRating: '',
-      timelinessRemarks: '',
-    }),
+    default: () => ({}),
+  },
+  weekStatus: {
+    type: String,
+    default: 'Pending',
+  },
+  selectedMonth: {
+    type: Object,
+    default: null,
+  },
+  selectedWeek: {
+    type: Number,
+    default: 1,
+  },
+  viewEntries: {
+    type: Object,
+    default: () => ({}),
+  },
+  userControlNo: {
+    type: String,
+    default: '',
   },
 })
 
-// ── Emits ───────────────────────────────────────────────────────────────────
-const emit = defineEmits(['close'])
+// ── Helper: Get week range ────────────────────────────────────────────────
+function getWeekRange(year, month, weekNum) {
+  const firstDay = new Date(year, month - 1, 1)
+  const firstDayOfWeek = firstDay.getDay()
+
+  const mondayOffset = firstDayOfWeek === 0 ? -6 : 1 - firstDayOfWeek
+  const firstMonday = new Date(year, month - 1, 1 + mondayOffset)
+
+  const weekStart = new Date(firstMonday)
+  weekStart.setDate(weekStart.getDate() + (weekNum - 1) * 7)
+
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekEnd.getDate() + 4)
+
+  return { weekStart, weekEnd }
+}
+
+function isDateInWeek(dateStr, year, month, weekNum) {
+  if (!dateStr) return false
+
+  let dateObj
+  if (dateStr.includes('/')) {
+    const parts = dateStr.split('/')
+    dateObj = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]))
+  } else {
+    dateObj = new Date(dateStr)
+  }
+
+  if (isNaN(dateObj.getTime())) return false
+
+  const { weekStart, weekEnd } = getWeekRange(year, month, weekNum)
+
+  const compareDate = new Date(dateObj)
+  compareDate.setHours(0, 0, 0, 0)
+  weekStart.setHours(0, 0, 0, 0)
+  weekEnd.setHours(0, 0, 0, 0)
+
+  return compareDate >= weekStart && compareDate <= weekEnd
+}
+
+// ── Computed: Transform data for OTS slips ────────────────────────────────
+const otsSlipsData = computed(() => {
+  const slips = []
+  const currentYear = props.selectedMonth?.year || new Date().getFullYear()
+  const currentMonth = props.selectedMonth?.month || new Date().getMonth() + 1
+  const currentWeek = props.selectedWeek || 1
+
+  console.log(
+    '[OTS] Filtering for Week:',
+    currentWeek,
+    'Month:',
+    currentMonth,
+    'Year:',
+    currentYear,
+  )
+
+  props.performanceStandards.forEach((standard) => {
+    console.log('[OTS] Processing standard:', standard)
+
+    // Use output for PARTICULAR column
+    const output = standard.output || standard.output_name || ''
+
+    // Use output_name for TASK column
+    const outputName = standard.output_name || standard.output || ''
+    const performanceIndicator = standard.performance_indicator || []
+
+    // Build the task description using output_name
+    let taskDescription = outputName
+
+    // If there are performance indicators, add them
+    if (performanceIndicator.length > 0) {
+      const indicators = performanceIndicator.map(
+        (ind) => ind.charAt(0).toUpperCase() + ind.slice(1).toLowerCase(),
+      )
+      // Format: "Develop Information Systems"
+      taskDescription = `${indicators.join(' & ')} ${outputName}`
+    }
+
+    // If taskDescription is still empty, use the output
+    if (!taskDescription.trim()) {
+      taskDescription = output || 'No Task'
+    }
+
+    console.log('[OTS] Task Description:', taskDescription)
+    console.log('[OTS] Output (PARTICULAR):', output)
+    console.log('[OTS] Output Name (TASK):', outputName)
+    console.log('[OTS] Performance Indicator:', performanceIndicator)
+
+    const ratings = standard.performance_rating || []
+    ratings.forEach((rating) => {
+      const ratingDate = rating.date
+      if (!isDateInWeek(ratingDate, currentYear, currentMonth, currentWeek)) {
+        console.log('[OTS] Rating date not in week:', ratingDate)
+        return
+      }
+
+      const dropdownRatings = rating.dropdown_rating || []
+
+      dropdownRatings.forEach((dropdown, index) => {
+        const quantity = dropdown.quantity || '0'
+        const effectiveness = dropdown.effectiveness || ''
+        const timeliness = dropdown.timeliness || ''
+
+        let formattedDate = ratingDate || ''
+        if (formattedDate) {
+          const parts = formattedDate.split('/')
+          if (parts.length === 3) {
+            const dateObj = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]))
+            formattedDate = date.formatDate(dateObj, 'MMM D, YYYY')
+          }
+        }
+
+        const slipData = {
+          id: `${standard.id}-${rating.id}-${index}`,
+          // Map to OTS fields
+          // PARTICULAR column: use 'output'
+          particular1: output,
+          particular2: '',
+          particular3: '',
+          // TASKS column: use 'output_name' with indicator
+          task1: taskDescription,
+          task2: '',
+          task3: '',
+          facilitated1: '',
+          facilitated2: '',
+          facilitated3: '',
+          received1: '',
+          received2: '',
+          received3: '',
+          released1: '',
+          released2: '',
+          released3: '',
+          // Rating fields
+          qualityRating: quantity,
+          qualityRemarks: ``,
+          effectivenessRating: effectiveness,
+          effectivenessRemarks: '',
+          timelinessRating: timeliness,
+          timelinessRemarks: '',
+          // Additional info
+          controlNo: rating.control_no || props.userControlNo || '',
+          date: formattedDate,
+          rawDate: ratingDate,
+          status: rating.status || 'Pending',
+          standardOutput: output,
+          performanceIndicator: performanceIndicator,
+        }
+
+        console.log('[OTS] Slip data created:', slipData)
+        slips.push(slipData)
+      })
+    })
+  })
+
+  console.log('[OTS] Total slips generated:', slips.length)
+  return slips
+})
 
 // ── State ───────────────────────────────────────────────────────────────────
 const isLoading = ref(false)
 const loadError = ref('')
 const loadingMessage = ref('Initializing...')
 const pdfGenerated = ref(false)
-const logoBase64 = ref(null) // ADD THIS - the missing variable
+const logoBase64 = ref(null)
 let pdfMakeInstance = null
 
 // ── Helper: Convert image to base64 ───────────────────────────────────────
@@ -164,47 +313,43 @@ async function loadPdfMake() {
 }
 
 // ── Create Document Definition ─────────────────────────────────────────────
-function createDocumentDefinition(data) {
+function createDocumentDefinition(slipsData) {
   const pageW = 612
   const pageH = 1008
   const margins = [15, 15, 15, 15]
 
-  const usableW = pageW - margins[0] - margins[2] // 582
-  const usableH = pageH - margins[1] - margins[3] // 978
+  const usableW = pageW - margins[0] - margins[2]
+  const usableH = pageH - margins[1] - margins[3]
 
   const colGap = 5
-  const rowGap = 5
+  const rowGap = 10
 
-  const slipW = (usableW - colGap) / 2 // 288.5
-  const slipH = (usableH - rowGap * 2) / 3 // 322.6667
+  const slipW = (usableW - colGap) / 2
+  const slipH = (usableH - rowGap * 2) / 3
 
-  function miniSlip(item) {
+  function createSlipContent(item) {
     return {
       stack: [
-        // Force black border (always visible)
         {
           canvas: [
             {
               type: 'rect',
               x: 0,
               y: 0,
-              w: slipW - 10, // account for miniSlip margin [5,5,5,5]
+              w: slipW - 10,
               h: slipH - 10,
               lineWidth: 1,
               lineColor: '#000000',
             },
           ],
-          margin: [0, 0, 0, -(slipH - 10)], // overlay trick so content starts at top
+          margin: [0, 0, 0, -(slipH - 10)],
         },
-
-        // actual slip content
         {
           margin: [10, 5, 10, 0],
           stack: [
             {
               margin: [-1, 0, 0, 0],
               stack: [
-                // green header bar (background)
                 {
                   canvas: [
                     {
@@ -217,8 +362,6 @@ function createDocumentDefinition(data) {
                     },
                   ],
                 },
-
-                // foreground layer (logo + texts) placed above the bar
                 {
                   margin: [0, -26, 0, 0],
                   columns: [
@@ -277,7 +420,7 @@ function createDocumentDefinition(data) {
                           fontSize: 5.5,
                           bold: true,
                           color: 'white',
-                          margin: [0, 2, 0, 0],
+                          margin: [0, 3, 0, 0],
                         },
                       ],
                     },
@@ -285,13 +428,12 @@ function createDocumentDefinition(data) {
                 },
               ],
             },
-
             {
               text: 'OUTPUT TRACKING SLIP',
               fontSize: 7.5,
               bold: true,
               alignment: 'center',
-              margin: [0, 1, 0, 0],
+              margin: [0, 5, 0, 0],
             },
             {
               text: 'Field and Appraisal Sheet',
@@ -300,11 +442,10 @@ function createDocumentDefinition(data) {
               alignment: 'center',
               margin: [0, 0, 0, 5],
             },
-
             {
               table: {
                 headerRows: 1,
-                widths: [10, 50, 45, 45, '*', '*'], // adjust if you want wider/narrower
+                widths: [10, 50, 45, 45, '*', '*'],
                 body: [
                   [
                     {
@@ -354,8 +495,6 @@ function createDocumentDefinition(data) {
                       verticalAlignment: 'middle',
                     },
                   ],
-
-                  // row 1
                   [
                     { text: '1', fontSize: 5.8, alignment: 'center' },
                     { text: item.particular1 || '', fontSize: 5.8 },
@@ -368,8 +507,6 @@ function createDocumentDefinition(data) {
                     { text: item.received1 || '', fontSize: 5.6 },
                     { text: item.released1 || '', fontSize: 5.6 },
                   ],
-
-                  // row 2
                   [
                     { text: '2', fontSize: 5.8, alignment: 'center' },
                     { text: item.particular2 || '', fontSize: 5.8 },
@@ -382,8 +519,6 @@ function createDocumentDefinition(data) {
                     { text: item.received2 || '', fontSize: 5.6 },
                     { text: item.released2 || '', fontSize: 5.6 },
                   ],
-
-                  // row 3
                   [
                     { text: '3', fontSize: 5.8, alignment: 'center' },
                     { text: item.particular3 || '', fontSize: 5.8 },
@@ -405,12 +540,11 @@ function createDocumentDefinition(data) {
                 vLineColor: () => '#00000c',
                 paddingLeft: () => 2,
                 paddingRight: () => 2,
-                paddingTop: (i) => (i === 0 ? 4 : 2), // header row more top padding
+                paddingTop: (i) => (i === 0 ? 4 : 2),
                 paddingBottom: (i) => (i === 0 ? 4 : 2),
               },
               margin: [0, 2, 0, 3],
             },
-
             {
               text: '*End of Transaction*',
               fontSize: 6,
@@ -430,7 +564,7 @@ function createDocumentDefinition(data) {
                       border: [false, false, false, false],
                     },
                     {
-                      text: ' ',
+                      text: item.qualityRating || '0',
                       fontSize: 6,
                       alignment: 'center',
                       border: [true, true, true, true],
@@ -438,7 +572,7 @@ function createDocumentDefinition(data) {
                   ],
                 ],
               },
-              alignment: 'center', // centers whole table block
+              alignment: 'center',
               layout: {
                 hLineWidth: () => 0.6,
                 vLineWidth: () => 0.6,
@@ -460,7 +594,6 @@ function createDocumentDefinition(data) {
                     {
                       text: '',
                       bold: true,
-
                       fontSize: 6,
                     },
                     {
@@ -530,7 +663,7 @@ function createDocumentDefinition(data) {
                       border: [true, true, true, true],
                     },
                     {
-                      text: ' ',
+                      text: item.date || '',
                       fontSize: 6,
                       border: [true, true, true, true],
                     },
@@ -542,7 +675,7 @@ function createDocumentDefinition(data) {
                       border: [true, true, true, true],
                     },
                     {
-                      text: ' ',
+                      text: item.controlNo || '',
                       fontSize: 6,
                       border: [true, true, true, true],
                     },
@@ -567,10 +700,127 @@ function createDocumentDefinition(data) {
       margin: [5, 5, 5, 5],
     }
   }
-  // helper to enforce black border on every slip
-  const slipCell = {
-    border: [true, true, true, true],
-    borderColor: ['#000000', '#000000', '#000000', '#000000'],
+
+  const totalSlips = slipsData.length
+  const totalPages = Math.ceil(totalSlips / 6)
+
+  const content = []
+
+  for (let page = 0; page < totalPages; page++) {
+    const startIndex = page * 6
+    const pageSlips = []
+
+    for (let i = 0; i < 6; i++) {
+      const index = startIndex + i
+      if (index < slipsData.length) {
+        pageSlips.push(slipsData[index])
+      } else {
+        pageSlips.push(null)
+      }
+    }
+
+    const tableBody = []
+
+    const row1 = []
+    if (pageSlips[0]) {
+      row1.push({
+        stack: [createSlipContent(pageSlips[0])],
+        border: [true, true, true, true],
+        borderColor: ['#000000', '#000000', '#000000', '#000000'],
+      })
+    } else {
+      row1.push({ text: '', border: [false, false, false, false] })
+    }
+
+    row1.push({ text: '', border: [false, false, false, false] })
+
+    if (pageSlips[1]) {
+      row1.push({
+        stack: [createSlipContent(pageSlips[1])],
+        border: [true, true, true, true],
+        borderColor: ['#000000', '#000000', '#000000', '#000000'],
+      })
+    } else {
+      row1.push({ text: '', border: [false, false, false, false] })
+    }
+    tableBody.push(row1)
+
+    tableBody.push([
+      { text: '', border: [false, false, false, false] },
+      { text: '', border: [false, false, false, false] },
+      { text: '', border: [false, false, false, false] },
+    ])
+
+    const row2 = []
+    if (pageSlips[2]) {
+      row2.push({
+        stack: [createSlipContent(pageSlips[2])],
+        border: [true, true, true, true],
+        borderColor: ['#000000', '#000000', '#000000', '#000000'],
+      })
+    } else {
+      row2.push({ text: '', border: [false, false, false, false] })
+    }
+
+    row2.push({ text: '', border: [false, false, false, false] })
+
+    if (pageSlips[3]) {
+      row2.push({
+        stack: [createSlipContent(pageSlips[3])],
+        border: [true, true, true, true],
+        borderColor: ['#000000', '#000000', '#000000', '#000000'],
+      })
+    } else {
+      row2.push({ text: '', border: [false, false, false, false] })
+    }
+    tableBody.push(row2)
+
+    tableBody.push([
+      { text: '', border: [false, false, false, false] },
+      { text: '', border: [false, false, false, false] },
+      { text: '', border: [false, false, false, false] },
+    ])
+
+    const row3 = []
+    if (pageSlips[4]) {
+      row3.push({
+        stack: [createSlipContent(pageSlips[4])],
+        border: [true, true, true, true],
+        borderColor: ['#000000', '#000000', '#000000', '#000000'],
+      })
+    } else {
+      row3.push({ text: '', border: [false, false, false, false] })
+    }
+
+    row3.push({ text: '', border: [false, false, false, false] })
+
+    if (pageSlips[5]) {
+      row3.push({
+        stack: [createSlipContent(pageSlips[5])],
+        border: [true, true, true, true],
+        borderColor: ['#000000', '#000000', '#000000', '#000000'],
+      })
+    } else {
+      row3.push({ text: '', border: [false, false, false, false] })
+    }
+    tableBody.push(row3)
+
+    content.push({
+      table: {
+        widths: [slipW, colGap, slipW],
+        heights: [slipH, rowGap, slipH, rowGap, slipH],
+        body: tableBody,
+      },
+      layout: {
+        hLineWidth: () => 0,
+        vLineWidth: () => 0,
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      },
+      pageBreak: page < totalPages - 1 ? 'after' : undefined,
+    })
   }
 
   return {
@@ -578,88 +828,45 @@ function createDocumentDefinition(data) {
     pageMargins: margins,
     header: undefined,
     footer: undefined,
-
-    content: [
-      {
-        table: {
-          widths: [slipW, colGap, slipW],
-          heights: [slipH, rowGap, slipH, rowGap, slipH],
-          body: [
-            [
-              { ...slipCell, stack: [miniSlip(data)] },
-              { text: '', border: [false, false, false, false] },
-              { ...slipCell, stack: [miniSlip(data)] },
-            ],
-            [
-              { text: '', border: [false, false, false, false] },
-              { text: '', border: [false, false, false, false] },
-              { text: '', border: [false, false, false, false] },
-            ],
-            [
-              { ...slipCell, stack: [miniSlip(data)] },
-              { text: '', border: [false, false, false, false] },
-              { ...slipCell, stack: [miniSlip(data)] },
-            ],
-            [
-              { text: '', border: [false, false, false, false] },
-              { text: '', border: [false, false, false, false] },
-              { text: '', border: [false, false, false, false] },
-            ],
-            [
-              { ...slipCell, stack: [miniSlip(data)] },
-              { text: '', border: [false, false, false, false] },
-              { ...slipCell, stack: [miniSlip(data)] },
-            ],
-          ],
-        },
-        layout: {
-          // hide helper grid lines, keep per-cell black borders
-          hLineWidth: () => 0,
-          vLineWidth: () => 0,
-          paddingLeft: () => 0,
-          paddingRight: () => 0,
-          paddingTop: () => 0,
-          paddingBottom: () => 0,
-        },
-      },
-    ],
-
+    content: content,
     defaultStyle: {
       fontSize: 6,
       color: '#000000',
-      lineHeight: 1.05,
+      lineHeight: 1,
     },
   }
 }
 
-// ── Generate PDF using open() method ──────────────────────────────────────
+// ── Generate PDF ──────────────────────────────────────────────────────────
 async function generatePdf() {
   console.log('[OTS] Starting PDF generation...')
+  console.log('[OTS] Slips data:', otsSlipsData.value.length, 'slips')
+
+  if (otsSlipsData.value.length === 0) {
+    loadError.value = 'No data available for this week. Please add ratings first.'
+    return
+  }
+
   isLoading.value = true
   loadError.value = ''
   loadingMessage.value = 'Starting...'
   pdfGenerated.value = false
 
   try {
-    // Load logo
     loadingMessage.value = 'Loading logo...'
     let logo = await getImageBase64('/tagumlogo.png')
     if (!logo) {
       logo = await getImageBase64('/logo.png')
     }
 
-    // Store the logo in the ref so createDocumentDefinition can use it
     logoBase64.value = logo
 
-    // Load pdfmake
     loadingMessage.value = 'Loading PDF library...'
     const pdfMake = await loadPdfMake()
 
-    // Create document definition
-    loadingMessage.value = 'Creating document...'
-    const docDefinition = createDocumentDefinition(props.trackingData)
+    loadingMessage.value = `Creating document with ${otsSlipsData.value.length} slips...`
+    const docDefinition = createDocumentDefinition(otsSlipsData.value)
 
-    // Create and open PDF
     loadingMessage.value = 'Opening PDF...'
     console.log('[OTS] Creating and opening PDF with open() method...')
     const pdfDoc = pdfMake.createPdf(docDefinition)
@@ -676,15 +883,18 @@ async function generatePdf() {
   }
 }
 
-// ── Close dialog ────────────────────────────────────────────────────────────
-const closeDialog = () => {
-  emit('close')
-}
-
 // ── Lifecycle ───────────────────────────────────────────────────────────────
 onMounted(() => {
   console.log('[OTS] Component mounted')
-  generatePdf()
+  console.log('[OTS] Selected Week:', props.selectedWeek)
+  console.log('[OTS] Selected Month:', props.selectedMonth)
+  console.log('[OTS] Performance Standards:', props.performanceStandards.length)
+
+  if (props.performanceStandards.length > 0) {
+    generatePdf()
+  } else {
+    loadError.value = 'No performance standards data available'
+  }
 })
 </script>
 

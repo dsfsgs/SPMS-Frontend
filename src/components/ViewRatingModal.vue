@@ -851,7 +851,18 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="openOTSDialog" maximized> <OTS /></q-dialog>
+  <q-dialog v-model="openOTSDialog" maximized>
+    <OTS
+      :performance-standards="performanceStandards"
+      :period="period"
+      :week-status="currentWeekStatus"
+      :selected-month="selectedMonth"
+      :selected-week="selectedWeek"
+      :view-entries="viewEntriesByDate"
+      :user-control-no="userControlNo"
+      @close="openOTSDialog = false"
+    />
+  </q-dialog>
 </template>
 
 <script>
