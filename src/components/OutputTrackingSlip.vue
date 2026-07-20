@@ -97,6 +97,14 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  employeeName: {
+    type: String,
+    default: '',
+  },
+  office: {
+    type: String,
+    default: '',
+  },
 })
 
 // ── Helper: Get week range ────────────────────────────────────────────────
@@ -222,7 +230,8 @@ const otsSlipsData = computed(() => {
           task1: taskDescription,
           task2: '',
           task3: '',
-          facilitated1: '',
+          // FACILITATED column: use employee name
+          facilitated1: props.employeeName || '',
           facilitated2: '',
           facilitated3: '',
           received1: '',
@@ -415,8 +424,10 @@ function createDocumentDefinition(slipsData) {
                           color: '#00703c',
                           alignment: 'left',
                         },
+                        // Use the office prop here
                         {
-                          text: 'HUMAN RESOURCE MERIT PROMOTION AND SELECTION BOARD',
+                          text:
+                            props.office || 'HUMAN RESOURCE MERIT PROMOTION AND SELECTION BOARD',
                           fontSize: 5.5,
                           bold: true,
                           color: 'white',
@@ -668,6 +679,7 @@ function createDocumentDefinition(slipsData) {
                       border: [true, true, true, true],
                     },
                     {
+                      // Use employee name in "By:" field
                       text: 'By:',
                       fontSize: 6,
                       bold: true,
@@ -675,7 +687,7 @@ function createDocumentDefinition(slipsData) {
                       border: [true, true, true, true],
                     },
                     {
-                      text: item.controlNo || '',
+                      text: props.employeeName || item.controlNo || '',
                       fontSize: 6,
                       border: [true, true, true, true],
                     },

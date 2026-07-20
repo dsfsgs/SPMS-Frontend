@@ -8,12 +8,18 @@ export const useRateStore = defineStore('targetPeriod', () => {
   const loading = ref(false)
   const error = ref(null)
   const weekStatus = ref('Pending')
+  const employeeName = ref('')
+  const office = ref('')
+  const targetPeriodData = ref(null) // Store the full response data if needed
 
   // ===== GETTERS =====
   const getPerformanceStandards = computed(() => performanceStandards.value)
   const getLoading = computed(() => loading.value)
   const getError = computed(() => error.value)
   const getWeekStatus = computed(() => weekStatus.value)
+  const getEmployeeName = computed(() => employeeName.value)
+  const getOffice = computed(() => office.value)
+  const getTargetPeriodData = computed(() => targetPeriodData.value)
 
   // ===== CONSTANTS =====
   const MONTH_NAMES = [
@@ -37,8 +43,10 @@ export const useRateStore = defineStore('targetPeriod', () => {
     try {
       loading.value = true
       error.value = null
+
       const monthName = MONTH_NAMES[month - 1] || String(month)
       const weekLabel = `week${week}`
+
       const response = await api.get(
         `/erms/employee/target-periods/details/${targetPeriodId}/${monthName}/${year}/${weekLabel}`,
       )
@@ -46,10 +54,17 @@ export const useRateStore = defineStore('targetPeriod', () => {
       let rawData = response.data
       if (Array.isArray(rawData)) rawData = rawData[0]
 
-      // Extract week_status from the response
+      // Extract data from the response
       if (rawData) {
+        // Store employee info
+        employeeName.value = rawData.name || ''
+        office.value = rawData.office || ''
         weekStatus.value = rawData.week_status || 'Pending'
 
+        // Store the full raw data if needed
+        targetPeriodData.value = rawData
+
+        // Process performance standards
         if (rawData.performance_standards) {
           performanceStandards.value = rawData.performance_standards.map((std, index) => ({
             id: std.id || `temp-${index}`,
@@ -58,8 +73,8 @@ export const useRateStore = defineStore('targetPeriod', () => {
             category: std.category || '',
             mfo: std.mfo || '',
             output: std.output || '',
-            output_name: std.output_name || '', // Keep as output_name
-            performance_indicator: std.performance_indicator || [], // KEEP THIS - don't rename to indicatorName
+            output_name: std.output_name || '',
+            performance_indicator: std.performance_indicator || [],
             success_indicator: std.success_indicator || '',
             required_output: std.required_output || '',
             standard_outcomes: std.standard_outcomes || [],
@@ -76,6 +91,8 @@ export const useRateStore = defineStore('targetPeriod', () => {
       return {
         data: response.data,
         weekStatus: weekStatus.value,
+        employeeName: employeeName.value,
+        office: office.value,
       }
     } catch (err) {
       error.value = err.response?.data?.message || 'Failed to fetch performance standards'
@@ -127,10 +144,19 @@ export const useRateStore = defineStore('targetPeriod', () => {
     performanceStandards.value = []
     error.value = null
     weekStatus.value = 'Pending'
+    employeeName.value = ''
+    office.value = ''
+    targetPeriodData.value = null
   }
 
   const clearError = () => {
     error.value = null
+  }
+
+  // Optional: Action to set employee data manually if needed
+  const setEmployeeData = (name, officeData) => {
+    employeeName.value = name || ''
+    office.value = officeData || ''
   }
 
   // ===== EXPORTS =====
@@ -140,12 +166,18 @@ export const useRateStore = defineStore('targetPeriod', () => {
     loading,
     error,
     weekStatus,
+    employeeName,
+    office,
+    targetPeriodData,
 
     // Getters
     getPerformanceStandards,
     getLoading,
     getError,
     getWeekStatus,
+    getEmployeeName,
+    getOffice,
+    getTargetPeriodData,
 
     // Actions
     fetchPerformanceStandards,
@@ -153,5 +185,6 @@ export const useRateStore = defineStore('targetPeriod', () => {
     updateStatusRating,
     clearPerformanceStandards,
     clearError,
+    setEmployeeData,
   }
 })

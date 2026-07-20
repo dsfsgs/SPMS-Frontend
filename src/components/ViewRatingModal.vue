@@ -860,6 +860,8 @@
       :selected-week="selectedWeek"
       :view-entries="viewEntriesByDate"
       :user-control-no="userControlNo"
+      :employee-name="employeeName"
+      :office="office"
       @close="openOTSDialog = false"
     />
   </q-dialog>
@@ -1129,6 +1131,14 @@ export default {
 
     reviewWeekLabel() {
       return `${this.reviewMonthLabel} - Week ${this.reviewWeek}`
+    },
+
+    employeeName() {
+      return this.rateStore.getEmployeeName
+    },
+
+    office() {
+      return this.rateStore.getOffice
     },
   },
 
