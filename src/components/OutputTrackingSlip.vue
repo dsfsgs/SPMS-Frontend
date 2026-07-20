@@ -428,7 +428,7 @@ function createDocumentDefinition(slipsData) {
                         {
                           text:
                             props.office || 'HUMAN RESOURCE MERIT PROMOTION AND SELECTION BOARD',
-                          fontSize: 5.5,
+                          fontSize: 4,
                           bold: true,
                           color: 'white',
                           margin: [0, 3, 0, 0],
