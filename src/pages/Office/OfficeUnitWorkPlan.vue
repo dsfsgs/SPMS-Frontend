@@ -377,8 +377,6 @@
                                   </q-select>
 
                                   <!-- MFO Select -->
-                                  <!-- Non-Office-Head employees only see MFOs the Office Head
-                                       has already included in their plan (headMfoNames). -->
                                   <q-select
                                     v-if="!isSupportCategory(standard.rows.category)"
                                     outlined
@@ -431,15 +429,7 @@
                                     </template>
                                   </q-select>
 
-                                  <!-- ============================================================
-                                       OUTPUT SELECT
-                                       - Office Head + non-support category (A or B) → HIDDEN
-                                         (Office Head owns the MFO-level target; output granularity
-                                          is not required at this level)
-                                       - Office Head + support category (C)           → SHOWN,
-                                         filtered unique per standard
-                                       - All other employees                           → ALWAYS SHOWN
-                                       ============================================================ -->
+                                  <!-- Output Select -->
                                   <q-select
                                     v-if="shouldShowOutput(standard)"
                                     outlined
@@ -734,7 +724,7 @@
                                     </template>
                                   </q-select>
 
-                                  <!-- Performance Indicator Select (single selection, filtered by category) -->
+                                  <!-- Performance Indicator Select -->
                                   <q-select
                                     outlined
                                     v-model="standard.indicatorName"
@@ -1282,13 +1272,43 @@
     <q-dialog v-model="showCompetencyModal" persistent>
       <q-card style="min-width: 700px; max-width: 900px; border-radius: 8px">
         <q-card-section class="modal-header">
-          <div class="text-h6">
-            Select {{ competencyType.charAt(0).toUpperCase() + competencyType.slice(1) }} Competency
-          </div>
-          <div class="text-caption text-grey-7 q-mt-xs">
-            Based on SG: {{ currentEmployee.sg }} | Level: {{ currentEmployee.level }}
+          <div class="row items-center justify-between">
+            <div>
+              <div class="text-h6">
+                Select
+                {{ competencyType.charAt(0).toUpperCase() + competencyType.slice(1) }} Competency
+              </div>
+              <div class="text-caption text-grey-7 q-mt-xs">
+                Based on SG: {{ currentEmployee.sg }} | Level: {{ currentEmployee.level }}
+                <span class="q-ml-md text-primary">
+                  Selected: {{ getSelectedCompetencyCount }} / {{ getTotalAvailableCompetencies }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <q-btn
+                flat
+                dense
+                color="primary"
+                label="Select All"
+                @click="selectAllCompetencies"
+                :disable="!hasAvailableCompetencies"
+                icon="check_box"
+              />
+              <q-btn
+                flat
+                dense
+                color="grey"
+                label="Clear All"
+                @click="clearAllCompetencies"
+                :disable="competencySelections.every((sel) => !sel.selectedCompetency)"
+                icon="clear"
+                class="q-ml-sm"
+              />
+            </div>
           </div>
         </q-card-section>
+
         <q-card-section class="modal-body">
           <div class="q-gutter-md">
             <div
@@ -1319,6 +1339,13 @@
                           <q-item-label caption>
                             Required Level: {{ scope.opt.requiredLevel }}
                           </q-item-label>
+                        </q-item-section>
+                      </q-item>
+                    </template>
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey">
+                          No available competencies
                         </q-item-section>
                       </q-item>
                     </template>
@@ -1367,6 +1394,7 @@
             </div>
           </div>
         </q-card-section>
+
         <q-card-actions align="right" class="modal-actions q-pa-md">
           <q-btn
             flat
@@ -1897,6 +1925,29 @@ export default {
     }
 
     // ===========================================================================
+    // 8.5 COMPETENCY MODAL COMPUTED PROPERTIES (ADDED FOR SELECT ALL)
+    // ===========================================================================
+    const getSelectedCompetencyCount = computed(() => {
+      return competencySelections.value.filter((sel) => sel.selectedCompetency).length
+    })
+
+    const getTotalAvailableCompetencies = computed(() => {
+      const standard =
+        currentEmployee.value.performanceStandards[currentStandardIndexForCompetency.value]
+      if (!standard) return 0
+
+      const selectedCodes = standard.competencies[competencyType.value]?.map((c) => c.code) || []
+      const selectedInModal = competencySelections.value
+        .map((sel) => sel.selectedCompetency?.code)
+        .filter(Boolean)
+      const taken = [...selectedCodes, ...selectedInModal]
+
+      return competencyOptions.value.filter((c) => !taken.includes(c.code)).length
+    })
+
+    const hasAvailableCompetencies = computed(() => getTotalAvailableCompetencies.value > 0)
+
+    // ===========================================================================
     // 9. METHODS THAT USE STORES (these will be called after initialization)
     // ===========================================================================
     const autoPopulateCoreCompetencies = (standard, sg, level) => {
@@ -1996,7 +2047,7 @@ export default {
         )
           .toLowerCase()
           .trim()
-        return jt === 'office head'
+        return jt === 'department head'
       })
       if (headTab?.employeeData) empData = headTab.employeeData
 
@@ -2006,7 +2057,7 @@ export default {
           ...(uwpData.value.employeesWithoutTargetPeriod || []),
         ]
         const headEmp = allEmployees.find(
-          (emp) => (emp.job_title || emp.jobTitle || '').toLowerCase().trim() === 'office head',
+          (emp) => (emp.job_title || emp.jobTitle || '').toLowerCase().trim() === 'department head',
         )
         if (headEmp) empData = headEmp
       }
@@ -2018,7 +2069,7 @@ export default {
             ControlNo: null,
             name: officeNode.label || '',
             office: officeNode.label || '',
-            job_title: 'Office Head',
+            job_title: 'Department Head',
             office_id: officeNode.id || null,
           }
         }
@@ -2034,7 +2085,7 @@ export default {
           ControlNo: empData.ControlNo || empData.control_no || empData.id || null,
           name: empData.name || empData.label || '',
           office: empData.office || empData.office_name || empData.label || '',
-          job_title: empData.job_title || empData.jobTitle || 'Office Head',
+          job_title: empData.job_title || empData.jobTitle || 'Department Head',
           office_id: empData.office_id || empData.officeId || null,
         },
       }
@@ -2672,6 +2723,86 @@ export default {
       })
     }
 
+    // ===========================================================================
+    // 9.5 COMPETENCY MODAL METHODS (ADDED FOR SELECT ALL)
+    // ===========================================================================
+    const selectAllCompetencies = () => {
+      // Get the current standard
+      const standard =
+        currentEmployee.value.performanceStandards[currentStandardIndexForCompetency.value]
+      if (!standard) return
+
+      // Get available competencies for the current type
+      const available = competencyOptions.value.filter((comp) => {
+        // Check if already selected in this standard
+        const alreadySelected = standard.competencies[competencyType.value].some(
+          (existing) => existing.code === comp.code,
+        )
+        // Check if already selected in modal selections
+        const alreadyInModal = competencySelections.value.some(
+          (sel) => sel.selectedCompetency?.code === comp.code,
+        )
+        return !alreadySelected && !alreadyInModal
+      })
+
+      if (available.length === 0) {
+        $q.notify({
+          message: 'All available competencies are already selected',
+          color: 'info',
+          position: 'top',
+        })
+        return
+      }
+
+      // Add all available competencies to modal selections
+      let addedCount = 0
+      available.forEach((comp) => {
+        // Find an empty slot in existing selections
+        const emptySlot = competencySelections.value.find((sel) => !sel.selectedCompetency)
+        if (emptySlot) {
+          emptySlot.selectedCompetency = comp
+          emptySlot.selectedLevel = LEVEL_MAP[comp.requiredLevel] || null
+          addedCount++
+        } else {
+          // Add new row if no empty slots
+          competencySelections.value.push({
+            selectedCompetency: comp,
+            selectedLevel: LEVEL_MAP[comp.requiredLevel] || null,
+          })
+          filteredCompetencyOptionsByRow.value.push(competencyOptions.value)
+          addedCount++
+        }
+      })
+
+      if (addedCount > 0) {
+        $q.notify({
+          message: `Added ${addedCount} competenc${addedCount > 1 ? 'ies' : 'y'} to selection`,
+          color: 'positive',
+          position: 'top',
+        })
+      }
+    }
+
+    const clearAllCompetencies = () => {
+      // Reset all selections to empty
+      competencySelections.value = competencySelections.value.map(() => ({
+        selectedCompetency: null,
+        selectedLevel: null,
+      }))
+
+      // Keep at least one row
+      if (competencySelections.value.length === 0) {
+        competencySelections.value.push({ selectedCompetency: null, selectedLevel: null })
+        filteredCompetencyOptionsByRow.value.push(competencyOptions.value)
+      }
+
+      $q.notify({
+        message: 'Cleared all selections',
+        color: 'info',
+        position: 'top',
+      })
+    }
+
     const openCompetencyModal = (type, standardIndex) => {
       if (!currentEmployee.value?.sg || !currentEmployee.value?.level) {
         $q.notify({
@@ -2692,19 +2823,63 @@ export default {
       if (typeof update !== 'function') return
       update(() => {
         const needle = (val || '').toLowerCase()
-        filteredCompetencyOptionsByRow.value[rowIndex] = competencyOptions.value.filter(
+        const allOptions = competencyOptions.value
+
+        // Filter by search
+        const filtered = allOptions.filter(
           (c) =>
             c.code.toLowerCase().includes(needle) || c.description.toLowerCase().includes(needle),
+        )
+
+        // Get already selected competencies of this type
+        const standard =
+          currentEmployee.value.performanceStandards[currentStandardIndexForCompetency.value]
+        const currentType = competencyType.value
+        const selectedInType = standard?.competencies[currentType]?.map((c) => c.code) || []
+
+        // Get competencies selected in other modal rows
+        const selectedInModal = competencySelections.value
+          .map((sel, i) =>
+            i !== rowIndex && sel.selectedCompetency ? sel.selectedCompetency.code : null,
+          )
+          .filter(Boolean)
+
+        const taken = [...selectedInType, ...selectedInModal]
+
+        filteredCompetencyOptionsByRow.value[rowIndex] = filtered.filter(
+          (c) => !taken.includes(c.code),
         )
       })
     }
 
+    const getAvailableCompetenciesForType = (type, standardIndex) => {
+      const standard = currentEmployee.value.performanceStandards[standardIndex]
+      if (!standard) return []
+
+      // Get all selected competencies for this type
+      const selectedCodes = standard.competencies[type]?.map((c) => c.code) || []
+
+      // Get competencies available from the store
+      const allAvailable = competencyOptions.value // Assuming this is already filtered by SG
+
+      // Filter out selected ones
+      return allAvailable.filter((c) => !selectedCodes.includes(c.code))
+    }
+
     const getAvailableCompetencies = (rowIndex) => {
-      const taken = competencySelections.value
+      const standard =
+        currentEmployee.value.performanceStandards[currentStandardIndexForCompetency.value]
+      if (!standard) return []
+
+      const currentType = competencyType.value
+      const selectedInType = standard.competencies[currentType]?.map((c) => c.code) || []
+      const selectedInModal = competencySelections.value
         .map((sel, i) =>
           i !== rowIndex && sel.selectedCompetency ? sel.selectedCompetency.code : null,
         )
         .filter(Boolean)
+
+      const taken = [...selectedInType, ...selectedInModal]
       const options = filteredCompetencyOptionsByRow.value[rowIndex] || competencyOptions.value
       return options.filter((c) => !taken.includes(c.code))
     }
@@ -2729,6 +2904,8 @@ export default {
       let added = 0
       competencySelections.value.forEach(({ selectedCompetency: sc, selectedLevel: sl }) => {
         if (!sc || !sl) return
+
+        // Check if competency already exists in the current type
         const already = standard.competencies[competencyType.value].some((e) => e.code === sc.code)
         if (!already) {
           standard.competencies[competencyType.value].push({
@@ -2749,6 +2926,7 @@ export default {
         })
       }
 
+      // Reset modal state
       competencySelections.value = [{ selectedCompetency: null, selectedLevel: null }]
       filteredCompetencyOptionsByRow.value = [competencyOptions.value]
       showCompetencyModal.value = false
@@ -3596,6 +3774,7 @@ export default {
       isCurrentEmployeeHead,
       isCurrentEmployeeOfficeHead,
       shouldShowOutput,
+      getAvailableCompetenciesForType,
       standardOutcomeColumns: STANDARD_OUTCOME_COLUMNS,
       quantityIndicator: QUANTITY_INDICATOR_OPTIONS,
       showCascadeModal,
@@ -3617,6 +3796,12 @@ export default {
       showCompetencyError,
       competencySelections,
       filteredCompetencyOptionsByRow,
+      // NEW: Competency modal select all methods and computed
+      selectAllCompetencies,
+      clearAllCompetencies,
+      getSelectedCompetencyCount,
+      getTotalAvailableCompetencies,
+      hasAvailableCompetencies,
       isHeadPosition,
       getEmployeeBadgeColor,
       getEmployeeName,

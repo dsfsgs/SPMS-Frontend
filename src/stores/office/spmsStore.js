@@ -1,18 +1,19 @@
+// stores/office/spmsStore.js
+
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { api } from 'boot/axios'
+import { api } from 'src/boot/axios'
 import { useUserStore } from 'src/stores/userStore'
 
 export const useOrganizationStore = defineStore('organization', {
   state: () => ({
-    structure: ref([]),
-    loading: ref(false),
-    error: ref(null),
+    structure: [],
+    loading: false,
+    error: null,
     officeName: '',
-    targetPeriods: ref([]),
-    selectedSemester: ref(null),
-    selectedYear: ref(null),
-    completionMap: ref({}),
+    targetPeriods: [],
+    selectedSemester: null,
+    selectedYear: null,
+    completionMap: {},
     // Head position titles for auto-detection
     headPositionTitles: [
       'office head',
@@ -25,46 +26,84 @@ export const useOrganizationStore = defineStore('organization', {
   }),
 
   getters: {
+    /**
+     * Get the latest target period based on year and semester
+     */
     getLatestPeriod: (state) => {
       if (!state.targetPeriods || state.targetPeriods.length === 0) return null
 
       const semesterOrder = {
+        'January-June': 1,
         'July-December': 2,
-        'july-december': 2,
-        'Jan-June': 1,
-        'jan-june': 1,
       }
 
-      return state.targetPeriods.sort((a, b) => {
+      // Sort by year (descending) then semester (descending)
+      const sorted = [...state.targetPeriods].sort((a, b) => {
         const yearDiff = parseInt(b.year) - parseInt(a.year)
         if (yearDiff !== 0) return yearDiff
         return (semesterOrder[b.semester] || 0) - (semesterOrder[a.semester] || 0)
-      })[0]
+      })
+
+      return sorted[0] || null
     },
 
+    /**
+     * Get unique years from target periods, sorted descending
+     */
     getAvailableYears: (state) => {
+      if (!state.targetPeriods || state.targetPeriods.length === 0) return []
+
       const years = new Set()
-      state.targetPeriods.forEach((period) => years.add(period.year))
-      return Array.from(years).sort().reverse()
+      state.targetPeriods.forEach((period) => {
+        if (period.year) years.add(period.year)
+      })
+
+      // Sort descending (newest first)
+      return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a))
     },
 
+    /**
+     * Get unique semesters for the selected year
+     */
     getAvailableSemesters: (state) => {
-      if (!state.selectedYear) return []
-      return state.targetPeriods
+      if (!state.selectedYear || !state.targetPeriods || state.targetPeriods.length === 0) {
+        return []
+      }
+
+      const semesters = state.targetPeriods
         .filter((period) => period.year === state.selectedYear)
         .map((period) => period.semester)
-        .filter((sem, idx, arr) => arr.indexOf(sem) === idx)
+        .filter((sem, idx, arr) => arr.indexOf(sem) === idx) // Remove duplicates
+
+      // Sort: January-June first, then July-December
+      const order = { 'January-June': 1, 'July-December': 2 }
+      return semesters.sort((a, b) => (order[a] || 0) - (order[b] || 0))
     },
 
+    /**
+     * Get current target period object
+     */
     getCurrentTargetPeriod: (state) => {
       if (!state.selectedSemester || !state.selectedYear) return null
-      return { semester: state.selectedSemester, year: state.selectedYear }
+      return {
+        semester: state.selectedSemester,
+        year: state.selectedYear,
+      }
     },
 
+    /**
+     * Get node completion status
+     */
     getNodeCompletion: (state) => (nodeId) => {
       const completion = state.completionMap[nodeId]
       if (!completion) {
-        return { completed: 0, total: 0, isCompleted: false, ratio: '0/0', isLeafNode: false }
+        return {
+          completed: 0,
+          total: 0,
+          isCompleted: false,
+          ratio: '0/0',
+          isLeafNode: false,
+        }
       }
       return {
         completed: completion.completed,
@@ -75,7 +114,9 @@ export const useOrganizationStore = defineStore('organization', {
       }
     },
 
-    // Get all employees with head positions in the organization
+    /**
+     * Get all employees with head positions in the organization
+     */
     getHeadEmployees: (state) => {
       const headEmployees = []
 
@@ -179,75 +220,145 @@ export const useOrganizationStore = defineStore('organization', {
     },
 
     // =========================================================================
-    // TARGET PERIOD
+    // TARGET PERIOD - FIXED VERSION
     // =========================================================================
 
+    /**
+     * Fetch target periods from the API
+     * Handles the nested response structure: { success, message, data: [...] }
+     */
     async fetchListTargetPeriod() {
       this.loading = true
+      this.error = null
+
       try {
         const response = await api.get('/targetPeriod')
-        this.targetPeriods = response.data || []
 
-        const latestPeriod = this.getLatestPeriod
-        if (latestPeriod) {
-          this.selectedSemester = latestPeriod.semester
-          this.selectedYear = latestPeriod.year
+        // Extract data from the nested response structure
+        // Response format: { success: true, message: "...", data: [...] }
+        let periods = []
+
+        if (response.data?.data && Array.isArray(response.data.data)) {
+          periods = response.data.data
+        } else if (Array.isArray(response.data)) {
+          periods = response.data
+        } else if (response.data?.periods && Array.isArray(response.data.periods)) {
+          periods = response.data.periods
+        } else {
+          console.warn('Unexpected response format for target periods:', response.data)
+          periods = []
+        }
+
+        // Set the periods in state
+        this.targetPeriods = periods
+
+        console.log('Target periods loaded successfully:', this.targetPeriods)
+
+        // Auto-select the latest period if available
+        if (this.targetPeriods.length > 0) {
+          const latestPeriod = this.getLatestPeriod
+          if (latestPeriod) {
+            // Only update if not already set or if current selection is invalid
+            const currentValid = this.targetPeriods.some(
+              (p) => p.semester === this.selectedSemester && p.year === this.selectedYear,
+            )
+
+            if (!currentValid || !this.selectedSemester || !this.selectedYear) {
+              this.selectedSemester = latestPeriod.semester
+              this.selectedYear = latestPeriod.year
+              console.log('Auto-selected period:', {
+                semester: this.selectedSemester,
+                year: this.selectedYear,
+              })
+            }
+          }
+        } else {
+          // No periods available, reset selection
+          this.selectedSemester = null
+          this.selectedYear = null
+          console.warn('No target periods available')
         }
 
         this.error = null
-      } catch {
-        this.error = 'Failed to fetch target periods'
+        return this.targetPeriods
+      } catch (error) {
+        console.error('Error fetching target periods:', error)
+        this.error = error.message || 'Failed to fetch target periods'
         this.targetPeriods = []
+        this.selectedSemester = null
+        this.selectedYear = null
+        throw error
       } finally {
         this.loading = false
       }
     },
 
+    /**
+     * Set the current target period and refresh structure
+     */
     async setTargetPeriod(semester, year) {
+      if (!semester || !year) {
+        console.warn('Invalid target period:', { semester, year })
+        return
+      }
+
+      // Validate that the period exists
+      const periodExists = this.targetPeriods.some(
+        (p) => p.semester === semester && p.year === year,
+      )
+
+      if (!periodExists) {
+        console.warn('Target period not found in available periods:', { semester, year })
+        // Don't proceed if period doesn't exist
+        return
+      }
+
       this.selectedSemester = semester
       this.selectedYear = year
+
+      console.log('Target period set:', { semester, year })
+
+      // Refresh structure with the new period
       await this.fetchStructure()
     },
 
-    // =========================================================================
-    // EMPLOYEE STATUS HELPERS
-    // =========================================================================
-
-    isExcludedStatus(status) {
-      if (!status) return false
-      return ['CONTRACTUAL', 'HONORARIUM'].includes(status.toUpperCase())
-    },
-
-    shouldCountEmployee(employee) {
-      if (!employee) return false
-      const status = employee.status || employee.employeeData?.status
-      return !this.isExcludedStatus(status)
-    },
-
-    // =========================================================================
-    // FETCH STRUCTURE
-    // =========================================================================
-
+    /**
+     * Fetch structure data for the current target period
+     */
     async fetchStructure() {
+      if (!this.selectedSemester || !this.selectedYear) {
+        console.warn('Cannot fetch structure: No target period selected')
+        return
+      }
+
       this.loading = true
+      this.error = null
+
       try {
         const userStore = useUserStore()
         const { officeId } = userStore
 
+        if (!officeId) {
+          console.warn('No office ID available')
+          this.structure = []
+          this.completionMap = {}
+          return
+        }
+
+        // Fetch office structure
         const { data: structureData } = await api.get('spms/office/structure', {
           params: { office_id: officeId },
         })
 
+        // Fetch employees for the selected period
         let employees = []
         try {
-          const employeeParams = { office_id: officeId }
-          if (this.selectedSemester && this.selectedYear) {
-            employeeParams.semester = this.selectedSemester
-            employeeParams.year = this.selectedYear
-          }
-
           const employeeResponse = await api.get('spms/fetch_employees', {
-            params: employeeParams,
+            params: {
+              office_id: officeId,
+              semester: this.selectedSemester,
+              year: this.selectedYear,
+            },
           })
 
           if (Array.isArray(employeeResponse.data)) {
@@ -257,10 +368,12 @@ export const useOrganizationStore = defineStore('organization', {
           } else if (Array.isArray(employeeResponse.data?.employees)) {
             employees = employeeResponse.data.employees
           }
-        } catch {
+        } catch (error) {
+          console.warn('Failed to fetch employees:', error)
           employees = []
         }
 
+        // Build the structure
         if (structureData?.length) {
           this.officeName = structureData[0].office
           this.structure = this.transformStructure(structureData[0], employees)
@@ -271,8 +384,9 @@ export const useOrganizationStore = defineStore('organization', {
         }
 
         this.error = null
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        console.error('Error fetching structure:', error)
+        this.error = error.message || 'Failed to fetch structure'
         this.structure = []
         this.completionMap = {}
       } finally {
@@ -280,11 +394,28 @@ export const useOrganizationStore = defineStore('organization', {
       }
     },
 
+    /**
+     * Alternative fetch method for HR data
+     */
     async fetchStructureHR() {
+      if (!this.selectedSemester || !this.selectedYear) {
+        console.warn('Cannot fetch structure: No target period selected')
+        return
+      }
+
       this.loading = true
+      this.error = null
+
       try {
         const userStore = useUserStore()
         const { officeId } = userStore
+
+        if (!officeId) {
+          console.warn('No office ID available')
+          this.structure = []
+          this.completionMap = {}
+          return
+        }
 
         const { data: structureData } = await api.get('spms/office/structure', {
           params: { office_id: officeId },
@@ -292,14 +423,12 @@ export const useOrganizationStore = defineStore('organization', {
 
         let employees = []
         try {
-          const employeeParams = { office_id: officeId }
-          if (this.selectedSemester && this.selectedYear) {
-            employeeParams.semester = this.selectedSemester
-            employeeParams.year = this.selectedYear
-          }
-
           const employeeResponse = await api.get('spms/employees-requested', {
-            params: employeeParams,
+            params: {
+              office_id: officeId,
+              semester: this.selectedSemester,
+              year: this.selectedYear,
+            },
           })
 
           if (Array.isArray(employeeResponse.data)) {
@@ -309,7 +438,8 @@ export const useOrganizationStore = defineStore('organization', {
           } else if (Array.isArray(employeeResponse.data?.employees)) {
             employees = employeeResponse.data.employees
           }
-        } catch {
+        } catch (error) {
+          console.warn('Failed to fetch HR employees:', error)
           employees = []
         }
 
@@ -323,8 +453,9 @@ export const useOrganizationStore = defineStore('organization', {
         }
 
         this.error = null
-      } catch (err) {
-        this.error = err.message
+      } catch (error) {
+        console.error('Error fetching HR structure:', error)
+        this.error = error.message || 'Failed to fetch HR structure'
         this.structure = []
         this.completionMap = {}
       } finally {
@@ -370,7 +501,6 @@ export const useOrganizationStore = defineStore('organization', {
           position:
             typeof emp.position === 'object' ? emp.position?.name || 'N/A' : emp.position || 'N/A',
           rank: emp.rank,
-          // Store job_title directly on the node for easy access
           jobTitle: emp.job_title || '',
           ipcrStatus,
           type: 'employee',
@@ -636,28 +766,69 @@ export const useOrganizationStore = defineStore('organization', {
     },
 
     // =========================================================================
-    // UTILITIES
+    // UTILITY FUNCTIONS
     // =========================================================================
 
-    _findNode(nodeId, nodes = this.structure) {
-      if (!nodes) return null
-      return (
-        nodes.find((n) => n.id === nodeId) ||
-        nodes.reduce((acc, n) => acc || this._findNode(nodeId, n.children), null)
-      )
+    /**
+     * Check if an employee status should be excluded from counts
+     */
+    isExcludedStatus(status) {
+      if (!status) return false
+      return ['CONTRACTUAL', 'HONORARIUM'].includes(status.toUpperCase())
     },
 
+    /**
+     * Check if an employee should be counted in the organization
+     */
+    shouldCountEmployee(employee) {
+      if (!employee) return false
+      const status = employee.status || employee.employeeData?.status
+      return !this.isExcludedStatus(status)
+    },
+
+    /**
+     * Find a node by ID in the structure
+     */
+    _findNode(nodeId, nodes = this.structure) {
+      if (!nodes) return null
+
+      for (const node of nodes) {
+        if (node.id === nodeId) return node
+        if (node.children) {
+          const found = this._findNode(nodeId, node.children)
+          if (found) return found
+        }
+      }
+      return null
+    },
+
+    /**
+     * Create a URL-friendly slug from text
+     */
     slugify(text) {
-      return (
-        text
-          ?.toString()
-          .toLowerCase()
-          .replace(/\s+/g, '-')
-          .replace(/[^\w-]+/g, '')
-          .replace(/--+/g, '-')
-          .replace(/^-+/, '')
-          .replace(/-+$/, '') || ''
-      )
+      if (!text) return ''
+      return text
+        .toString()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '')
+    },
+
+    /**
+     * Reset all data (useful for logout or switching offices)
+     */
+    reset() {
+      this.structure = []
+      this.loading = false
+      this.error = null
+      this.officeName = ''
+      this.targetPeriods = []
+      this.selectedSemester = null
+      this.selectedYear = null
+      this.completionMap = {}
     },
   },
 })

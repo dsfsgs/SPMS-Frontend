@@ -314,6 +314,12 @@
               <div class="text-body1 text-weight-medium">{{ form.category.name }}</div>
             </div>
 
+            <!-- Add this new section for Parent MFO display -->
+            <div v-if="form.parentMfo" class="q-mb-md">
+              <div class="text-caption text-grey-6">MFO</div>
+              <div class="text-body1 text-weight-medium">{{ form.parentMfo.name }}</div>
+            </div>
+
             <!-- Single input for edit mode -->
             <template v-if="modal.mode === 'edit'">
               <div :ref="'itemContainer_0'">

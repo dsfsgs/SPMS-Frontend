@@ -1714,7 +1714,7 @@ export default {
         .toLowerCase()
         .trim()
 
-      return jobTitle === 'office head' || jobTitle.includes('office head')
+      return jobTitle === 'department head' || jobTitle.includes('department head')
     })
 
     const shouldShowOutput = (standard) => {
@@ -1767,7 +1767,7 @@ export default {
           ControlNo: null,
           name: uwpData.value.hierarchy.office?.label || '',
           office: uwpData.value.hierarchy.office?.label || '',
-          job_title: 'Office Head',
+          job_title: 'Department Head',
         }
 
         const payload = {

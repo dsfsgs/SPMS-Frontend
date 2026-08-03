@@ -1124,18 +1124,48 @@
       </q-card>
     </q-dialog>
 
-    <!-- Competency Selection Modal -->
+    <!-- Competency Selection Modal - UPDATED with Select All -->
     <q-dialog v-model="showCompetencyModal" persistent>
       <q-card style="min-width: 700px; max-width: 900px; border-radius: 8px">
         <q-card-section class="modal-header">
-          <div class="text-h6">
-            Select {{ competencyType.charAt(0).toUpperCase() + competencyType.slice(1) }} Competency
-          </div>
-          <div class="text-caption text-grey-7 q-mt-xs">
-            Based on SG: {{ currentEmployee?.sg }} | Level:
-            {{ getLevelText(currentEmployee?.level) }}
+          <div class="row items-center justify-between">
+            <div>
+              <div class="text-h6">
+                Select
+                {{ competencyType.charAt(0).toUpperCase() + competencyType.slice(1) }} Competency
+              </div>
+              <div class="text-caption text-grey-7 q-mt-xs">
+                Based on SG: {{ currentEmployee?.sg }} | Level:
+                {{ getLevelText(currentEmployee?.level) }}
+                <span class="q-ml-md text-primary">
+                  Selected: {{ getSelectedCompetencyCount }} / {{ getTotalAvailableCompetencies }}
+                </span>
+              </div>
+            </div>
+            <div>
+              <q-btn
+                flat
+                dense
+                color="primary"
+                label="Select All"
+                @click="selectAllCompetencies"
+                :disable="!hasAvailableCompetencies"
+                icon="check_box"
+              />
+              <q-btn
+                flat
+                dense
+                color="grey"
+                label="Clear All"
+                @click="clearAllCompetencies"
+                :disable="competencySelections.every((sel) => !sel.selectedCompetency)"
+                icon="clear"
+                class="q-ml-sm"
+              />
+            </div>
           </div>
         </q-card-section>
+
         <q-card-section class="modal-body">
           <div class="q-gutter-md">
             <div
@@ -1214,6 +1244,7 @@
             </div>
           </div>
         </q-card-section>
+
         <q-card-actions align="right" class="modal-actions q-pa-md">
           <q-btn
             flat
@@ -1484,7 +1515,7 @@ export default {
       )
         .toLowerCase()
         .trim()
-      return jobTitle === 'office head'
+      return jobTitle === 'department head'
     })
 
     const shouldShowOutput = (standard) => {
@@ -1749,6 +1780,29 @@ export default {
     })
 
     const competencyOptions = computed(() => filteredCompetencyOptionsByType.value)
+
+    // ===========================================================================
+    // 9c. COMPETENCY MODAL COMPUTED PROPERTIES (ADDED FOR SELECT ALL)
+    // ===========================================================================
+    const getSelectedCompetencyCount = computed(() => {
+      return competencySelections.value.filter((sel) => sel.selectedCompetency).length
+    })
+
+    const getTotalAvailableCompetencies = computed(() => {
+      const standard =
+        currentEmployee.value?.performanceStandards[currentStandardIndexForCompetency.value]
+      if (!standard) return 0
+
+      const selectedCodes = standard.competencies[competencyType.value]?.map((c) => c.code) || []
+      const selectedInModal = competencySelections.value
+        .map((sel) => sel.selectedCompetency?.code)
+        .filter(Boolean)
+      const taken = [...selectedCodes, ...selectedInModal]
+
+      return competencyOptions.value.filter((c) => !taken.includes(c.code)).length
+    })
+
+    const hasAvailableCompetencies = computed(() => getTotalAvailableCompetencies.value > 0)
 
     const isAnyCompetencyValid = computed(() =>
       competencySelections.value.some((c) => c.selectedCompetency && c.selectedLevel),
@@ -2024,6 +2078,87 @@ export default {
       if (!competency) return []
       const rl = competency.requiredLevel
       return rl && LEVEL_MAP[rl] ? [LEVEL_MAP[rl]] : []
+    }
+
+    // ===========================================================================
+    // 12b. COMPETENCY MODAL METHODS (ADDED FOR SELECT ALL)
+    // ===========================================================================
+
+    const selectAllCompetencies = () => {
+      // Get the current standard
+      const standard =
+        currentEmployee.value?.performanceStandards[currentStandardIndexForCompetency.value]
+      if (!standard) return
+
+      // Get available competencies for the current type
+      const available = competencyOptions.value.filter((comp) => {
+        // Check if already selected in this standard
+        const alreadySelected = standard.competencies[competencyType.value].some(
+          (existing) => existing.code === comp.code,
+        )
+        // Check if already selected in modal selections
+        const alreadyInModal = competencySelections.value.some(
+          (sel) => sel.selectedCompetency?.code === comp.code,
+        )
+        return !alreadySelected && !alreadyInModal
+      })
+
+      if (available.length === 0) {
+        $q.notify({
+          message: 'All available competencies are already selected',
+          color: 'info',
+          position: 'top',
+        })
+        return
+      }
+
+      // Add all available competencies to modal selections
+      let addedCount = 0
+      available.forEach((comp) => {
+        // Find an empty slot in existing selections
+        const emptySlot = competencySelections.value.find((sel) => !sel.selectedCompetency)
+        if (emptySlot) {
+          emptySlot.selectedCompetency = comp
+          emptySlot.selectedLevel = getLevelOptionsForCompetency(comp)[0] || null
+          addedCount++
+        } else {
+          // Add new row if no empty slots
+          competencySelections.value.push({
+            selectedCompetency: comp,
+            selectedLevel: getLevelOptionsForCompetency(comp)[0] || null,
+          })
+          filteredCompetencyOptionsByRow.value.push([...filteredCompetencyOptionsByType.value])
+          addedCount++
+        }
+      })
+
+      if (addedCount > 0) {
+        $q.notify({
+          message: `Added ${addedCount} competenc${addedCount > 1 ? 'ies' : 'y'} to selection`,
+          color: 'positive',
+          position: 'top',
+        })
+      }
+    }
+
+    const clearAllCompetencies = () => {
+      // Reset all selections to empty
+      competencySelections.value = competencySelections.value.map(() => ({
+        selectedCompetency: null,
+        selectedLevel: null,
+      }))
+
+      // Keep at least one row
+      if (competencySelections.value.length === 0) {
+        competencySelections.value.push({ selectedCompetency: null, selectedLevel: null })
+        filteredCompetencyOptionsByRow.value.push([...filteredCompetencyOptionsByType.value])
+      }
+
+      $q.notify({
+        message: 'Cleared all selections',
+        color: 'info',
+        position: 'top',
+      })
     }
 
     const openCompetencyModal = (type, standardIndex) => {
@@ -2759,24 +2894,80 @@ export default {
       }
     }
 
-    const removePerformanceStandard = (index) => {
+    const removePerformanceStandard = async (index) => {
       const standards = currentEmployee.value?.performanceStandards
       if (!standards) return
-      if (standards.length <= 1)
+
+      if (standards.length <= 1) {
         return $q.notify({
           message: 'Cannot remove the only performance standard',
           color: 'negative',
           position: 'top',
         })
-      $q.dialog({
-        title: 'Confirm Deletion',
-        message: `Remove Performance Standard ${index + 1}?`,
-        cancel: true,
-        persistent: true,
-      }).onOk(() => {
+      }
+
+      const standard = standards[index]
+      const performanceStandardId = standard.performanceStandardId
+
+      // If it's a new standard (no ID), just remove it locally
+      if (!performanceStandardId) {
         standards.splice(index, 1)
         showCompetencyError.value.splice(index, 1)
-        $q.notify({ message: 'Performance standard removed', color: 'positive', position: 'top' })
+        $q.notify({
+          message: 'Performance standard removed',
+          color: 'positive',
+          position: 'top',
+        })
+        return
+      }
+
+      // Confirm deletion for existing standards
+      $q.dialog({
+        title: 'Confirm Deletion',
+        message: `Delete Performance Standard ${index + 1}? This action cannot be undone.`,
+        cancel: true,
+        persistent: true,
+        ok: {
+          label: 'Delete',
+          color: 'negative',
+        },
+      }).onOk(async () => {
+        try {
+          // Show loading state
+          const loadingNotif = $q.notify({
+            message: 'Deleting performance standard...',
+            color: 'info',
+            position: 'top',
+            spinner: true,
+            timeout: 0,
+            group: false,
+          })
+
+          // Call the store action
+          await uwpStore.deletePerformanceStandard(performanceStandardId)
+
+          loadingNotif()
+
+          // Remove from local array
+          standards.splice(index, 1)
+          showCompetencyError.value.splice(index, 1)
+
+          $q.notify({
+            message: 'Performance standard deleted successfully',
+            color: 'positive',
+            position: 'top',
+            icon: 'check_circle',
+            timeout: 3000,
+          })
+        } catch (error) {
+          console.error('[EDIT-UWP] Delete error:', error)
+          $q.notify({
+            message: error.message || 'Failed to delete performance standard',
+            color: 'negative',
+            position: 'top',
+            timeout: 5000,
+          })
+        }
       })
     }
 
@@ -2835,6 +3026,10 @@ export default {
           const performanceStandards = targetPeriod.performance_standards || []
           if (performanceStandards.length > 0) {
             currentEmployee.value.performanceStandards = performanceStandards.map((ps) => {
+              // ✅ FIX: Preserve the performanceStandardId from the API
+              const perfStandardId = ps.performanceStandardId || ps.id || null
+              console.log('[fetchEmployeeData] PS ID:', perfStandardId)
+
               const config = ps.config || targetPeriod.config || {}
               const timelinessType = config.timelinessType || {}
 
@@ -2894,27 +3089,18 @@ export default {
                 }
               }
 
-              // ============================================================
-              // FIX: Populate performance indicator and its category
-              // ============================================================
               const indicatorName = uwpStore.resolvePerformanceIndicators(
                 ps.performance_indicator,
                 officeLibraryIndicatorStore.verbs || [],
               )
 
-              // Get the indicator ID and category
               let indicatorId = null
               let indicatorCategoryId = null
 
               if (Array.isArray(indicatorName) && indicatorName.length > 0) {
-                // If it's an array, take the first one
                 const firstIndicator = indicatorName[0]
-
-                // Try to find the indicator in the library
                 const foundIndicator = officeLibraryIndicatorStore.verbs?.find((v) => {
-                  // Try matching by ID
                   if (v.id === Number(firstIndicator)) return true
-                  // Try matching by name
                   if (
                     v.indicator_name &&
                     v.indicator_name.toLowerCase() === String(firstIndicator).toLowerCase()
@@ -2927,15 +3113,11 @@ export default {
                   indicatorId = foundIndicator.id
                   indicatorCategoryId = foundIndicator.category_id
                 } else {
-                  // If not found, use the value as is
                   indicatorId = firstIndicator
                 }
               } else if (indicatorName) {
-                // Single indicator
                 const foundIndicator = officeLibraryIndicatorStore.verbs?.find((v) => {
-                  // Try matching by ID
                   if (v.id === Number(indicatorName)) return true
-                  // Try matching by name
                   if (
                     v.indicator_name &&
                     v.indicator_name.toLowerCase() === String(indicatorName).toLowerCase()
@@ -2981,12 +3163,14 @@ export default {
                 }
               })
 
+              // ✅ FIX: Create the standard object with the performanceStandardId
               const standard = {
                 id: `ps_${ps.id || Date.now()}`,
+                performanceStandardId: perfStandardId, // ✅ PRESERVE THE ID
                 expanded: true,
                 outputName: ps.output_name || '',
                 indicatorName: indicatorId,
-                indicatorCategoryId: indicatorCategoryId, // <- This now gets populated
+                indicatorCategoryId: indicatorCategoryId,
                 successIndicator: ps.success_indicator || '',
                 requiredOutput: ps.required_output || '',
                 modeOfVerification: '',
@@ -3016,10 +3200,16 @@ export default {
                 if (existing) standard.targetOutputValue = existing
               }
 
+              console.log(
+                '[fetchEmployeeData] Created standard with ID:',
+                standard.performanceStandardId,
+              )
               return standard
             })
           } else {
-            currentEmployee.value.performanceStandards = [createDefaultPerformanceStandard()]
+            const newStandard = createDefaultPerformanceStandard()
+            newStandard.performanceStandardId = null
+            currentEmployee.value.performanceStandards = [newStandard]
           }
         } else {
           targetPeriodDetails.value = {
@@ -3032,7 +3222,9 @@ export default {
             section: '',
             unit: '',
           }
-          currentEmployee.value.performanceStandards = [createDefaultPerformanceStandard()]
+          const newStandard = createDefaultPerformanceStandard()
+          newStandard.performanceStandardId = null
+          currentEmployee.value.performanceStandards = [newStandard]
         }
 
         if (currentEmployee.value.sg && currentEmployee.value.level) {
@@ -3398,6 +3590,15 @@ export default {
       filteredCompetencyOptionsByRow,
       isAnyCompetencyValid,
       filteredCompetencyOptionsByType,
+
+      // NEW: Competency modal select all computed properties
+      getSelectedCompetencyCount,
+      getTotalAvailableCompetencies,
+      hasAvailableCompetencies,
+
+      // NEW: Competency modal select all methods
+      selectAllCompetencies,
+      clearAllCompetencies,
 
       // Head MFO filter
       headMfoNames,

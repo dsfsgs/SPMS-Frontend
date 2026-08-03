@@ -247,11 +247,8 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
       return result
     },
 
-    /* ----------------------------- NEW: performance indicator resolver ----------------------------- */
+    /* ----------------------------- performance indicator resolver ----------------------------- */
 
-    /**
-     * Resolve performance_indicator from API into an array of verb IDs (numbers).
-     */
     resolvePerformanceIndicators(rawIndicators, verbs) {
       if (!rawIndicators) return []
 
@@ -358,6 +355,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
     createDefaultPerformanceStandard(standard = {}) {
       return {
         id: uuidv4(),
+        performanceStandardId: standard.performanceStandardId || standard.id || null, // ✅ FIXED
         expanded: true,
         categoryName: standard.category || '',
         mfoName: standard.mfo || '',
@@ -441,7 +439,18 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
         const standardOutcomes = targetPeriod?.standard_outcomes || []
 
         const transformedStandards = performanceStandards.map((standard) => {
+          // ✅ FIX: Properly extract the performance_standard_id
+          // The API returns it as "performanceStandardId" (capital S)
+          const perfStandardId = standard.performanceStandardId || standard.id || null
+
+          console.log('[Store] Extracting performanceStandardId:', {
+            raw: standard,
+            extractedId: perfStandardId,
+          })
+
           const perfStandard = this.createDefaultPerformanceStandard(standard)
+          perfStandard.performanceStandardId = perfStandardId
+
           const standardRows = this.mapStandardOutcomesToRows(standardOutcomes)
           perfStandard.standardOutcomeRows = standardRows
 
@@ -477,7 +486,9 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
         })
 
         if (transformedStandards.length === 0) {
-          transformedStandards.push(this.createDefaultPerformanceStandard())
+          const newStandard = this.createDefaultPerformanceStandard()
+          newStandard.performanceStandardId = null
+          transformedStandards.push(newStandard)
         }
 
         return {
@@ -566,6 +577,8 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
           const employeeId =
             emp.employeeId || emp.employeeData?.id || emp.employeeData?.employeeId || null
 
+          const targetPeriodId = emp.employeeData?.target_periods?.[0]?.id || null
+
           const performanceStandards = Array.isArray(emp.performanceStandards)
             ? emp.performanceStandards.map((standard) => {
                 const coreCompetencies = standard.competencies?.core || []
@@ -576,12 +589,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                 const mfoId = this.extractId(standard.rows?.mfo)
                 const outputId = this.extractId(standard.rows?.output)
 
-                // ── supervisory_control_no per standard ──────────────────────
-                // Priority:
-                //   1. standard.rows.supervisory_control_no — set by the cascade
-                //      resolver when the user selects an MFO/indicator (most specific)
-                //   2. emp-level supervisoryControlNo — resolved at the employee level
-                //      (covers standards that were never opened / cascade not triggered)
                 const standardSupervisoryControlNo =
                   standard.rows?.supervisory_control_no || supervisoryControlNo || null
 
@@ -606,7 +613,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                     standard.rows?.output ||
                     ''
 
-                // Build performance indicators
                 let performanceIndicators = []
                 if (standard.indicatorName) {
                   const items = Array.isArray(standard.indicatorName)
@@ -639,8 +645,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                     .filter(Boolean)
                 }
 
-                console.log('📊 Final performance indicators for CREATE:', performanceIndicators)
-
                 const requiredOutput = standard.requiredOutput || ''
                 const activeInputs = standard.activeTimelinessInputs || standard.timelinessInputs
                 const ratings = []
@@ -650,7 +654,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                     if (!row.rating) return
                     const timelinessValue = this.buildTimelinessValue(row, activeInputs)
                     ratings.push({
-                      rating: Number(row.rating) || 0,
+                      rating: String(row.rating || '0'),
                       quantity: String(row.quantity || ''),
                       effectiveness: String(row.effectiveness || ''),
                       timeliness: String(timelinessValue),
@@ -681,12 +685,13 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                   targetOutput = '100%'
                 }
 
+                // ✅ FIX: Use snake_case for config fields in CREATE
                 const config = {
-                  target_output: targetOutput,
-                  quantity_indicator: String(standard.quantityIndicatorType || 'numeric'),
+                  target_output: targetOutput, // ✅ snake_case
+                  quantity_indicator: String(standard.quantityIndicatorType || 'numeric'), // ✅ snake_case
                   timeliness_indicator: String(
                     standard.timelinessIndicatorType || 'beforeDeadline',
-                  ),
+                  ), // ✅ snake_case
                   timeliness_value: String(referenceTimelinessValue || ''),
                   timelinessType: {
                     type: String(standard.timelinessIndicatorType || 'beforeDeadline'),
@@ -697,6 +702,8 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                 }
 
                 return {
+                  target_period_id: targetPeriodId,
+                  performance_standard_id: standard.performanceStandardId || null,
                   supervisory_control_no: standardSupervisoryControlNo,
                   category_id: categoryId,
                   mfo_id: mfoId,
@@ -775,6 +782,8 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
         employee.employeeData?.supervisorySignatory?.controlNo ||
         null
 
+      const targetPeriodId = employee.employeeData?.target_periods?.[0]?.id || null
+
       const base = {
         employee_id: employee.employeeId ? Number(employee.employeeId) : null,
         employee_name: employee.name || '',
@@ -798,10 +807,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
           const mfoId = this.extractId(standard.rows?.mfo)
           const outputId = this.extractId(standard.rows?.output)
 
-          // ── supervisory_control_no per standard ──────────────────────────
-          // Priority:
-          //   1. standard.rows.supervisory_control_no — set by the cascade resolver
-          //   2. emp-level supervisoryControlNo — fallback for uncascaded standards
           const standardSupervisoryControlNo =
             standard.rows?.supervisory_control_no || supervisoryControlNo || null
 
@@ -823,7 +828,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
               standard.rows?.output ||
               ''
 
-          // Build performance indicators
           let performanceIndicators = []
           if (standard.indicatorName) {
             const items = Array.isArray(standard.indicatorName)
@@ -864,7 +868,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
               if (!row.rating) return
               const timelinessValue = this.buildTimelinessValue(row, activeInputs)
               ratings.push({
-                rating: Number(row.rating) || 0,
+                rating: String(row.rating || '0'),
                 quantity: String(row.quantity || ''),
                 effectiveness: String(row.effectiveness || ''),
                 timeliness: String(timelinessValue),
@@ -891,9 +895,9 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
           }
 
           const config = {
-            target_output: targetOutput,
-            quantity_indicator: String(standard.quantityIndicatorType || 'numeric'),
-            timeliness_indicator: String(standard.timelinessIndicatorType || 'beforeDeadline'),
+            targetOutput: targetOutput,
+            quantityIndicator: String(standard.quantityIndicatorType || 'numeric'),
+            timelinessIndicator: String(standard.timelinessIndicatorType || 'beforeDeadline'),
             timeliness_value: String(referenceTimelinessValue || ''),
             timelinessType: {
               type: String(standard.timelinessIndicatorType || 'beforeDeadline'),
@@ -904,6 +908,8 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
           }
 
           return {
+            target_period_id: targetPeriodId,
+            performanceStandardId: standard.performanceStandardId || null, // ADD THIS
             supervisory_control_no: standardSupervisoryControlNo,
             category_id: categoryId,
             mfo_id: mfoId,
@@ -1029,13 +1035,12 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
         }
 
         const token = localStorage.getItem('token')
-        const response = await api.put(
-          `/unit_work_plan/update/${controlNo}/${semester}/${year}`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } },
-        )
+        const response = await api.post(`/unit_work_plan/update`, payload, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
 
         console.log('✅ Update response:', response.data)
+        return response.data
       } catch (error) {
         this.error = error.message || 'Failed to update UWP'
         console.error('❌ Update UWP error:', error.response?.data || error)
@@ -1048,9 +1053,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
       }
     },
 
-    /**
-     * Fetch a single employee's work plan data and transform it for the Edit form.
-     */
     async fetchEmployeeByControlNo(controlNo, semester, year) {
       this.loading = true
       this.error = null
@@ -1111,7 +1113,11 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
 
                 const cleanString = (str) => str?.toString().trim().toLowerCase() || ''
 
-                // Resolve category
+                // ✅ FIX: Extract the performance standard ID from the API response
+                // The API returns it as "performanceStandardId" (capital S)
+                const perfStandardId = ps.performanceStandardId || ps.id || null
+                console.log(`[Store] PS ${index + 1} ID:`, perfStandardId)
+
                 const categoryName = ps.category || ''
                 const categoryObj = this.officeLibraryStore?.categories?.find(
                   (cat) => cleanString(cat.name) === cleanString(categoryName),
@@ -1122,7 +1128,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                   categories_name: categoryName,
                 }
 
-                // Resolve MFO
                 const mfoName = ps.mfo || ''
                 let mfoObj = null
                 if (categoryObj && mfoName) {
@@ -1133,7 +1138,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                   ) || { id: ps.mfo_id, name: mfoName, label: mfoName }
                 }
 
-                // Resolve output
                 const outputName = ps.output || ''
                 let outputObj = null
                 if (outputName) {
@@ -1161,11 +1165,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                   this.officeLibraryIndicatorStore?.verbs || [],
                 )
 
-                console.log(`[Store] PS ${index + 1} indicator resolution:`, {
-                  raw: ps.performance_indicator,
-                  resolved: resolvedIndicatorIds,
-                })
-
                 const standardOutcomeRows = this.mapStandardOutcomesToRows(ratings)
 
                 let quantityIndicatorType = 'numeric'
@@ -1188,8 +1187,10 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                   description: timelinessType.description === true,
                 }
 
+                // ✅ FIX: Create the standard object with the performanceStandardId
                 const standard = {
                   id: `ps_${ps.id || index}`,
+                  performanceStandardId: perfStandardId, // ✅ STORE THE ID HERE
                   expanded: true,
                   outputName: ps.output_name || '',
                   indicatorName: resolvedIndicatorIds,
@@ -1200,8 +1201,6 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                     category: categoryObj,
                     mfo: mfoObj,
                     output: outputObj,
-                    // Preserve supervisory_control_no from the API so edits
-                    // don't lose it if the cascade is not re-triggered.
                     supervisory_control_no: ps.supervisory_control_no || null,
                   },
                   quantityIndicatorType,
@@ -1228,10 +1227,14 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
               },
             )
           } else {
-            transformedEmployee.performanceStandards = [this.createDefaultPerformanceStandard()]
+            const newStandard = this.createDefaultPerformanceStandard()
+            newStandard.performanceStandardId = null
+            transformedEmployee.performanceStandards = [newStandard]
           }
         } else {
-          transformedEmployee.performanceStandards = [this.createDefaultPerformanceStandard()]
+          const newStandard = this.createDefaultPerformanceStandard()
+          newStandard.performanceStandardId = null
+          transformedEmployee.performanceStandards = [newStandard]
         }
 
         console.log('[Store] ✅ Transformed employee:', transformedEmployee)
@@ -1278,6 +1281,60 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
         throw new Error(response.data.message || 'Failed to fetch UWP')
       } catch (error) {
         this.error = error.message || 'Failed to fetch UWP'
+        throw error
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async deletePerformanceStandard(performanceId) {
+      this.loading = true
+      this.error = null
+      try {
+        const token = localStorage.getItem('token')
+        const response = await api.delete(
+          `/unit_work_plan/delete/performance-standard/${performanceId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+
+        if (response.data.success) {
+          // Update local state by removing the performance standard from filteredEmployeesData
+          if (this.filteredEmployeesData.length > 0) {
+            this.filteredEmployeesData = this.filteredEmployeesData.map((employee) => {
+              if (employee.performanceStandards) {
+                employee.performanceStandards = employee.performanceStandards.filter(
+                  (standard) => standard.performanceStandardId !== performanceId,
+                )
+              }
+              return employee
+            })
+          }
+
+          // Also update uwpData if it exists
+          if (this.uwpData && this.uwpData.employees) {
+            this.uwpData.employees = this.uwpData.employees.map((employee) => {
+              if (employee.performanceStandards) {
+                employee.performanceStandards = employee.performanceStandards.filter(
+                  (standard) => standard.performanceStandardId !== performanceId,
+                )
+              }
+              return employee
+            })
+          }
+
+          console.log(`✅ Performance standard ${performanceId} deleted successfully`)
+          return response.data
+        }
+
+        throw new Error(response.data.message || 'Failed to delete performance standard')
+      } catch (error) {
+        this.error = error.message || 'Failed to delete performance standard'
+        console.error('❌ Delete performance standard error:', error.response?.data || error)
+        if (error.response?.data?.errors) {
+          console.error('Validation errors:', error.response.data.errors)
+        }
         throw error
       } finally {
         this.loading = false

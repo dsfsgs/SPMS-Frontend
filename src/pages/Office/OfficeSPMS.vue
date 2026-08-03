@@ -1359,8 +1359,11 @@ const show_opcr_Modal = (employee) => {
   selectedEmployee.value = employee
   show_opcr_ModalOpen.value = true
 }
-const close_opcr_Modal = () => {
+const close_opcr_Modal = async () => {
   show_opcr_ModalOpen.value = false
+  // Refresh data when closing OPCR
+  await refreshData()
+  await orgStore.fetchListTargetPeriod()
 }
 
 const show_qpef_Modal = (employee) => {

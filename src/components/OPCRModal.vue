@@ -38,15 +38,32 @@
 
       <div style="overflow-y: auto; max-height: 70vh; padding: 8px">
         <div class="preview-container" id="opcr-preview">
-          <!-- Header Section with Logos -->
-          <div class="header">
-            <img src="/tagumlogo.png" alt="City of Tagum Logo" class="logo" />
-            <div class="center-text">
-              <div>Republic of the Philippines</div>
-              <div>Province of Davao del Norte</div>
-              <div>CITY OF TAGUM</div>
+          <!-- Header Section with Correct Design -->
+          <div class="header-container">
+            <!-- Left: Green Banner at Bottom -->
+            <div class="left-banner">
+              <div class="green-banner-left"></div>
             </div>
-            <img src="/rotp.png" alt="Republic of the Philippines Logo" class="logo" />
+
+            <!-- Middle: Logo (Full Height) -->
+            <div class="logo-wrapper">
+              <img class="logo" alt="City of Tagum Logo" src="/logo.png" />
+            </div>
+
+            <!-- Right: Text + Green Banner -->
+            <div class="header-content">
+              <!-- Top: Three lines of text -->
+              <div class="header-text">
+                <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
+                <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
+                <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
+              </div>
+
+              <!-- Bottom: Green Banner with Office Name -->
+              <div class="green-banner-right">
+                <div class="office-name">{{ employee?.office || 'OFFICE' }}</div>
+              </div>
+            </div>
           </div>
 
           <div class="opcr-title">OFFICE PERFORMANCE COMMITMENT AND REVIEW (OPCR)</div>
@@ -100,7 +117,7 @@
             </table>
           </div>
 
-          <!-- Rating Scale Table -->
+          <!-- Rating Scale Table - Centered -->
           <div class="rating-scale-wrap">
             <table class="rating-scale-table">
               <tbody>
@@ -317,9 +334,11 @@ const initPdfMake = async () => {
 const PDF_FONT = {
   header: 8,
   sectionHeader: 8,
-  body: 8,
+  body: 7,
   label: 8,
   signature: 8,
+  title: 10,
+  subtitle: 9,
 }
 
 const props = defineProps({
@@ -612,18 +631,15 @@ const handlePrint = async () => {
 
     // Load images as base64 data URLs
     let tagumLogoBase64 = null
-    let rotpLogoBase64 = null
 
     try {
-      tagumLogoBase64 = await convertImageToBase64('/tagumlogo.png')
-      rotpLogoBase64 = await convertImageToBase64('/rotp.png')
+      tagumLogoBase64 = await convertImageToBase64('/logo.png')
     } catch (error) {
       console.warn('Could not load images, using SVG placeholders:', error)
       tagumLogoBase64 = createSvgPlaceholder('TAGUM LOGO')
-      rotpLogoBase64 = createSvgPlaceholder('ROTP LOGO')
     }
 
-    const docDefinition = generateOpcrPdfContent(tagumLogoBase64, rotpLogoBase64)
+    const docDefinition = generateOpcrPdfContent(tagumLogoBase64)
 
     // Open in new window
     pdfMakeInstance.createPdf(docDefinition).open()
@@ -646,7 +662,7 @@ const handlePrint = async () => {
 }
 
 // Generate OPCR PDF Content
-const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
+const generateOpcrPdfContent = (tagumLogoBase64) => {
   const employeeName = opcrData.value?.name || 'N/A'
   const position = props.employee?.position || 'N/A'
   const office = props.employee?.office || 'N/A'
@@ -654,73 +670,124 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
 
   const content = []
 
-  // Header with logos
+  // Header with correct design matching preview
   content.push({
     columns: [
       {
-        width: 'auto',
-        stack: tagumLogoBase64
-          ? [{ image: tagumLogoBase64, width: 40, alignment: 'center', margin: [0, 10, 0, 10] }]
-          : [
-              {
-                text: 'TAGUM LOGO',
-                alignment: 'center',
-                italics: true,
-                margin: [0, 20, 0, 10],
-              },
-            ],
-      },
-      {
-        width: '*',
+        // Left: Green banner at bottom only
+        width: 60,
         stack: [
           {
-            text: 'Republic of the Philippines',
-            alignment: 'center',
-            fontSize: PDF_FONT.body,
-            margin: [0, 10, 0, 2],
+            // Empty space above the banner
+            text: '',
+            margin: [0, 0, 0, 0],
           },
           {
-            text: 'Province of Davao del Norte',
-            alignment: 'center',
-            fontSize: PDF_FONT.body,
-            margin: [0, 0, 0, 2],
-          },
-          {
-            text: 'CITY OF TAGUM',
-            alignment: 'center',
-            fontSize: PDF_FONT.body,
-            bold: true,
-            margin: [0, 0, 0, 10],
+            // Green banner at bottom
+            canvas: [
+              {
+                type: 'rect',
+                x: 0,
+                y: 75,
+                w: 60,
+                h: 25,
+                color: '#036431',
+              },
+            ],
           },
         ],
       },
       {
+        // Middle: Logo (full height)
         width: 'auto',
-        stack: rotpLogoBase64
-          ? [{ image: rotpLogoBase64, width: 40, alignment: 'center', margin: [0, 10, 0, 10] }]
+        stack: tagumLogoBase64
+          ? [
+              {
+                image: tagumLogoBase64,
+                width: 70,
+                alignment: 'center',
+                margin: [5, 10, 5, 10],
+              },
+            ]
           : [
               {
-                text: 'ROTP LOGO',
+                text: 'LOGO',
                 alignment: 'center',
                 italics: true,
-                margin: [0, 20, 0, 10],
+                margin: [5, 40, 5, 40],
               },
             ],
       },
+      {
+        // Right: Text + Green Banner
+        width: '*',
+        stack: [
+          {
+            // Top: Three lines of text
+            stack: [
+              {
+                text: 'REPUBLIC OF THE PHILIPPINES',
+                alignment: 'left',
+                fontSize: 8,
+                color: '#036431',
+                margin: [10, 10, 0, 1],
+              },
+              {
+                text: 'PROVINCE OF DAVAO DEL NORTE',
+                alignment: 'left',
+                fontSize: 8,
+                color: '#036431',
+                margin: [10, 0, 0, 1],
+              },
+              {
+                text: 'CITY OF TAGUM',
+                alignment: 'left',
+                fontSize: 10,
+                bold: true,
+                color: '#036431',
+                margin: [10, 0, 0, 15],
+              },
+            ],
+          },
+          {
+            // Bottom: Green Banner with Office Name
+            canvas: [
+              {
+                type: 'rect',
+                x: 10,
+                y: 0,
+                w: 480,
+                h: 25,
+                color: '#036431',
+              },
+            ],
+            stack: [
+              {
+                text: office || 'OFFICE',
+                color: 'white',
+                fontSize: 10,
+                bold: true,
+                margin: [20, 3, 0, 0],
+              },
+            ],
+            margin: [0, 0, 0, 5],
+          },
+        ],
+      },
     ],
-    margin: [0, 0, 0, 0],
+    margin: [0, 0, 0, 10],
   })
 
   // Title
   content.push({
     text: 'OFFICE PERFORMANCE COMMITMENT AND REVIEW (OPCR)',
     alignment: 'center',
-    fontSize: 11,
+    fontSize: PDF_FONT.title,
     bold: true,
-    margin: [0, 0, 0, 15],
+    margin: [0, 5, 0, 10],
   })
 
-  // Commitment Statement Table
+  // Commitment Statement
   content.push({
     table: {
       widths: ['100%'],
@@ -756,7 +823,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
     margin: [0, 0, 0, 0],
   })
 
-  // Signatory section in commitment
+  // Signatory in commitment
   content.push({
     table: {
       widths: ['*', '*'],
@@ -822,7 +889,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
                 bold: true,
                 fontSize: PDF_FONT.body,
                 alignment: 'center',
-                margin: [0, 20, 0, 0],
+                margin: [0, 15, 0, 0],
               },
               {
                 text: '________________________________',
@@ -844,10 +911,10 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
-    margin: [0, 0, 0, 15],
+    margin: [0, 0, 0, 10],
   })
 
-  // Rating Scale Table (aligned right)
+  // Rating Scale
   const ratingScaleRow = (label, value) => [
     {
       text: label,
@@ -886,11 +953,12 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
           vLineColor: () => '#000000',
         },
       },
+      { width: '*', text: '' },
     ],
     margin: [0, 0, 0, 10],
   })
 
-  // Main OPCR Table
+  // Main OPCR Table with adjusted column widths for better fit
   const headerCell = (text, opts = {}) => ({
     text,
     alignment: 'center',
@@ -906,7 +974,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
       headerCell('MFO', { rowSpan: 2 }),
       headerCell('REQUIRED COMPETENCY &\nPROFICIENCY LEVEL', { rowSpan: 2 }),
       headerCell('SUCCESS INDICATOR', { rowSpan: 2 }),
-      headerCell('ALLOTED BUDGET', { rowSpan: 2 }),
+      headerCell('ALLOTED\nBUDGET', { rowSpan: 2 }),
       headerCell('DIVISION/\nINDIVIDUAL\nACCOUNTABLE', { rowSpan: 2 }),
       headerCell('ACTUAL\nACCOMPLISHMENT', { rowSpan: 2 }),
       headerCell('RATING', { colSpan: 4 }),
@@ -942,7 +1010,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
         bold: true,
         fillColor: '#d9d9d9',
         border: [true, true, true, true],
-        margin: [3, 3, 3, 3],
+        margin: [2, 2, 2, 2],
       },
       {},
       {},
@@ -960,7 +1028,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
     const standards = getStandardsByCategory(category)
     standards.forEach((standard) => {
       const bodyCell = (text, opts = {}) => ({
-        text,
+        text: text || '',
         fontSize: PDF_FONT.body,
         border: [true, true, true, true],
         margin: [2, 2, 2, 2],
@@ -971,13 +1039,13 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
         bodyCell(standard.mfo || 'N/A', { bold: true }),
         bodyCell(formatCompetencies(standard)),
         bodyCell(standard.success_indicator || 'N/A'),
-        bodyCell(standard.opcr?.budget || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
-        bodyCell(standard.opcr?.accountable || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
-        bodyCell(standard.opcr?.accomplishment || '-'),
-        bodyCell(standard.opcr?.rating_q || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
-        bodyCell(standard.opcr?.rating_e || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
-        bodyCell(standard.opcr?.rating_t || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
-        bodyCell(standard.opcr?.rating_a || '-', { alignment: 'center', margin: [0, 0, 0, 0] }),
+        bodyCell(standard.opcr?.budget || '-', { alignment: 'center' }),
+        bodyCell(standard.opcr?.accountable || '-', { alignment: 'center' }),
+        bodyCell(standard.opcr_accomplishment?.accomplishment || '-'),
+        bodyCell(standard.opcr?.rating_q || '-', { alignment: 'center' }),
+        bodyCell(standard.opcr?.rating_e || '-', { alignment: 'center' }),
+        bodyCell(standard.opcr?.rating_t || '-', { alignment: 'center' }),
+        bodyCell(standard.opcr?.rating_a || '-', { alignment: 'center' }),
         bodyCell(formatProficiencyResult(standard)),
         bodyCell(standard.opcr?.remarks || ''),
       ])
@@ -1019,7 +1087,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   if (hasCategoryData('A. STRATEGIC FUNCTION')) categoryRatingRowCount++
   if (hasCategoryData('B. CORE FUNCTION')) categoryRatingRowCount++
   if (hasCategoryData('C. SUPPORT FUNCTION')) categoryRatingRowCount++
-  categoryRatingRowCount += 2 // Final Rating + Adjectival Rating
+  categoryRatingRowCount += 2
 
   const categoryLabelRow = (label, value, opts = {}) => [
     {
@@ -1078,7 +1146,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   content.push({
     table: {
       headerRows: 0,
-      widths: ['10%', '12%', '10%', '8%', '8%', '10%', '5%', '5%', '5%', '5%', '10%', '12%'],
+      widths: ['14%', '16%', '12%', '7%', '8%', '12%', '5%', '5%', '5%', '5%', '6%', '7%'],
       body: tableBody,
     },
     layout: {
@@ -1090,7 +1158,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
     margin: [0, 0, 0, 10],
   })
 
-  // Signature Section - Make it unbreakable
+  // Signature Section
   const signatureBlock = (name, role) => ({
     stack: [
       {
@@ -1098,7 +1166,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
         bold: true,
         fontSize: PDF_FONT.signature,
         alignment: 'center',
-        margin: [0, 40, 0, 2],
+        margin: [0, 30, 0, 2],
       },
       {
         text: '________________________________',
@@ -1150,7 +1218,7 @@ const generateOpcrPdfContent = (tagumLogoBase64, rotpLogoBase64) => {
   return {
     pageSize: 'LEGAL',
     pageOrientation: 'landscape',
-    pageMargins: [36, 36, 36, 36],
+    pageMargins: [30, 30, 30, 30],
     content: content,
     defaultStyle: {
       fontSize: PDF_FONT.body,
@@ -1164,32 +1232,114 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.header {
+/* ---------- Header Design ---------- */
+.header-container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
+  height: 100px;
+  margin-bottom: 8px;
+  /* border: 1px solid #e0e0e0; */
+}
+
+/* Left: Green Banner at Bottom */
+.left-banner {
+  flex: 0 0 60px;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.green-banner-left {
+  width: 60px;
+  height: 25px;
+  background-color: #036431;
+  flex-shrink: 0;
+  margin-bottom: 5px;
+}
+
+/* Middle: Logo - spans full height */
+.logo-wrapper {
+  flex: 0 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background-color: white;
+  position: relative;
+  z-index: 1;
 }
 
 .logo {
-  width: 70px;
-  height: auto;
-  padding: 10px;
+  height: 100%;
+  width: auto;
+  max-height: 90px;
+  object-fit: contain;
 }
 
-.center-text {
-  text-align: center;
-  flex-grow: 1;
-  font-weight: bold;
-  line-height: 1.5;
-  font-size: 11px;
+/* Right: Content area with flex column */
+.header-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 5px 0 0 0;
 }
+
+/* Top: Three lines of text */
+.header-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 10px;
+}
+
+.text-green-9 {
+  color: #036431;
+}
+
+.text-caption {
+  font-size: 9px;
+  line-height: 1.3;
+}
+
+.text-h5 {
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.text-weight-bold {
+  font-weight: bold;
+}
+
+/* Bottom: Green Banner with Office Name */
+.green-banner-right {
+  background-color: #036431;
+  color: white;
+  height: 25px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  flex-shrink: 0;
+  margin-bottom: 5px;
+}
+
+.office-name {
+  font-weight: bold;
+  font-size: 12px;
+  color: white;
+}
+
+/* ---------- End Header Design ---------- */
 
 .opcr-title {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: bold;
   text-align: center;
-  margin-top: 12px;
+  margin-top: 10px;
+  letter-spacing: 0.5px;
 }
 
 .my-card {
@@ -1216,25 +1366,29 @@ onMounted(() => {
   color: #000;
 }
 
-/* ---------- Full-width table helper (matches IPCR pattern) ---------- */
+/* ---------- Full-width table helper ---------- */
 .full-width {
   width: 100%;
 }
 
-/* ---------- Main OPCR table (class-based, one font-size everywhere) ---------- */
+/* ---------- Main OPCR table ---------- */
 #opcr-preview .opcr-table {
   border-collapse: collapse;
   margin-top: 8px;
-  font-size: 9px;
+  font-size: 8px;
   border: 1px solid #000 !important;
+  table-layout: fixed;
+  width: 100%;
 }
 
 #opcr-preview .opcr-table th,
 #opcr-preview .opcr-table td {
   border: 1px solid #000 !important;
-  padding: 4px;
+  padding: 3px;
   vertical-align: top;
-  font-size: 9px;
+  font-size: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 #opcr-preview .opcr-table th {
@@ -1247,47 +1401,47 @@ onMounted(() => {
   text-align: center;
 }
 
-/* Column widths, named the same way as the IPCR table's col-* classes */
+/* Column widths - totals to 100% */
 .col-mfo {
-  width: 11.11%;
+  width: 14%;
 }
 .col-competency {
-  width: 11.11%;
+  width: 16%;
 }
 .col-success {
-  width: 11.11%;
+  width: 12%;
 }
 .col-budget {
-  width: 8%;
+  width: 7%;
 }
 .col-accountable {
   width: 8%;
 }
 .col-accomplishment {
-  width: 11.11%;
+  width: 12%;
 }
 .col-rating {
-  width: 3%;
+  width: 5%;
 }
 .col-proficiency {
-  width: 11.11%;
+  width: 6%;
 }
 .col-remarks {
-  width: 11.11%;
+  width: 7%;
 }
 
-/* Category divider row, same role as IPCR's .section-header */
+/* Category divider row */
 #opcr-preview .section-header {
   background-color: #d9d9d9;
   font-weight: bold;
-  padding: 4px;
+  padding: 3px;
   border: 1px solid #000;
-  font-size: 9px;
+  font-size: 8px;
 }
 
-/* Competency / proficiency line lists inside a cell */
+/* Competency / proficiency line lists */
 .competency-list {
-  font-size: 9px;
+  font-size: 8px;
   white-space: pre-line;
 }
 
@@ -1366,11 +1520,11 @@ onMounted(() => {
   border-top: 1px solid #000;
 }
 
-/* ---------- Rating scale ---------- */
+/* ---------- Rating scale - Centered ---------- */
 .rating-scale-wrap {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 20px;
+  justify-content: center;
+  margin-top: 15px;
 }
 
 .rating-scale-table {
@@ -1382,16 +1536,16 @@ onMounted(() => {
 
 .rating-scale-label {
   border: 1px solid #000;
-  padding: 6px 14px;
-  min-width: 180px;
+  padding: 5px 14px;
+  min-width: 160px;
   font-size: 9px;
 }
 
 .rating-scale-value {
   border: 1px solid #000;
-  padding: 6px 14px;
+  padding: 5px 14px;
   text-align: center;
-  min-width: 50px;
+  min-width: 40px;
   font-size: 9px;
 }
 
@@ -1412,7 +1566,7 @@ onMounted(() => {
 .signatory-block {
   text-align: center;
   vertical-align: bottom;
-  padding-top: 60px;
+  padding-top: 50px;
   width: 50%;
   font-size: 9px;
 }
