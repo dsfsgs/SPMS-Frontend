@@ -61,7 +61,9 @@
 
               <!-- Bottom: Green Banner with Office Name -->
               <div class="green-banner-right">
-                <div class="office-name">{{ employee?.office || 'OFFICE' }}</div>
+                <div class="office-name">
+                  {{ opcrData?.office || employee?.office || 'OFFICE' }}
+                </div>
               </div>
             </div>
           </div>
@@ -75,8 +77,8 @@
                 <tr>
                   <td class="commitment-cell">
                     I, <b>{{ opcrData.name }}</b
-                    >, {{ employee?.position || 'N/A' }} of the {{ employee?.office || 'N/A' }},
-                    commit to deliver and agree to be rated on the attainment of the following
+                    >, <b>{{ formattedPosition }}</b> of the <b>{{ formattedOffice }}</b
+                    >, commit to deliver and agree to be rated on the attainment of the following
                     targets in accordance with the indicated measures for the period of
                     <b>{{ currentPeriod?.semester || 'N/A' }}, {{ currentPeriod?.year || 'N/A' }}</b
                     >.
@@ -85,17 +87,24 @@
                     <div class="commitment-signatory">
                       <div class="commitment-signatory-block">
                         <div>{{ opcrData.name }}</div>
-                        <div>{{ employee?.position || 'N/A' }}</div>
+                        <div>
+                          <b>{{ formattedPosition }}</b>
+                        </div>
                         <div>Date: {{ currentDate }}</div>
                       </div>
                     </div>
                   </td>
                 </tr>
 
-                <!-- Approval Section -->
+                <!-- Approval Section - FIXED COLUMN WIDTHS -->
                 <tr>
                   <td class="approval-outer-cell">
                     <table class="approval-table">
+                      <!-- COLGROUP defines column widths: 70% | 30% -->
+                      <colgroup>
+                        <col style="width: 70%" />
+                        <col style="width: 30%" />
+                      </colgroup>
                       <tbody>
                         <tr>
                           <th class="approval-head approval-head-left">Approved by:</th>
@@ -146,7 +155,7 @@
           </div>
 
           <!-- Main OPCR Table -->
-          <table class="opcr-table full-width q-mt-md" style="table-layout: fixed">
+          <table class="opcr-table full-width q-mt-md">
             <thead>
               <tr>
                 <th rowspan="2" class="text-center col-mfo">MFO</th>
@@ -258,38 +267,126 @@
                   <b>{{ opcrData.average_rating?.adjectival_rating }}</b>
                 </td>
               </tr>
-
-              <!-- Signatory Section -->
-              <tr>
-                <td colspan="12" style="padding: 0">
-                  <table class="signatory-table">
-                    <tbody>
-                      <tr>
-                        <td class="signatory-head">
-                          <b>Assessed by:</b>
-                        </td>
-                        <td class="signatory-head">
-                          <b>Final Rating by:</b>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="signatory-block">
-                          <div class="signatory-name">{{ employee?.supervisor || 'N/A' }}</div>
-                          <div class="signatory-line"></div>
-                          <div>Immediate Supervisor</div>
-                        </td>
-                        <td class="signatory-block">
-                          <div class="signatory-name">REY T. UY</div>
-                          <div class="signatory-line"></div>
-                          <div>City Mayor</div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
-              </tr>
             </tbody>
           </table>
+          <div style="display: flex; justify-content: center; padding-bottom: 30px">
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid">
+              <tbody>
+                <!-- Header -->
+                <tr>
+                  <th colspan="5" style="border: 1px solid; padding: 8px; text-align: left">
+                    Assessed by:
+                  </th>
+                  <th style="border: 1px solid; padding: 8px; text-align: left">
+                    Final Rating by:
+                  </th>
+                  <th style="border: 1px solid; padding: 8px; text-align: center">Date</th>
+                </tr>
+
+                <!-- Row 1 -->
+                <tr>
+                  <!-- Column 1 -->
+                  <td
+                    rowspan="5"
+                    style="border: 1px solid; width: 22%; vertical-align: bottom; height: 120px"
+                  >
+                    <div
+                      style="
+                        height: 120px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: flex-end;
+                        padding-bottom: 10px;
+                      "
+                    ></div>
+                  </td>
+
+                  <!-- Column 2 -->
+                  <td style="border: 1px solid; width: 8%; height: 20px"></td>
+
+                  <!-- Column 3 -->
+                  <td rowspan="6" style="border: 1px solid; width: 8%"></td>
+
+                  <!-- Column 4 -->
+                  <td rowspan="5" style="border: 1px solid; width: 22%; vertical-align: bottom">
+                    <div
+                      style="
+                        height: 120px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: flex-end;
+                        padding-bottom: 10px;
+                      "
+                    >
+                      <strong>{{ mpoConfirmedSignatory?.name || '' }}</strong>
+                    </div>
+                  </td>
+
+                  <!-- Column 5 -->
+                  <td rowspan="6" style="border: 1px solid; width: 8%"></td>
+
+                  <!-- Final Rating -->
+                  <td rowspan="5" style="border: 1px solid; width: 22%; vertical-align: bottom">
+                    <div
+                      style="
+                        height: 120px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: flex-end;
+                        padding-bottom: 10px;
+                      "
+                    >
+                      <strong>REY T. UY</strong>
+                    </div>
+                  </td>
+
+                  <!-- Date -->
+                  <td rowspan="6" style="border: 1px solid; width: 10%"></td>
+                </tr>
+
+                <!-- Row 2 -->
+                <tr>
+                  <td style="border: 1px solid; height: 20px"></td>
+                </tr>
+
+                <!-- Row 3 -->
+                <tr>
+                  <td style="border: 1px solid; height: 20px"></td>
+                </tr>
+
+                <!-- Row 4 -->
+                <tr>
+                  <td style="border: 1px solid; height: 20px"></td>
+                </tr>
+
+                <!-- Row 5 -->
+                <tr>
+                  <td style="border: 1px solid; height: 20px"></td>
+                </tr>
+
+                <!-- Row 6 -->
+                <tr>
+                  <!-- Planning Office -->
+                  <td style="border: 1px solid; text-align: center; font-size: 11px; padding: 5px">
+                    Planning Office
+                  </td>
+
+                  <!-- Column 2 -->
+                  <td style="border: 1px solid; height: 20px"></td>
+
+                  <!-- Performance Management Team -->
+                  <td style="border: 1px solid; text-align: center; font-size: 11px; padding: 5px">
+                    Performance Management Team
+                  </td>
+
+                  <!-- City Mayor -->
+                  <td style="border: 1px solid; text-align: center; font-size: 11px; padding: 5px">
+                    City Mayor
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </template>
@@ -312,34 +409,33 @@ import { useOpcrStore } from 'src/stores/office/opcrStore'
 import { useQuasar } from 'quasar'
 import OPCRInput from './OPCRInput.vue'
 
-// Add pdfMake import
-let pdfMake = null
+// Import pdfmake and fonts - the fonts are already embedded in vfs_fonts.js
+import pdfMake from 'pdfmake/build/pdfmake'
+import pdfFonts from '/src/pdfmake/vfs_fonts.js'
 
-const initPdfMake = async () => {
-  if (!pdfMake) {
-    const pdfMakeModule = await import('pdfmake/build/pdfmake')
-    const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
+// Configure pdfmake with the fonts from vfs_fonts.js
+pdfMake.vfs = pdfFonts
 
-    pdfMake = pdfMakeModule.default || pdfMakeModule
-    const pdfFonts = pdfFontsModule.default || pdfFontsModule
+console.log(Object.keys(pdfMake.vfs))
 
-    if (pdfMake && !pdfMake.vfs) {
-      pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
-    }
-  }
-  return pdfMake
+pdfMake.fonts = {
+  Candara: {
+    normal: 'Candara.ttf',
+    bold: 'Candara_Bold.ttf',
+    italics: 'Candara_Italic.ttf',
+    bolditalics: 'Candara_Bold_Italic.ttf',
+  },
+  Poppins: {
+    normal: 'Poppins-Regular.ttf',
+    bold: 'Poppins-Bold.ttf',
+    italics: 'Poppins-Italic.ttf',
+    bolditalics: 'Poppins-BoldItalic.ttf',
+  },
 }
 
-// Single source of truth for PDF font sizes so every table section matches
-const PDF_FONT = {
-  header: 8,
-  sectionHeader: 8,
-  body: 7,
-  label: 8,
-  signature: 8,
-  title: 10,
-  subtitle: 9,
-}
+// The fonts are already available in the vfs, so we just need to tell pdfmake
+// to use them. The vfs_fonts.js already contains Poppins fonts.
+// No need to call pdfMake.addFonts() again!
 
 const props = defineProps({
   employee: {
@@ -360,6 +456,13 @@ const $q = useQuasar()
 // Modal state
 const editModalOpen = ref(false)
 const isPrinting = ref(false)
+
+// NOTE: `mpoConfirmedSignatory` is used in the template (Performance Management Team
+// signatory on the "Assessed by" side) but was not previously declared anywhere.
+// Added here as a placeholder so the preview and PDF both resolve without errors.
+// Replace this with whatever store/API call actually supplies the confirmed
+// Performance Management Team Office signatory for this employee/period.
+const mpoConfirmedSignatory = ref(props.employee?.mpoSignatory || null)
 
 // Use store state directly
 const loading = computed(() => opcrStore.loading)
@@ -443,13 +546,76 @@ const getProficiencyLevel = (level) => {
   return levels[level] || 'Not Applicable'
 }
 
-// Format competencies
-const formatCompetencies = (standard) => {
+// ------------------------------------------------------------------
+// Proper-case helper for ALL-CAPS position / office strings.
+// Position titles frequently end in a Roman numeral salary/level
+// suffix (e.g. "ADMINISTRATIVE OFFICER III", "ENGINEER II"), which a
+// plain "capitalize first letter, lowercase the rest" conversion would
+// mangle into "Iii" / "Ii". This checks each word/segment against a
+// Roman numeral pattern and keeps those upper-case, while properly
+// casing everything else (including hyphenated words).
+// ------------------------------------------------------------------
+const ROMAN_NUMERAL_REGEX = /^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/
+
+const isRomanNumeral = (word) => {
+  if (!word) return false
+  // Guard against matching empty/near-empty results and stray single
+  // letters like a lone "L" or "C" being read as numerals 50/100 when
+  // they're really just initials - require at least one of the
+  // "core" numeral letters actually present.
+  if (!/^[IVXLCDM]+$/.test(word)) return false
+  return ROMAN_NUMERAL_REGEX.test(word)
+}
+
+const toProperCase = (text) => {
+  if (!text) return text
+
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map((word) => {
+      if (!word) return word
+
+      // Whole word is a Roman numeral (e.g. "III", "IV") - keep as-is, upper case
+      const upperWord = word.toUpperCase()
+      if (isRomanNumeral(upperWord)) {
+        return upperWord
+      }
+
+      // Otherwise capitalize each letter-run, so hyphenated words like
+      // "officer-in-charge" become "Officer-In-Charge", and any
+      // punctuation (commas, parentheses, periods) is left untouched.
+      return word.replace(/[a-zA-Z]+/g, (segment) => {
+        const upperSegment = segment.toUpperCase()
+        if (isRomanNumeral(upperSegment)) {
+          return upperSegment
+        }
+        return segment.charAt(0).toUpperCase() + segment.slice(1)
+      })
+    })
+    .join(' ')
+}
+
+// Proper-cased position / office for the commitment statement, shared
+// by the HTML preview and the PDF so both stay in sync.
+const formattedPosition = computed(() => toProperCase(props.employee?.position || 'N/A'))
+const formattedOffice = computed(() =>
+  toProperCase(opcrData.value?.office || props.employee?.office || 'N/A'),
+)
+
+// Combine core/technical/leadership competencies into one flat array.
+// Shared by both the HTML preview (joined string) and the PDF (line array),
+// so the two outputs always stay in sync.
+const getCombinedCompetencies = (standard) => {
   const core = standard.core || []
   const technical = standard.technical || []
   const leadership = standard.leadership || []
+  return [...core, ...technical, ...leadership]
+}
 
-  const combined = [...core, ...technical, ...leadership]
+// Format competencies - used by the HTML preview (v-html + pre-line CSS)
+const formatCompetencies = (standard) => {
+  const combined = getCombinedCompetencies(standard)
 
   if (combined.length === 0) {
     return 'Not Applicable'
@@ -463,13 +629,26 @@ const formatCompetencies = (standard) => {
   return formatted.join('\n')
 }
 
-// Format proficiency result
-const formatProficiencyResult = (standard) => {
-  const core = standard.core || []
-  const technical = standard.technical || []
-  const leadership = standard.leadership || []
+// Same content as formatCompetencies, but returned as an array of lines
+// instead of a single \n-joined string. Used to build a pdfmake "stack"
+// so each numbered competency reliably renders on its own line inside
+// the PDF table cell - mirroring the preview's `white-space: pre-line` look.
+const getCompetencyLines = (standard) => {
+  const combined = getCombinedCompetencies(standard)
 
-  const combined = [...core, ...technical, ...leadership]
+  if (combined.length === 0) {
+    return ['Not Applicable']
+  }
+
+  return combined.map((comp, index) => {
+    const proficiency = getProficiencyLevel(comp.level)
+    return `${index + 1}. ${comp.description} (${proficiency})`
+  })
+}
+
+// Format proficiency result - used by the HTML preview (v-html + pre-line CSS)
+const formatProficiencyResult = (standard) => {
+  const combined = getCombinedCompetencies(standard)
 
   if (combined.length === 0) {
     return 'Not Applicable'
@@ -481,6 +660,20 @@ const formatProficiencyResult = (standard) => {
   })
 
   return proficiencyLevels.join('\n')
+}
+
+// Line-array version of formatProficiencyResult, for the PDF stack.
+const getProficiencyLines = (standard) => {
+  const combined = getCombinedCompetencies(standard)
+
+  if (combined.length === 0) {
+    return ['Not Applicable']
+  }
+
+  return combined.map((comp, index) => {
+    const proficiency = getProficiencyLevel(comp.level)
+    return `${index + 1}. ${proficiency}`
+  })
 }
 
 const loadOpcrData = async () => {
@@ -609,7 +802,7 @@ const formatDate = (date) => {
   return `${month}/${day}/${year}`
 }
 
-// PDF Generation Function
+// PDF Generation Function - Using Poppins font from vfs_fonts.js
 const handlePrint = async () => {
   if (!opcrData.value) {
     $q.notify({
@@ -623,26 +816,129 @@ const handlePrint = async () => {
   isPrinting.value = true
 
   try {
-    const pdfMakeInstance = await initPdfMake()
-
-    if (!pdfMakeInstance) {
-      throw new Error('Failed to load pdfMake')
-    }
-
     // Load images as base64 data URLs
-    let tagumLogoBase64 = null
+    let logoBase64 = null
 
     try {
-      tagumLogoBase64 = await convertImageToBase64('/logo.png')
+      logoBase64 = await convertImageToBase64('/logo.png')
     } catch (error) {
-      console.warn('Could not load images, using SVG placeholders:', error)
-      tagumLogoBase64 = createSvgPlaceholder('TAGUM LOGO')
+      console.warn('Could not load logo image, using SVG placeholder:', error)
+      logoBase64 = createSvgPlaceholder('TAGUM')
     }
 
-    const docDefinition = generateOpcrPdfContent(tagumLogoBase64)
+    const allContent = generateOpcrContent()
+
+    const docDefinition = {
+      pageSize: 'LEGAL',
+      pageOrientation: 'landscape',
+      pageMargins: [72, 100, 72, 20],
+      defaultStyle: {
+        // Use the font name as registered in vfs_fonts.js
+        // Since the fonts are already in vfs, we can use them
+        font: 'Candara',
+        fontSize: 9,
+      },
+      header: function () {
+        // Use opcrData.office which has the full office name
+        const office = opcrData.value?.office || props.employee?.office || 'OFFICE'
+
+        return {
+          stack: [
+            {
+              canvas: [
+                {
+                  type: 'rect',
+                  x: (1008 - 936) / 2,
+                  y: 60,
+                  w: 936,
+                  h: 25,
+                  color: '#008000',
+                },
+              ],
+            },
+            {
+              margin: [72, -65, 72, 0],
+              columns: [
+                {
+                  width: 65,
+                  stack: [
+                    {
+                      canvas: [
+                        {
+                          type: 'rect',
+                          x: 0,
+                          y: 0,
+                          w: 75,
+                          h: 80,
+                          color: '#ffffff',
+                        },
+                      ],
+                    },
+                    ...(logoBase64
+                      ? [
+                          {
+                            image: logoBase64,
+                            width: 65,
+                            height: 65,
+                            absolutePosition: { x: 77, y: 22 },
+                          },
+                        ]
+                      : []),
+                  ],
+                },
+                {
+                  width: '*',
+                  margin: [15, -15, 0, 0],
+                  stack: [
+                    {
+                      text: 'REPUBLIC OF THE PHILIPPINES',
+                      fontSize: 8,
+                      color: '#00703c',
+                      alignment: 'left',
+                      margin: [0, 20, 0, 2],
+                    },
+                    {
+                      text: 'PROVINCE OF DAVAO DEL NORTE',
+                      fontSize: 8,
+                      color: '#00703c',
+                      alignment: 'left',
+                      margin: [0, 0, 0, 2],
+                    },
+                    {
+                      text: 'CITY OF TAGUM',
+                      fontSize: 10,
+                      bold: true,
+                      color: '#00703c',
+                      alignment: 'left',
+                    },
+                    {
+                      text: office,
+                      fontSize: 10,
+                      bold: true,
+                      color: 'white',
+                      margin: [0, 13, 0, 0],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }
+      },
+      content: allContent,
+      styles: {
+        tableHeader: {
+          fontSize: 9,
+          bold: true,
+        },
+      },
+      footer: function () {
+        return { stack: [{}] }
+      },
+    }
 
     // Open in new window
-    pdfMakeInstance.createPdf(docDefinition).open()
+    pdfMake.createPdf(docDefinition).open()
 
     $q.notify({
       type: 'positive',
@@ -661,274 +957,221 @@ const handlePrint = async () => {
   }
 }
 
-// Generate OPCR PDF Content
-const generateOpcrPdfContent = (tagumLogoBase64) => {
+// Generate OPCR Content - KEEP ORIGINAL FONT SIZES FOR PDF
+const generateOpcrContent = () => {
   const employeeName = opcrData.value?.name || 'N/A'
-  const position = props.employee?.position || 'N/A'
-  const office = props.employee?.office || 'N/A'
+  const position = toProperCase(props.employee?.position || 'N/A')
+  const office = toProperCase(opcrData.value?.office || props.employee?.office || 'N/A')
   const period = `${props.targetPeriod?.semester || 'N/A'}, ${props.targetPeriod?.year || 'N/A'}`
 
   const content = []
 
-  // Header with correct design matching preview
-  content.push({
-    columns: [
-      {
-        // Left: Green banner at bottom only
-        width: 60,
-        stack: [
-          {
-            // Empty space above the banner
-            text: '',
-            margin: [0, 0, 0, 0],
-          },
-          {
-            // Green banner at bottom
-            canvas: [
-              {
-                type: 'rect',
-                x: 0,
-                y: 75,
-                w: 60,
-                h: 25,
-                color: '#036431',
-              },
-            ],
-          },
-        ],
-      },
-      {
-        // Middle: Logo (full height)
-        width: 'auto',
-        stack: tagumLogoBase64
-          ? [
-              {
-                image: tagumLogoBase64,
-                width: 70,
-                alignment: 'center',
-                margin: [5, 10, 5, 10],
-              },
-            ]
-          : [
-              {
-                text: 'LOGO',
-                alignment: 'center',
-                italics: true,
-                margin: [5, 40, 5, 40],
-              },
-            ],
-      },
-      {
-        // Right: Text + Green Banner
-        width: '*',
-        stack: [
-          {
-            // Top: Three lines of text
-            stack: [
-              {
-                text: 'REPUBLIC OF THE PHILIPPINES',
-                alignment: 'left',
-                fontSize: 8,
-                color: '#036431',
-                margin: [10, 10, 0, 1],
-              },
-              {
-                text: 'PROVINCE OF DAVAO DEL NORTE',
-                alignment: 'left',
-                fontSize: 8,
-                color: '#036431',
-                margin: [10, 0, 0, 1],
-              },
-              {
-                text: 'CITY OF TAGUM',
-                alignment: 'left',
-                fontSize: 10,
-                bold: true,
-                color: '#036431',
-                margin: [10, 0, 0, 15],
-              },
-            ],
-          },
-          {
-            // Bottom: Green Banner with Office Name
-            canvas: [
-              {
-                type: 'rect',
-                x: 10,
-                y: 0,
-                w: 480,
-                h: 25,
-                color: '#036431',
-              },
-            ],
-            stack: [
-              {
-                text: office || 'OFFICE',
-                color: 'white',
-                fontSize: 10,
-                bold: true,
-                margin: [20, 3, 0, 0],
-              },
-            ],
-            margin: [0, 0, 0, 5],
-          },
-        ],
-      },
-    ],
-    margin: [0, 0, 0, 10],
-  })
-
-  // Title
+  // Title - Original size for PDF
   content.push({
     text: 'OFFICE PERFORMANCE COMMITMENT AND REVIEW (OPCR)',
     alignment: 'center',
-    fontSize: PDF_FONT.title,
+    fontSize: 12,
     bold: true,
-    margin: [0, 5, 0, 10],
+    margin: [0, 0, 0, 10],
   })
 
-  // Commitment Statement
+  // Commitment Statement - Original size for PDF
+  const commitmentTableBody = [
+    [
+      {
+        text: [
+          { text: 'I, ', fontSize: 9 },
+          { text: employeeName, fontSize: 9, bold: true },
+          { text: ', ', fontSize: 9 },
+          { text: position, fontSize: 9, bold: true },
+          { text: ' of the ', fontSize: 9 },
+          { text: office, fontSize: 9, bold: true },
+          {
+            text: ', commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measures for the period of ',
+            fontSize: 9,
+          },
+          { text: period, fontSize: 9, bold: true },
+          { text: '.', fontSize: 9 },
+        ],
+        margin: [5, 5, 5, 5],
+        border: [true, true, true, false],
+      },
+    ],
+  ]
+
   content.push({
     table: {
       widths: ['100%'],
-      body: [
-        [
-          {
-            text: [
-              { text: 'I, ' },
-              { text: employeeName, bold: true },
-              { text: ', ' },
-              { text: position },
-              { text: ' of the ' },
-              { text: office },
-              {
-                text: ', commit to deliver and agree to be rated on the attainment of the following targets in accordance with the indicated measures for the period of ',
-              },
-              { text: period, bold: true },
-              { text: '.' },
-            ],
-            fontSize: PDF_FONT.body,
-            margin: [5, 5, 5, 5],
-            border: [true, true, true, false],
-          },
-        ],
-      ],
+      body: commitmentTableBody,
     },
     layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
     margin: [0, 0, 0, 0],
   })
 
-  // Signatory in commitment
+  // Signatory in commitment - Original size for PDF
+  const signatoryRow = [
+    { text: '', border: [true, false, false, false] },
+    {
+      stack: [
+        {
+          stack: [
+            {
+              text: employeeName,
+              bold: true,
+              fontSize: 9,
+              alignment: 'left',
+              margin: [0, 10, 0, 2],
+            },
+          ],
+        },
+        { text: position, fontSize: 8, bold: true, alignment: 'left' },
+        {
+          text: `Date: ${formatDate(new Date())}`,
+          fontSize: 8,
+          alignment: 'left',
+        },
+      ],
+      border: [false, false, true, false],
+      margin: [0, 0, 60, 0],
+    },
+  ]
+
   content.push({
     table: {
-      widths: ['*', '*'],
-      body: [
-        [
-          { text: '', border: [true, false, false, false] },
-          {
-            stack: [
-              {
-                text: employeeName,
-                bold: true,
-                fontSize: PDF_FONT.body,
-                alignment: 'center',
-                margin: [0, 10, 0, 2],
-              },
-              { text: position, fontSize: PDF_FONT.body, alignment: 'center' },
-              {
-                text: `Date: ${formatDate(new Date())}`,
-                fontSize: PDF_FONT.body,
-                alignment: 'center',
-              },
-            ],
-            border: [false, false, true, false],
-          },
-        ],
-      ],
+      widths: ['*', 'auto'],
+      body: [signatoryRow],
     },
     layout: {
       hLineWidth: () => 0,
-      vLineWidth: () => 1,
+      vLineWidth: () => 0.5,
       vLineColor: () => '#000000',
     },
     margin: [0, 0, 0, 0],
   })
 
-  // Approval Section
+  // Approval Section - Original size for PDF
+  const approvalBody = [
+    [
+      {
+        text: 'Approved by:',
+        fontSize: 9,
+        bold: true,
+        border: [true, true, true, true],
+        margin: [0, 0, 0, 0],
+      },
+      {
+        text: 'Date',
+        fontSize: 9,
+        bold: true,
+        border: [true, true, true, true],
+        margin: [0, 0, 0, 0],
+      },
+    ],
+    [
+      {
+        stack: [
+          {
+            text: 'REY T. UY',
+            bold: true,
+            fontSize: 9,
+            alignment: 'center',
+            margin: [0, 15, 0, 0],
+          },
+          {
+            canvas: [{ type: 'line', x1: 0, y1: 0, x2: 150, y2: 0, lineWidth: 1 }],
+            alignment: 'center',
+            margin: [0, 2, 0, 2],
+          },
+          { text: 'City Mayor', fontSize: 9, alignment: 'center' },
+        ],
+        border: [true, true, true, true],
+        margin: [5, 5, 5, 5],
+      },
+      { text: '', border: [true, true, true, true] },
+    ],
+  ]
+
   content.push({
     table: {
-      widths: ['50%', '50%'],
-      body: [
-        [
-          {
-            text: 'Approved by:',
-            fontSize: PDF_FONT.body,
-            bold: true,
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          {
-            text: 'Date',
-            fontSize: PDF_FONT.body,
-            bold: true,
-            alignment: 'left',
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-        ],
-        [
-          {
-            stack: [
-              {
-                text: 'REY T. UY',
-                bold: true,
-                fontSize: PDF_FONT.body,
-                alignment: 'center',
-                margin: [0, 15, 0, 0],
-              },
-              {
-                text: '________________________________',
-                alignment: 'center',
-                fontSize: PDF_FONT.body,
-              },
-              { text: 'City Mayor', fontSize: PDF_FONT.body, alignment: 'center' },
-            ],
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          { text: '', border: [true, true, true, true] },
-        ],
-      ],
+      widths: ['70%', '30%'],
+      body: approvalBody,
     },
     layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
     margin: [0, 0, 0, 10],
   })
 
-  // Rating Scale
-  const ratingScaleRow = (label, value) => [
-    {
-      text: label,
-      fontSize: PDF_FONT.body,
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {
-      text: value,
-      fontSize: PDF_FONT.body,
-      alignment: 'center',
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
+  // Rating Scale - Original size for PDF
+  const ratingScaleData = [
+    [
+      { text: 'Outstanding', border: [true, true, true, true], fontSize: 8, margin: [0, 0, 0, 0] },
+      {
+        text: '5',
+        border: [true, true, true, true],
+        fontSize: 8,
+        alignment: 'center',
+        margin: [0, 1, 0, 1],
+      },
+    ],
+    [
+      {
+        text: 'Very Satisfactory',
+        border: [true, true, true, true],
+        fontSize: 8,
+        margin: [0, 0, 0, 0],
+      },
+      {
+        text: '4',
+        border: [true, true, true, true],
+        fontSize: 8,
+        alignment: 'center',
+        margin: [0, 0, 0, 0],
+      },
+    ],
+    [
+      { text: 'Satisfactory', border: [true, true, true, true], fontSize: 8, margin: [0, 0, 0, 0] },
+      {
+        text: '3',
+        border: [true, true, true, true],
+        fontSize: 8,
+        alignment: 'center',
+        margin: [0, 0, 0, 0],
+      },
+    ],
+    [
+      {
+        text: 'Unsatisfactory',
+        border: [true, true, true, true],
+        fontSize: 8,
+        margin: [0, 0, 0, 0],
+      },
+      {
+        text: '2',
+        border: [true, true, true, true],
+        fontSize: 8,
+        alignment: 'center',
+        margin: [0, 0, 0, 0],
+      },
+    ],
+    [
+      { text: 'Poor', border: [true, true, true, true], fontSize: 8, margin: [0, 0, 0, 0] },
+      {
+        text: '1',
+        border: [true, true, true, true],
+        fontSize: 8,
+        alignment: 'center',
+        margin: [0, 0, 0, 0],
+      },
+    ],
   ]
 
   content.push({
@@ -937,18 +1180,12 @@ const generateOpcrPdfContent = (tagumLogoBase64) => {
       {
         width: 'auto',
         table: {
-          widths: [100, 30],
-          body: [
-            ratingScaleRow('Outstanding', '5'),
-            ratingScaleRow('Very Satisfactory', '4'),
-            ratingScaleRow('Satisfactory', '3'),
-            ratingScaleRow('Unsatisfactory', '2'),
-            ratingScaleRow('Poor', '1'),
-          ],
+          widths: [120, 30],
+          body: ratingScaleData,
         },
         layout: {
-          hLineWidth: () => 1,
-          vLineWidth: () => 1,
+          hLineWidth: () => 0.5,
+          vLineWidth: () => 0.5,
           hLineColor: () => '#000000',
           vLineColor: () => '#000000',
         },
@@ -958,55 +1195,186 @@ const generateOpcrPdfContent = (tagumLogoBase64) => {
     margin: [0, 0, 0, 10],
   })
 
-  // Main OPCR Table with adjusted column widths for better fit
-  const headerCell = (text, opts = {}) => ({
-    text,
-    alignment: 'center',
-    fontSize: PDF_FONT.header,
-    bold: true,
-    fillColor: '#f2f2f2',
+  // Main OPCR Table - Original size for PDF
+  const tableBody = []
+
+  // Header row - Original size for PDF
+  const headerRow = [
+    {
+      text: 'MFO',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'REQUIRED COMPETENCY &\nPROFICIENCY LEVEL',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'SUCCESS INDICATOR',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'ALLOTED\nBUDGET',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'DIVISION/\nINDIVIDUAL\nACCOUNTABLE',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'ACTUAL\nACCOMPLISHMENT',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'RATING',
+      colSpan: 4,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    {
+      text: 'PROFICIENCY\nRESULT',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'REMARKS',
+      rowSpan: 2,
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+  ]
+  tableBody.push(headerRow)
+
+  // Sub-header row - Original size for PDF
+  const subHeaderRow = [
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    {
+      text: 'Q',
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'E',
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'T',
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    {
+      text: 'A',
+      alignment: 'center',
+      fontSize: 8,
+      bold: true,
+      fillColor: '#f2f2f2',
+      border: [true, true, true, true],
+      margin: [2, 2, 2, 2],
+    },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+    { text: '', fillColor: '#f2f2f2', border: [true, true, true, true] },
+  ]
+  tableBody.push(subHeaderRow)
+
+  // Add data rows for each category - Original size for PDF
+  const cell = (text, opts = {}) => ({
+    text: text || '',
+    fontSize: 8,
     border: [true, true, true, true],
+    margin: [2, 2, 2, 2],
     ...opts,
   })
 
-  const tableBody = [
-    [
-      headerCell('MFO', { rowSpan: 2 }),
-      headerCell('REQUIRED COMPETENCY &\nPROFICIENCY LEVEL', { rowSpan: 2 }),
-      headerCell('SUCCESS INDICATOR', { rowSpan: 2 }),
-      headerCell('ALLOTED\nBUDGET', { rowSpan: 2 }),
-      headerCell('DIVISION/\nINDIVIDUAL\nACCOUNTABLE', { rowSpan: 2 }),
-      headerCell('ACTUAL\nACCOMPLISHMENT', { rowSpan: 2 }),
-      headerCell('RATING', { colSpan: 4 }),
-      {},
-      {},
-      {},
-      headerCell('PROFICIENCY\nRESULT', { rowSpan: 2 }),
-      headerCell('REMARKS', { rowSpan: 2 }),
-    ],
-    [
-      {},
-      {},
-      {},
-      {},
-      {},
-      {},
-      headerCell('Q'),
-      headerCell('E'),
-      headerCell('T'),
-      headerCell('A'),
-      {},
-      {},
-    ],
-  ]
+  // Stack-based cell: renders each entry in `lines` as its own line inside
+  // the table cell, so numbered competency / proficiency lists always break
+  // correctly (matches the preview's `white-space: pre-line` behaviour).
+  const stackCell = (lines, opts = {}) => ({
+    stack: (lines && lines.length ? lines : ['']).map((line) => ({
+      text: line,
+      fontSize: 8,
+      margin: [0, 1, 0, 1],
+    })),
+    border: [true, true, true, true],
+    margin: [2, 2, 2, 2],
+    ...opts,
+  })
 
-  // Add data rows for each category
   categories.value.forEach((category) => {
+    // Category header row - Original size for PDF
     tableBody.push([
       {
         text: category,
         colSpan: 12,
-        fontSize: PDF_FONT.sectionHeader,
+        fontSize: 8,
         bold: true,
         fillColor: '#d9d9d9',
         border: [true, true, true, true],
@@ -1027,37 +1395,35 @@ const generateOpcrPdfContent = (tagumLogoBase64) => {
 
     const standards = getStandardsByCategory(category)
     standards.forEach((standard) => {
-      const bodyCell = (text, opts = {}) => ({
-        text: text || '',
-        fontSize: PDF_FONT.body,
-        border: [true, true, true, true],
-        margin: [2, 2, 2, 2],
-        ...opts,
-      })
-
       tableBody.push([
-        bodyCell(standard.mfo || 'N/A', { bold: true }),
-        bodyCell(formatCompetencies(standard)),
-        bodyCell(standard.success_indicator || 'N/A'),
-        bodyCell(standard.opcr?.budget || '-', { alignment: 'center' }),
-        bodyCell(standard.opcr?.accountable || '-', { alignment: 'center' }),
-        bodyCell(standard.opcr_accomplishment?.accomplishment || '-'),
-        bodyCell(standard.opcr?.rating_q || '-', { alignment: 'center' }),
-        bodyCell(standard.opcr?.rating_e || '-', { alignment: 'center' }),
-        bodyCell(standard.opcr?.rating_t || '-', { alignment: 'center' }),
-        bodyCell(standard.opcr?.rating_a || '-', { alignment: 'center' }),
-        bodyCell(formatProficiencyResult(standard)),
-        bodyCell(standard.opcr?.remarks || ''),
+        cell(standard.mfo || 'N/A', { bold: true }),
+        stackCell(getCompetencyLines(standard)),
+        cell(standard.success_indicator || 'N/A'),
+        cell(standard.opcr?.budget || '-', { alignment: 'center' }),
+        cell(standard.opcr?.accountable || '-', { alignment: 'center' }),
+        cell(standard.opcr_accomplishment?.accomplishment || '-'),
+        cell(standard.opcr_accomplishment?.ratings?.quantity_rating || '-', {
+          alignment: 'center',
+        }),
+        cell(standard.opcr_accomplishment?.ratings?.effectiveness_rating || '-', {
+          alignment: 'center',
+        }),
+        cell(standard.opcr_accomplishment?.ratings?.timeliness_rating || '-', {
+          alignment: 'center',
+        }),
+        cell(standard.opcr_accomplishment?.ratings?.average_rating || '-', { alignment: 'center' }),
+        stackCell(getProficiencyLines(standard)),
+        cell(standard.opcr?.remarks || ''),
       ])
     })
   })
 
-  // Average Rating Section
+  // Average Rating Section - Original size for PDF
   tableBody.push([
     {
       text: 'Category',
       colSpan: 2,
-      fontSize: PDF_FONT.label,
+      fontSize: 9,
       bold: true,
       border: [true, true, true, true],
       margin: [3, 3, 3, 3],
@@ -1066,7 +1432,7 @@ const generateOpcrPdfContent = (tagumLogoBase64) => {
     {
       text: 'COMPETENCY ASSESSMENT (Subjective)',
       colSpan: 10,
-      fontSize: PDF_FONT.label,
+      fontSize: 9,
       bold: true,
       alignment: 'center',
       border: [true, true, true, true],
@@ -1083,147 +1449,226 @@ const generateOpcrPdfContent = (tagumLogoBase64) => {
     {},
   ])
 
-  let categoryRatingRowCount = 0
-  if (hasCategoryData('A. STRATEGIC FUNCTION')) categoryRatingRowCount++
-  if (hasCategoryData('B. CORE FUNCTION')) categoryRatingRowCount++
-  if (hasCategoryData('C. SUPPORT FUNCTION')) categoryRatingRowCount++
-  categoryRatingRowCount += 2
-
-  const categoryLabelRow = (label, value, opts = {}) => [
-    {
-      text: label,
-      fontSize: PDF_FONT.label,
-      bold: true,
-      border: [true, true, true, true],
-      margin: [3, 3, 3, 3],
-    },
-    {
-      text: value,
-      fontSize: PDF_FONT.label,
-      bold: true,
-      alignment: 'center',
-      border: [true, true, true, true],
-    },
-    ...(opts.blankSpan
-      ? [
-          { text: '', colSpan: 10, rowSpan: opts.blankSpan, border: [true, true, true, true] },
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-          {},
-        ]
-      : [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]),
-  ]
+  // Build the label/value rows first, then push them with the blank
+  // right-hand area merged into ONE rowSpan cell (only the first row
+  // draws it; the rest get {} placeholders) - this matches the preview,
+  // where <td rowspan="5" colspan="10"> is declared once and the
+  // following rows only contain the label + value cells.
+  const categoryRatingRows = []
 
   if (hasCategoryData('A. STRATEGIC FUNCTION')) {
-    tableBody.push(
-      categoryLabelRow('Strategic Functions:', calculateCategoryRating('A. STRATEGIC FUNCTION'), {
-        blankSpan: categoryRatingRowCount,
-      }),
-    )
+    categoryRatingRows.push([
+      'Strategic Functions:',
+      calculateCategoryRating('A. STRATEGIC FUNCTION'),
+    ])
   }
 
   if (hasCategoryData('B. CORE FUNCTION')) {
-    tableBody.push(categoryLabelRow('Core Functions:', calculateCategoryRating('B. CORE FUNCTION')))
+    categoryRatingRows.push(['Core Functions:', calculateCategoryRating('B. CORE FUNCTION')])
   }
 
   if (hasCategoryData('C. SUPPORT FUNCTION')) {
-    tableBody.push(
-      categoryLabelRow('Support Functions:', calculateCategoryRating('C. SUPPORT FUNCTION')),
-    )
+    categoryRatingRows.push(['Support Functions:', calculateCategoryRating('C. SUPPORT FUNCTION')])
   }
 
-  tableBody.push(categoryLabelRow('Final Rating:', calculateAverageRating()))
-  tableBody.push(
-    categoryLabelRow('Adjectival Rating:', getAdjectivalRating(calculateAverageRating())),
-  )
+  categoryRatingRows.push(['Final Rating:', calculateAverageRating()])
+  categoryRatingRows.push(['Adjectival Rating:', getAdjectivalRating(calculateAverageRating())])
 
+  categoryRatingRows.forEach(([label, value], idx) => {
+    const labelCell = {
+      text: label,
+      fontSize: 9,
+      bold: true,
+      border: [true, true, true, true],
+      margin: [3, 3, 3, 3],
+    }
+    const valueCell = {
+      text: value,
+      fontSize: 9,
+      bold: true,
+      alignment: 'center',
+      border: [true, true, true, true],
+      margin: [3, 3, 3, 3],
+    }
+
+    // The blank right-hand block: only the first row actually draws it
+    // (with rowSpan covering every row in categoryRatingRows); every
+    // other row just contributes {} placeholders for that same block.
+    const blankBlock =
+      idx === 0
+        ? [
+            {
+              text: '',
+              colSpan: 10,
+              rowSpan: categoryRatingRows.length,
+              border: [true, true, true, true],
+            },
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+            {},
+          ]
+        : [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}]
+
+    tableBody.push([labelCell, valueCell, ...blankBlock])
+  })
+
+  // Add the main table with corrected column widths
   content.push({
     table: {
-      headerRows: 0,
-      widths: ['14%', '16%', '12%', '7%', '8%', '12%', '5%', '5%', '5%', '5%', '6%', '7%'],
+      headerRows: 2,
+      widths: ['10%', '23%', '10%', '7%', '8%', '10%', '4%', '4%', '4%', '4%', '8%', '8%'],
       body: tableBody,
     },
     layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
     margin: [0, 0, 0, 10],
   })
 
-  // Signature Section
-  const signatureBlock = (name, role) => ({
-    stack: [
+  // ------------------------------------------------------------------
+  // Signature Section - rebuilt to match the HTML preview's 7-column
+  // layout: "Assessed by:" (Planning Office blank slot + Performance
+  // Management Team / mpoConfirmedSignatory) and "Final Rating by:"
+  // (City Mayor / REY T. UY), with a trailing Date column.
+  // ------------------------------------------------------------------
+  const mpoName = mpoConfirmedSignatory.value?.name || ''
+
+  const signatureTableBody = [
+    // Header row
+    [
       {
-        text: name,
+        text: 'Assessed by:',
+        colSpan: 5,
+        fontSize: 9,
         bold: true,
-        fontSize: PDF_FONT.signature,
-        alignment: 'center',
-        margin: [0, 30, 0, 2],
+        border: [true, true, true, true],
+        margin: [4, 4, 4, 4],
+      },
+      {},
+      {},
+      {},
+      {},
+      {
+        text: 'Final Rating by:',
+        fontSize: 9,
+        bold: true,
+        border: [true, true, true, true],
+        margin: [4, 4, 4, 4],
       },
       {
-        text: '________________________________',
+        text: 'Date',
+        fontSize: 9,
+        bold: true,
         alignment: 'center',
-        fontSize: PDF_FONT.signature,
+        border: [true, true, true, true],
+        margin: [4, 4, 4, 4],
       },
-      { text: role, fontSize: PDF_FONT.body, alignment: 'center' },
     ],
-    border: [true, true, true, true],
-    margin: [5, 5, 5, 5],
-  })
+    // Row 1 - main signatory row (most columns start a rowSpan here)
+    [
+      // Col 1: Planning Office signatory area (left blank, like the preview)
+      { text: '', rowSpan: 5, border: [true, true, true, true] },
+      // Col 2: thin spacer column, one cell per row
+      { text: '', border: [true, true, true, true] },
+      // Col 3: thin spacer column, spans all 6 rows
+      { text: '', rowSpan: 6, border: [true, true, true, true] },
+      // Col 4: Performance Management Team signatory name
+      {
+        text: mpoName,
+        bold: true,
+        fontSize: 9,
+        alignment: 'center',
+        rowSpan: 5,
+        margin: [2, 45, 2, 0],
+        border: [true, true, true, true],
+      },
+      // Col 5: thin spacer column, spans all 6 rows
+      { text: '', rowSpan: 6, border: [true, true, true, true] },
+      // Col 6: Final Rating (City Mayor) signatory name
+      {
+        text: 'REY T. UY',
+        bold: true,
+        fontSize: 9,
+        alignment: 'center',
+        rowSpan: 5,
+        margin: [2, 45, 2, 0],
+        border: [true, true, true, true],
+      },
+      // Col 7: Date, spans all 6 rows
+      { text: '', rowSpan: 6, border: [true, true, true, true] },
+    ],
+    // Rows 2-5 - only column 2 needs a fresh cell; the rest are covered
+    // by the rowSpan started above (marked with {} placeholders)
+    [{}, { text: '', border: [true, true, true, true] }, {}, {}, {}, {}, {}],
+    [{}, { text: '', border: [true, true, true, true] }, {}, {}, {}, {}, {}],
+    [{}, { text: '', border: [true, true, true, true] }, {}, {}, {}, {}, {}],
+    [{}, { text: '', border: [true, true, true, true] }, {}, {}, {}, {}, {}],
+    // Row 6 - role labels beneath each signatory
+    [
+      {
+        text: 'Planning Office',
+        fontSize: 8,
+        alignment: 'center',
+        border: [true, true, true, true],
+        margin: [2, 4, 2, 4],
+      },
+      { text: '', border: [true, true, true, true] },
+      {},
+      {
+        text: 'Performance Management Team',
+        fontSize: 8,
+        alignment: 'center',
+        border: [true, true, true, true],
+        margin: [2, 4, 2, 4],
+      },
+      {},
+      {
+        text: 'City Mayor',
+        fontSize: 8,
+        alignment: 'center',
+        border: [true, true, true, true],
+        margin: [2, 4, 2, 4],
+      },
+      {},
+    ],
+  ]
 
   content.push({
+    // Keeps the whole signature block together on one page. Since several
+    // cells here (the blank spacer columns, the empty Planning Office /
+    // signatory areas) span multiple rows via rowSpan, letting pdfmake
+    // break the table mid-block would cut those merged cells apart and
+    // leave broken borders. If it doesn't fit on the current page, the
+    // whole table moves to the next page instead.
+    unbreakable: true,
     table: {
-      widths: ['50%', '50%'],
-      body: [
-        [
-          {
-            text: 'Assessed by:',
-            fontSize: PDF_FONT.signature,
-            bold: true,
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-          {
-            text: 'Final Rating by:',
-            fontSize: PDF_FONT.signature,
-            bold: true,
-            border: [true, true, true, true],
-            margin: [5, 5, 5, 5],
-          },
-        ],
-        [
-          signatureBlock(props.employee?.supervisor || 'N/A', 'Immediate Supervisor'),
-          signatureBlock('REY T. UY', 'City Mayor'),
-        ],
-      ],
+      // No headerRows here on purpose: only the main OPCR table header
+      // (below) and the page-level letterhead should repeat across page
+      // breaks. The signature table's own header row ("Assessed by:" /
+      // "Final Rating by:" / "Date") must not repeat.
+      widths: ['22%', '8%', '8%', '22%', '8%', '22%', '10%'],
+      body: signatureTableBody,
+      dontBreakRows: true,
     },
     layout: {
-      hLineWidth: () => 1,
-      vLineWidth: () => 1,
+      hLineWidth: () => 0.5,
+      vLineWidth: () => 0.5,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
     margin: [0, 0, 0, 0],
-    unbreakable: true,
   })
 
-  return {
-    pageSize: 'LEGAL',
-    pageOrientation: 'landscape',
-    pageMargins: [30, 30, 30, 30],
-    content: content,
-    defaultStyle: {
-      fontSize: PDF_FONT.body,
-    },
-  }
+  return content
 }
 
 onMounted(() => {
@@ -1239,7 +1684,6 @@ onMounted(() => {
   width: 100%;
   height: 100px;
   margin-bottom: 8px;
-  /* border: 1px solid #e0e0e0; */
 }
 
 /* Left: Green Banner at Bottom */
@@ -1252,7 +1696,7 @@ onMounted(() => {
 
 .green-banner-left {
   width: 60px;
-  height: 25px;
+  height: 30px;
   background-color: #036431;
   flex-shrink: 0;
   margin-bottom: 5px;
@@ -1300,12 +1744,12 @@ onMounted(() => {
 }
 
 .text-caption {
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.3;
 }
 
 .text-h5 {
-  font-size: 12px;
+  font-size: 16px;
   font-weight: bold;
   line-height: 1.3;
 }
@@ -1318,7 +1762,7 @@ onMounted(() => {
 .green-banner-right {
   background-color: #036431;
   color: white;
-  height: 25px;
+  height: 30px;
   display: flex;
   align-items: center;
   padding: 0 15px;
@@ -1328,14 +1772,15 @@ onMounted(() => {
 
 .office-name {
   font-weight: bold;
-  font-size: 12px;
+  font-size: 16px;
   color: white;
 }
 
 /* ---------- End Header Design ---------- */
 
+/* OPCR Title - Increased to 16px for preview (Original was 11px) */
 .opcr-title {
-  font-size: 11px;
+  font-size: 16px;
   font-weight: bold;
   text-align: center;
   margin-top: 10px;
@@ -1353,16 +1798,17 @@ onMounted(() => {
   border-bottom: 1px solid #e0e0e0;
 }
 
+/* PREVIEW FONT SIZES - Increased by 3px from original */
 .preview-container {
   padding: 12px;
   background-color: white;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 #opcr-preview {
   padding: 12px;
   font-family: Arial, sans-serif;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
   color: #000;
 }
 
@@ -1375,7 +1821,7 @@ onMounted(() => {
 #opcr-preview .opcr-table {
   border-collapse: collapse;
   margin-top: 8px;
-  font-size: 8px;
+  font-size: 11px; /* Original was 8px, +3 = 11px */
   border: 1px solid #000 !important;
   table-layout: fixed;
   width: 100%;
@@ -1386,7 +1832,7 @@ onMounted(() => {
   border: 1px solid #000 !important;
   padding: 3px;
   vertical-align: top;
-  font-size: 8px;
+  font-size: 11px; /* Original was 8px, +3 = 11px */
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
@@ -1403,13 +1849,13 @@ onMounted(() => {
 
 /* Column widths - totals to 100% */
 .col-mfo {
-  width: 14%;
+  width: 13%;
 }
 .col-competency {
-  width: 16%;
+  width: 20%;
 }
 .col-success {
-  width: 12%;
+  width: 11%;
 }
 .col-budget {
   width: 7%;
@@ -1418,16 +1864,16 @@ onMounted(() => {
   width: 8%;
 }
 .col-accomplishment {
-  width: 12%;
+  width: 11%;
 }
 .col-rating {
   width: 5%;
 }
 .col-proficiency {
-  width: 6%;
+  width: 7%;
 }
 .col-remarks {
-  width: 7%;
+  width: 8%;
 }
 
 /* Category divider row */
@@ -1436,25 +1882,25 @@ onMounted(() => {
   font-weight: bold;
   padding: 3px;
   border: 1px solid #000;
-  font-size: 8px;
+  font-size: 11px; /* Original was 8px, +3 = 11px */
 }
 
 /* Competency / proficiency line lists */
 .competency-list {
-  font-size: 8px;
+  font-size: 11px; /* Original was 8px, +3 = 11px */
   white-space: pre-line;
 }
 
 /* ---------- Commitment statement ---------- */
 .commitment-container {
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .commitment-table {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid #000;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .commitment-cell {
@@ -1462,7 +1908,7 @@ onMounted(() => {
   padding: 8px;
   border: 1px solid #000;
   vertical-align: top;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .commitment-signatory {
@@ -1474,7 +1920,7 @@ onMounted(() => {
 .commitment-signatory-block {
   display: inline-block;
   text-align: left;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .approval-outer-cell {
@@ -1483,31 +1929,48 @@ onMounted(() => {
   border: 1px solid #000;
 }
 
+/* ---------- APPROVAL TABLE - FIXED 70% | 30% COLUMN WIDTHS ---------- */
 .approval-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 9px;
+  table-layout: fixed;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
-.approval-head {
+/* Column widths defined via colgroup in template */
+/* First column (Approved by) - 70% */
+.approval-head-left {
   padding: 8px;
-  width: 50%;
   text-align: left;
   border-bottom: 1px solid #000;
-  font-size: 9px;
-}
-
-.approval-head-left {
   border-right: 1px solid #000;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
+  font-weight: bold;
 }
 
+/* Second column (Date) - 30% */
+.approval-head-right {
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid #000;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
+  font-weight: bold;
+}
+
+/* Data cells matching column widths */
 .approval-signatory {
   padding: 8px;
   border-right: 1px solid #000;
   text-align: center;
   height: 80px;
   vertical-align: bottom;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
+}
+
+/* The date cell automatically takes 30% via colgroup */
+.approval-table td.text-center {
+  padding: 8px;
+  vertical-align: bottom;
 }
 
 .signatory-name {
@@ -1531,14 +1994,14 @@ onMounted(() => {
   border: 1px solid #000;
   border-collapse: collapse;
   width: auto;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .rating-scale-label {
   border: 1px solid #000;
   padding: 5px 14px;
   min-width: 160px;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .rating-scale-value {
@@ -1546,7 +2009,7 @@ onMounted(() => {
   padding: 5px 14px;
   text-align: center;
   min-width: 40px;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 /* ---------- Final signatory block ---------- */
@@ -1554,13 +2017,13 @@ onMounted(() => {
   width: 100%;
   border-collapse: collapse;
   border-top: 1px solid #000;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .signatory-head {
   padding: 6px;
   width: 50%;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
 }
 
 .signatory-block {
@@ -1568,6 +2031,16 @@ onMounted(() => {
   vertical-align: bottom;
   padding-top: 50px;
   width: 50%;
-  font-size: 9px;
+  font-size: 12px; /* Original was 9px, +3 = 12px */
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+  .approval-head-left,
+  .approval-head-right,
+  .approval-signatory,
+  .approval-table td.text-center {
+    width: 50% !important;
+  }
 }
 </style>

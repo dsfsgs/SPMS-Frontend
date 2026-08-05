@@ -204,15 +204,7 @@
                     !canEditNode(selectedNode)
                   "
                   class="q-mb-md"
-                >
-                  <q-banner rounded class="bg-info text-white">
-                    <template v-slot:avatar>
-                      <q-icon name="info" color="white" />
-                    </template>
-                    Create UWP is only available when the {{ selectedNode.type }} has "Not Started",
-                    "Draft", or "Returned Target" status.
-                  </q-banner>
-                </div>
+                ></div>
 
                 <!-- Employee Search -->
                 <div class="q-mb-md">
@@ -273,7 +265,7 @@
                           <q-td key="ipcr_status" :props="props">
                             <q-badge
                               :color="getStatusColor(props.row)"
-                              :label="props.row.ipcrStatus || '-'"
+                              :label="props.row.ipcrStatus || 'Not Started'"
                               class="status-badge"
                             />
                           </q-td>
@@ -657,7 +649,7 @@ const canEditNode = (node) => {
 /**
  * Allowed statuses that let a node proceed to Create UWP
  */
-const ALLOWED_UWP_NODE_STATUSES = ['Not Started', 'Draft', 'Returned Target']
+const ALLOWED_UWP_NODE_STATUSES = ['', 'Not Started', 'Draft', 'Returned Target']
 
 const canEditEmployee = (employee) => {
   if (!employee) return false
