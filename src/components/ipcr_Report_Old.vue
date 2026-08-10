@@ -159,52 +159,20 @@
             <q-tab-panel name="ipcr">
               <div class="report-content">
                 <!-- Header with Logo -->
-                <div class="header-container">
-                  <!-- Left: Green Banner at Bottom -->
-                  <div class="left-banner">
-                    <div class="green-banner-left"></div>
-                  </div>
-
-                  <!-- Middle: Logo (Full Height) -->
-                  <div class="logo-wrapper">
-                    <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
-                  </div>
-
-                  <!-- Right: Text + Green Banner -->
-                  <div class="header-content">
-                    <!-- Top: Three lines of text -->
-                    <div class="header-text">
-                      <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
-                      <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
-                      <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
-                    </div>
-
-                    <!-- Bottom: Green Banner with Office Name -->
-                    <div class="green-banner-right">
-                      <div class="office-name">
-                        {{ levels?.office || 'N/A' }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <!-- <div class="header">
+                <div class="header">
                   <img src="/tagumlogo.png" alt="City of Tagum Logo" class="logo" />
                   <div class="center-text">
                     <div class="title">INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)</div>
                     <div class="title">{{ levels?.office || 'N/A' }}</div>
                   </div>
                   <img src="/rotp.png" alt="Republic of the Philippines Logo" class="logo" />
-                </div> -->
-
-                <div class="text-h5 text-weight-bold text-center q-ma-lg">
-                  INDIVIDUAL PERFORMANCE COMMITMENT and REVIEW (IPCR)
                 </div>
 
                 <!-- Commitment Section -->
                 <div class="commitment-section">
                   <div style="display: flex">
                     <!-- Left section (3/4 width) -->
-                    <div style="flex: 5; padding-right: 10px">
+                    <div style="flex: 3; padding-right: 10px">
                       <div style="font-size: 11px; line-height: 1.5">
                         I,
                         <strong
@@ -439,14 +407,7 @@
                       ></span>
                     </div>
                   </div>
-                  <table
-                    style="
-                      border-collapse: collapse;
-                      border: 1px solid black;
-                      width: 250px;
-                      margin-left: 300px;
-                    "
-                  >
+                  <table style="border-collapse: collapse; border: 1px solid black; width: 250px">
                     <tbody>
                       <tr>
                         <td
@@ -1008,40 +969,52 @@
             <!-- ===================== PERFORMANCE STANDARD TAB ===================== -->
             <q-tab-panel name="ps">
               <div class="report-content">
-                <div class="header-container">
-                  <!-- Left: Green Banner at Bottom -->
-                  <div class="left-banner">
-                    <div class="green-banner-left"></div>
-                  </div>
-
-                  <!-- Middle: Logo (Full Height) -->
-                  <div class="logo-wrapper">
-                    <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
-                  </div>
-
-                  <!-- Right: Text + Green Banner -->
-                  <div class="header-content">
-                    <!-- Top: Three lines of text -->
-                    <div class="header-text">
-                      <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
-                      <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
-                      <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
-                    </div>
-
-                    <!-- Bottom: Green Banner with Office Name -->
-                    <div class="green-banner-right">
-                      <div class="office-name">
-                        {{ levels?.office || 'N/A' }}
-                      </div>
+                <div class="header">
+                  <img src="/rotp.png" alt="City of Tagum Logo" class="logo" />
+                  <img src="/tagumlogo.png" alt="City of Tagum Logo" class="logo" />
+                  <div class="center-text">
+                    <div class="title">{{ levels.office || 'N/A' }}</div>
+                    <div class="title">
+                      PERFORMANCE STANDARDS FOR RATING PERIOD
+                      <u>{{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}</u>
                     </div>
                   </div>
-                </div>
-
-                <div class="text-h5 text-weight-bold text-center q-ma-lg">
-                  PERFORMANCE STANDARDS FOR RATING PERIOD
-                  <u class="text-uppercase">
-                    {{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}
-                  </u>
+                  <div
+                    style="
+                      border: 7px double #bf9000;
+                      text-align: center;
+                      color: #7f6000;
+                      padding: 8px;
+                    "
+                  >
+                    <div style="font-size: 13px; font-weight: bold">
+                      Performance Management Team
+                    </div>
+                    <div
+                      style="text-align: left; padding-left: 8px; font-size: 8px; margin-top: 15px"
+                    >
+                      Target Calibrated by:
+                      <span
+                        style="
+                          border-bottom: 1px solid #bf9000;
+                          display: inline-block;
+                          width: 150px;
+                        "
+                      ></span>
+                    </div>
+                    <div
+                      style="text-align: left; padding-left: 8px; font-size: 8px; margin-top: 10px"
+                    >
+                      Date:
+                      <span
+                        style="
+                          border-bottom: 1px solid #bf9000;
+                          display: inline-block;
+                          width: 230px;
+                        "
+                      ></span>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="q-mt-md">
@@ -1415,39 +1388,14 @@
                   >
                     <!-- Month Header -->
                     <div class="header-container">
-                      <!-- Left: Green Banner at Bottom -->
-                      <div class="left-banner">
-                        <div class="green-banner-left"></div>
-                      </div>
-
-                      <!-- Middle: Logo (Full Height) -->
-                      <div class="logo-wrapper">
-                        <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
-                      </div>
-
-                      <!-- Right: Text + Green Banner -->
-                      <div class="header-content">
-                        <!-- Top: Three lines of text -->
-                        <div class="header-text">
-                          <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
-                          <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
-                          <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
-                        </div>
-
-                        <!-- Bottom: Green Banner with Office Name -->
-                        <div class="green-banner-right">
-                          <div class="office-name">
-                            {{ levels?.office || 'N/A' }}
-                          </div>
+                      <div class="header-text">
+                        <div class="padded-text">Republic of the Philippines</div>
+                        <div class="padded-text">Province of Davao del Norte</div>
+                        <div class="text-weight-bold padded-text">CITY OF TAGUM</div>
+                        <div class="text-weight-bold padded-text">
+                          MONTHLY PERFORMANCE OUTPUT REPORT
                         </div>
                       </div>
-                    </div>
-
-                    <div
-                      class="text-h5 text-weight-bold text-center q-ma-lg"
-                      style="border: 4px double black; padding: 12px"
-                    >
-                      MONTHLY PERFORMANCE OUTPUT REPORT
                     </div>
 
                     <!-- Employee Info Table -->
@@ -1808,39 +1756,17 @@
             <q-tab-panel name="smpr">
               <div class="report-content">
                 <div class="header-container">
-                  <!-- Left: Green Banner at Bottom -->
-                  <div class="left-banner">
-                    <div class="green-banner-left"></div>
-                  </div>
-
-                  <!-- Middle: Logo (Full Height) -->
-                  <div class="logo-wrapper">
-                    <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
-                  </div>
-
-                  <!-- Right: Text + Green Banner -->
-                  <div class="header-content">
-                    <!-- Top: Three lines of text -->
-                    <div class="header-text">
-                      <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
-                      <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
-                      <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
+                  <div class="header-text">
+                    <div class="padded-text">Republic of the Philippines</div>
+                    <div class="padded-text">Province of Davao del Norte</div>
+                    <div class="text-weight-bold padded-text">CITY OF TAGUM</div>
+                    <div class="text-weight-bold padded-text">
+                      SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT
                     </div>
-
-                    <!-- Bottom: Green Banner with Office Name -->
-                    <div class="green-banner-right">
-                      <div class="office-name">
-                        {{ levels?.office || 'N/A' }}
-                      </div>
+                    <div class="text-weight-bold padded-text">
+                      {{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}
                     </div>
                   </div>
-                </div>
-
-                <div
-                  class="text-h5 text-weight-bold text-center q-ma-lg"
-                  style="border: 4px double black; padding: 12px"
-                >
-                  SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT
                 </div>
 
                 <div class="q-mt-md">
@@ -2545,36 +2471,12 @@ const initPdfMake = async () => {
   if (!pdfMake) {
     const pdfMakeModule = await import('pdfmake/build/pdfmake')
     const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
-
     pdfMake = pdfMakeModule.default || pdfMakeModule
-
-    // vfs_fonts.js exports the VFS object
-    pdfMake.fonts = {
-      Roboto: {
-        normal: 'Roboto-Regular.ttf',
-        bold: 'Roboto-Medium.ttf',
-        italics: 'Roboto-Italic.ttf',
-        bolditalics: 'Roboto-MediumItalic.ttf',
-      },
-
-      Candara: {
-        normal: 'Candara.ttf',
-        bold: 'Candara_Bold.ttf',
-        italics: 'Candara_Italic.ttf',
-        bolditalics: 'Candara_Bold_Italic.ttf',
-      },
-
-      Poppins: {
-        normal: 'Poppins-Regular.ttf',
-        bold: 'Poppins-Bold.ttf',
-        italics: 'Poppins-Italic.ttf',
-        bolditalics: 'Poppins-BoldItalic.ttf',
-      },
+    const pdfFonts = pdfFontsModule.default || pdfFontsModule
+    if (pdfMake && !pdfMake.vfs) {
+      pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
     }
-
-    pdfMake.vfs = pdfFontsModule
   }
-
   return pdfMake
 }
 
@@ -4413,7 +4315,6 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
       vLineColor: () => '#000000',
     },
     margin: [20, 20, 20, 20],
-    unbreakable: true,
   })
 
   return {
@@ -4422,7 +4323,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     pageMargins: [32, 20, 32, 20],
     content,
     styles: { reportTitle: { fontSize: 12, bold: true } },
-    defaultStyle: { font: 'Candara', fontSize: 8 },
+    defaultStyle: { fontSize: 8 },
   }
 }
 
@@ -5852,7 +5753,6 @@ watch(
 </script>
 
 <style scoped>
-/* ===== APP CONTAINER ===== */
 .app-container {
   display: flex;
   flex-direction: column;
@@ -5874,115 +5774,6 @@ watch(
   flex-grow: 1;
 }
 
-/* ===== HEADER DESIGN (UNIFIED FOR ALL REPORTS) ===== */
-.header-container {
-  display: flex;
-  align-items: stretch;
-  width: 100%;
-  height: 100px;
-  margin-bottom: 8px;
-}
-
-/* Left: Green Banner at Bottom */
-.left-banner {
-  flex: 0 0 60px;
-  display: flex;
-  align-items: flex-end;
-  height: 100%;
-}
-
-.green-banner-left {
-  width: 60px;
-  height: 30px;
-  background-color: #036431;
-  flex-shrink: 0;
-  margin-bottom: 5px;
-}
-
-/* Middle: Logo - spans full height */
-.logo-wrapper {
-  flex: 0 0 auto;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
-  background-color: white;
-  position: relative;
-  z-index: 1;
-}
-
-.logo {
-  height: 100%;
-  width: auto;
-  max-height: 90px;
-  object-fit: contain;
-}
-
-/* Right: Content area with flex column */
-.header-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 5px 0 0 0;
-}
-
-/* Top: Three lines of text */
-.header-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-left: 10px;
-}
-
-.text-green-9 {
-  color: #036431;
-}
-
-.text-caption {
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-.text-h5 {
-  font-size: 16px;
-  font-weight: bold;
-  line-height: 1.3;
-}
-
-.text-weight-bold {
-  font-weight: bold;
-}
-
-/* Bottom: Green Banner with Office Name */
-.green-banner-right {
-  background-color: #036431;
-  color: white;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  padding: 0 15px;
-  flex-shrink: 0;
-  margin-bottom: 5px;
-}
-
-.office-name {
-  font-weight: bold;
-  font-size: 16px;
-  color: white;
-}
-
-/* ===== OPCR / REPORT TITLE ===== */
-.opcr-title {
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  margin-top: 10px;
-  letter-spacing: 0.5px;
-}
-
-/* ===== HEADER (Legacy - keep for compatibility) ===== */
 .header {
   display: flex;
   justify-content: space-between;
@@ -5990,7 +5781,24 @@ watch(
   width: 100%;
 }
 
-/* ===== MAIN CONTENT ===== */
+.logo {
+  width: 100px;
+  height: auto;
+  padding: 10px;
+}
+
+.center-text {
+  text-align: center;
+  flex-grow: 1;
+  font-weight: bold;
+  line-height: 1.5;
+}
+
+.title {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
 .main-content {
   display: flex;
   flex: 1;
@@ -6046,15 +5854,14 @@ watch(
   margin-bottom: 20px;
 }
 
-/* ===== MONTHLY HEADER (Legacy) ===== */
-.header-container-legacy {
+.header-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.header-text-legacy {
+.header-text {
   text-align: center;
   margin-bottom: 20px;
 }
@@ -6063,7 +5870,6 @@ watch(
   padding: 2px 0;
 }
 
-/* ===== TABLES ===== */
 .info-table {
   margin-bottom: 20px;
   border-collapse: collapse;
@@ -6079,11 +5885,6 @@ watch(
   overflow-x: auto;
 }
 
-.full-width {
-  width: 100%;
-}
-
-/* ===== MAIN OPCR / PERFORMANCE TABLE ===== */
 .main-table {
   border-collapse: collapse;
   width: 100%;
@@ -6105,7 +5906,6 @@ watch(
 .total-cell {
   background-color: #d9d9d9 !important;
 }
-
 .avg-cell {
   background-color: #d0cece !important;
 }
@@ -6115,7 +5915,6 @@ watch(
   background-color: #d9d9d9 !important;
 }
 
-/* ===== COLUMN WIDTHS ===== */
 .col-mfo {
   width: 12%;
 }
@@ -6137,18 +5936,10 @@ watch(
 .col-remarks {
   width: 12%;
 }
-.col-budget {
-  width: 7%;
-}
-.col-accountable {
-  width: 8%;
-}
 
-/* ===== COMPETENCY LISTS ===== */
 .competency-list {
   font-size: 10px;
   line-height: 1.4;
-  white-space: pre-line;
 }
 
 .competency-item {
@@ -6156,7 +5947,6 @@ watch(
   margin-top: 2px;
 }
 
-/* ===== SECTION HEADERS ===== */
 .section-header {
   background-color: #e8f5e9;
   font-weight: bold;
@@ -6186,342 +5976,14 @@ watch(
   font-size: 11px;
 }
 
-/* ===== COMMITMENT STATEMENT ===== */
-.commitment-container {
-  font-size: 12px;
+.main-table td {
+  vertical-align: middle;
+}
+.main-table tbody tr {
+  height: 40px;
 }
 
-.commitment-table {
-  width: 100%;
-  border-collapse: collapse;
-  border: 1px solid #000;
-  font-size: 12px;
-}
-
-.commitment-cell {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #000;
-  vertical-align: top;
-  font-size: 12px;
-}
-
-.commitment-signatory {
-  margin-top: 20px;
-  text-align: right;
-  padding-right: 200px;
-}
-
-.commitment-signatory-block {
-  display: inline-block;
-  text-align: left;
-  font-size: 12px;
-}
-
-/* ===== APPROVAL TABLE ===== */
-.approval-outer-cell {
-  width: 100%;
-  padding: 0;
-  border: 1px solid #000;
-}
-
-.approval-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 12px;
-}
-
-.approval-head-left {
-  padding: 8px;
-  text-align: left;
-  border-bottom: 1px solid #000;
-  border-right: 1px solid #000;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.approval-head-right {
-  padding: 8px;
-  text-align: center;
-  border-bottom: 1px solid #000;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.approval-signatory {
-  padding: 8px;
-  border-right: 1px solid #000;
-  text-align: center;
-  height: 80px;
-  vertical-align: bottom;
-  font-size: 12px;
-}
-
-.approval-table td.text-center {
-  padding: 8px;
-  vertical-align: bottom;
-}
-
-.signatory-name {
-  font-weight: bold;
-  font-size: 1.1em;
-}
-
-.signatory-line {
-  margin: 5px 0;
-  border-top: 1px solid #000;
-}
-
-/* ===== RATING SCALE ===== */
-.rating-scale-wrap {
-  display: flex;
-  justify-content: center;
-  margin-top: 15px;
-}
-
-.rating-scale-table {
-  border: 1px solid #000;
-  border-collapse: collapse;
-  width: auto;
-  font-size: 12px;
-}
-
-.rating-scale-label {
-  border: 1px solid #000;
-  padding: 5px 14px;
-  min-width: 160px;
-  font-size: 12px;
-}
-
-.rating-scale-value {
-  border: 1px solid #000;
-  padding: 5px 14px;
-  text-align: center;
-  min-width: 40px;
-  font-size: 12px;
-}
-
-/* ===== SIGNATORY BLOCK ===== */
-.signatory-table {
-  width: 100%;
-  border-collapse: collapse;
-  border-top: 1px solid #000;
-  font-size: 12px;
-}
-
-.signatory-head {
-  padding: 6px;
-  width: 50%;
-  font-size: 12px;
-}
-
-.signatory-block {
-  text-align: center;
-  vertical-align: bottom;
-  padding-top: 50px;
-  width: 50%;
-  font-size: 12px;
-}
-
-/* ===== PDF PRINT STYLES ===== */
-@media print {
-  .app-header,
-  .division-nav,
-  .report-header,
-  .q-tabs,
-  .q-tab-panels {
-    display: none !important;
-  }
-
-  .report-content-scroll {
-    overflow: visible !important;
-    padding: 0 !important;
-  }
-
-  .report-content {
-    box-shadow: none !important;
-    padding: 10px !important;
-  }
-
-  .header-container {
-    height: 80px !important;
-  }
-
-  .green-banner-left,
-  .green-banner-right {
-    height: 25px !important;
-  }
-
-  .logo {
-    max-height: 70px !important;
-  }
-
-  .page-break {
-    page-break-before: always;
-  }
-}
-
-/* ===== RESPONSIVE ===== */
-@media (max-width: 600px) {
-  .approval-head-left,
-  .approval-head-right,
-  .approval-signatory,
-  .approval-table td.text-center {
-    width: 50% !important;
-  }
-
-  .header-container {
-    height: 70px !important;
-    flex-wrap: wrap;
-  }
-
-  .left-banner {
-    flex: 0 0 40px;
-  }
-
-  .green-banner-left {
-    width: 40px;
-    height: 20px;
-  }
-
-  .logo-wrapper {
-    padding: 0 5px;
-  }
-
-  .logo {
-    max-height: 60px !important;
-  }
-
-  .green-banner-right {
-    height: 25px;
-    padding: 0 10px;
-  }
-
-  .office-name {
-    font-size: 12px;
-  }
-
-  .text-caption {
-    font-size: 9px;
-  }
-
-  .text-h5 {
-    font-size: 12px;
-  }
-
-  .opcr-title {
-    font-size: 13px;
-  }
-
-  .main-table th,
-  .main-table td {
-    font-size: 9px;
-    padding: 4px;
-  }
-
-  .division-nav {
-    width: 200px;
-  }
-}
-
-/* ===== Q-TABS OVERRIDES ===== */
-.q-tabs {
-  background-color: white;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.q-tab {
-  font-weight: 500;
-  text-transform: none;
-}
-
-.q-tab-panels {
-  background-color: transparent;
-}
-
-/* ===== MISC UTILITY ===== */
-.text-center {
-  text-align: center;
-}
-
-.text-right {
-  text-align: right;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.text-weight-bold {
-  font-weight: bold;
-}
-
-.text-grey-7 {
-  color: #9e9e9e;
-}
-
-.q-mt-md {
-  margin-top: 16px;
-}
-
-.q-mb-md {
-  margin-bottom: 16px;
-}
-
-.q-pa-xl {
-  padding: 48px;
-}
-
-.q-py-sm {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.q-px-md {
-  padding-left: 16px;
-  padding-right: 16px;
-}
-
-.q-gutter-sm > * {
-  margin: 4px;
-}
-
-.bg-grey-3 {
-  background-color: #eeeeee;
-}
-
-/* ===== FLEX UTILITIES ===== */
-.row {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.items-center {
-  align-items: center;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.justify-end {
-  justify-content: flex-end;
-}
-
-.no-wrap {
-  flex-wrap: nowrap;
-}
-
-.flex {
-  display: flex;
-}
-
-.col {
-  flex: 1;
-}
-
-.col-auto {
-  flex: 0 0 auto;
+.page-break {
+  page-break-before: always;
 }
 </style>

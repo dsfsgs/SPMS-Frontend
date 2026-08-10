@@ -159,20 +159,52 @@
             <q-tab-panel name="ipcr">
               <div class="report-content">
                 <!-- Header with Logo -->
-                <div class="header">
+                <div class="header-container">
+                  <!-- Left: Green Banner at Bottom -->
+                  <div class="left-banner">
+                    <div class="green-banner-left"></div>
+                  </div>
+
+                  <!-- Middle: Logo (Full Height) -->
+                  <div class="logo-wrapper">
+                    <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
+                  </div>
+
+                  <!-- Right: Text + Green Banner -->
+                  <div class="header-content">
+                    <!-- Top: Three lines of text -->
+                    <div class="header-text">
+                      <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
+                      <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
+                      <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
+                    </div>
+
+                    <!-- Bottom: Green Banner with Office Name -->
+                    <div class="green-banner-right">
+                      <div class="office-name">
+                        {{ levels?.office || 'N/A' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- <div class="header">
                   <img src="/tagumlogo.png" alt="City of Tagum Logo" class="logo" />
                   <div class="center-text">
                     <div class="title">INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)</div>
                     <div class="title">{{ levels?.office || 'N/A' }}</div>
                   </div>
                   <img src="/rotp.png" alt="Republic of the Philippines Logo" class="logo" />
+                </div> -->
+
+                <div class="text-h5 text-weight-bold text-center q-ma-lg">
+                  INDIVIDUAL PERFORMANCE COMMITMENT and REVIEW (IPCR)
                 </div>
 
                 <!-- Commitment Section -->
                 <div class="commitment-section">
                   <div style="display: flex">
                     <!-- Left section (3/4 width) -->
-                    <div style="flex: 3; padding-right: 10px">
+                    <div style="flex: 5; padding-right: 10px">
                       <div style="font-size: 11px; line-height: 1.5">
                         I,
                         <strong
@@ -407,7 +439,14 @@
                       ></span>
                     </div>
                   </div>
-                  <table style="border-collapse: collapse; border: 1px solid black; width: 250px">
+                  <table
+                    style="
+                      border-collapse: collapse;
+                      border: 1px solid black;
+                      width: 250px;
+                      margin-left: 300px;
+                    "
+                  >
                     <tbody>
                       <tr>
                         <td
@@ -969,52 +1008,40 @@
             <!-- ===================== PERFORMANCE STANDARD TAB ===================== -->
             <q-tab-panel name="ps">
               <div class="report-content">
-                <div class="header">
-                  <img src="/rotp.png" alt="City of Tagum Logo" class="logo" />
-                  <img src="/tagumlogo.png" alt="City of Tagum Logo" class="logo" />
-                  <div class="center-text">
-                    <div class="title">{{ levels.office || 'N/A' }}</div>
-                    <div class="title">
-                      PERFORMANCE STANDARDS FOR RATING PERIOD
-                      <u>{{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}</u>
+                <div class="header-container">
+                  <!-- Left: Green Banner at Bottom -->
+                  <div class="left-banner">
+                    <div class="green-banner-left"></div>
+                  </div>
+
+                  <!-- Middle: Logo (Full Height) -->
+                  <div class="logo-wrapper">
+                    <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
+                  </div>
+
+                  <!-- Right: Text + Green Banner -->
+                  <div class="header-content">
+                    <!-- Top: Three lines of text -->
+                    <div class="header-text">
+                      <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
+                      <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
+                      <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
+                    </div>
+
+                    <!-- Bottom: Green Banner with Office Name -->
+                    <div class="green-banner-right">
+                      <div class="office-name">
+                        {{ levels?.office || 'N/A' }}
+                      </div>
                     </div>
                   </div>
-                  <div
-                    style="
-                      border: 7px double #bf9000;
-                      text-align: center;
-                      color: #7f6000;
-                      padding: 8px;
-                    "
-                  >
-                    <div style="font-size: 13px; font-weight: bold">
-                      Performance Management Team
-                    </div>
-                    <div
-                      style="text-align: left; padding-left: 8px; font-size: 8px; margin-top: 15px"
-                    >
-                      Target Calibrated by:
-                      <span
-                        style="
-                          border-bottom: 1px solid #bf9000;
-                          display: inline-block;
-                          width: 150px;
-                        "
-                      ></span>
-                    </div>
-                    <div
-                      style="text-align: left; padding-left: 8px; font-size: 8px; margin-top: 10px"
-                    >
-                      Date:
-                      <span
-                        style="
-                          border-bottom: 1px solid #bf9000;
-                          display: inline-block;
-                          width: 230px;
-                        "
-                      ></span>
-                    </div>
-                  </div>
+                </div>
+
+                <div class="text-h5 text-weight-bold text-center q-ma-lg">
+                  PERFORMANCE STANDARDS FOR RATING PERIOD
+                  <u class="text-uppercase">
+                    {{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}
+                  </u>
                 </div>
 
                 <div class="q-mt-md">
@@ -1023,6 +1050,54 @@
                       <tr>
                         <td><strong>Employee:</strong> {{ employee?.label || employee?.name }}</td>
                         <td><strong>Position:</strong> {{ employee?.position }}</td>
+                        <td>
+                          <div
+                            style="
+                              border: 7px double #bf9000;
+                              text-align: center;
+                              color: #bf9000;
+                              padding: 8px;
+                            "
+                          >
+                            <div style="font-size: 13px; font-weight: bold">
+                              Performance Management Team
+                            </div>
+                            <div
+                              style="
+                                text-align: left;
+                                padding-left: 8px;
+                                font-size: 8px;
+                                margin-top: 15px;
+                              "
+                            >
+                              Target Calibrated by:
+                              <span
+                                style="
+                                  border-bottom: 1px solid #bf9000;
+                                  display: inline-block;
+                                  width: 150px;
+                                "
+                              ></span>
+                            </div>
+                            <div
+                              style="
+                                text-align: left;
+                                padding-left: 8px;
+                                font-size: 8px;
+                                margin-top: 10px;
+                              "
+                            >
+                              Date:
+                              <span
+                                style="
+                                  border-bottom: 1px solid #bf9000;
+                                  display: inline-block;
+                                  width: 230px;
+                                "
+                              ></span>
+                            </div>
+                          </div>
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -1388,14 +1463,39 @@
                   >
                     <!-- Month Header -->
                     <div class="header-container">
-                      <div class="header-text">
-                        <div class="padded-text">Republic of the Philippines</div>
-                        <div class="padded-text">Province of Davao del Norte</div>
-                        <div class="text-weight-bold padded-text">CITY OF TAGUM</div>
-                        <div class="text-weight-bold padded-text">
-                          MONTHLY PERFORMANCE OUTPUT REPORT
+                      <!-- Left: Green Banner at Bottom -->
+                      <div class="left-banner">
+                        <div class="green-banner-left"></div>
+                      </div>
+
+                      <!-- Middle: Logo (Full Height) -->
+                      <div class="logo-wrapper">
+                        <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
+                      </div>
+
+                      <!-- Right: Text + Green Banner -->
+                      <div class="header-content">
+                        <!-- Top: Three lines of text -->
+                        <div class="header-text">
+                          <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
+                          <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
+                          <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
+                        </div>
+
+                        <!-- Bottom: Green Banner with Office Name -->
+                        <div class="green-banner-right">
+                          <div class="office-name">
+                            {{ levels?.office || 'N/A' }}
+                          </div>
                         </div>
                       </div>
+                    </div>
+
+                    <div
+                      class="text-h5 text-weight-bold text-center q-ma-lg"
+                      style="border: 4px double black; padding: 12px"
+                    >
+                      MONTHLY PERFORMANCE OUTPUT REPORT
                     </div>
 
                     <!-- Employee Info Table -->
@@ -1756,17 +1856,39 @@
             <q-tab-panel name="smpr">
               <div class="report-content">
                 <div class="header-container">
-                  <div class="header-text">
-                    <div class="padded-text">Republic of the Philippines</div>
-                    <div class="padded-text">Province of Davao del Norte</div>
-                    <div class="text-weight-bold padded-text">CITY OF TAGUM</div>
-                    <div class="text-weight-bold padded-text">
-                      SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT
+                  <!-- Left: Green Banner at Bottom -->
+                  <div class="left-banner">
+                    <div class="green-banner-left"></div>
+                  </div>
+
+                  <!-- Middle: Logo (Full Height) -->
+                  <div class="logo-wrapper">
+                    <img class="logo" alt="City of Tagum Logo" src="/tagumlogo.png" />
+                  </div>
+
+                  <!-- Right: Text + Green Banner -->
+                  <div class="header-content">
+                    <!-- Top: Three lines of text -->
+                    <div class="header-text">
+                      <div class="text-green-9 text-caption">REPUBLIC OF THE PHILIPPINES</div>
+                      <div class="text-green-9 text-caption">PROVINCE OF DAVAO DEL NORTE</div>
+                      <div class="text-green-9 text-h5 text-weight-bold">CITY OF TAGUM</div>
                     </div>
-                    <div class="text-weight-bold padded-text">
-                      {{ targetPeriod?.semester || 'N/A' }} {{ targetPeriod?.year || '' }}
+
+                    <!-- Bottom: Green Banner with Office Name -->
+                    <div class="green-banner-right">
+                      <div class="office-name">
+                        {{ levels?.office || 'N/A' }}
+                      </div>
                     </div>
                   </div>
+                </div>
+
+                <div
+                  class="text-h5 text-weight-bold text-center q-ma-lg"
+                  style="border: 4px double black; padding: 12px"
+                >
+                  SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT
                 </div>
 
                 <div class="q-mt-md">
@@ -2453,7 +2575,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useIPCRStatus } from 'src/composables/ipcr_status'
 import { useIpcrStore } from 'src/stores/office/IpcrStore'
@@ -2464,15 +2586,38 @@ import AbsentLateInputModal from './AbsentLateInputModal.vue'
 let pdfMake = null
 
 const initPdfMake = async () => {
-  if (!pdfMake) {
-    const pdfMakeModule = await import('pdfmake/build/pdfmake')
-    const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
-    pdfMake = pdfMakeModule.default || pdfMakeModule
-    const pdfFonts = pdfFontsModule.default || pdfFontsModule
-    if (pdfMake && !pdfMake.vfs) {
-      pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
-    }
+  if (pdfMake) {
+    return pdfMake
   }
+
+  const pdfMakeModule = await import('pdfmake/build/pdfmake')
+  const pdfFontsModule = await import('/src/pdfmake/vfs_fonts.js')
+
+  pdfMake = pdfMakeModule.default || pdfMakeModule
+
+  const pdfFonts = pdfFontsModule.default || pdfFontsModule
+
+  pdfMake.vfs = pdfFonts
+
+  pdfMake.fonts = {
+    Candara: {
+      normal: 'Candara.ttf',
+      bold: 'Candara_Bold.ttf',
+      italics: 'Candara_Italic.ttf',
+      bolditalics: 'Candara_Bold_Italic.ttf',
+    },
+
+    Poppins: {
+      normal: 'Poppins-Regular.ttf',
+      bold: 'Poppins-Bold.ttf',
+      italics: 'Poppins-Italic.ttf',
+      bolditalics: 'Poppins-BoldItalic.ttf',
+    },
+  }
+
+  console.log('PDFMake initialized')
+  console.log('VFS:', Object.keys(pdfMake.vfs))
+
   return pdfMake
 }
 
@@ -3421,55 +3566,37 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
   const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
   const content = []
 
-  content.push({
-    columns: [
-      { width: '*', text: '' },
-      {
-        width: 'auto',
-        columns: [
-          {
-            width: 'auto',
-            stack: tagumLogoBase64
-              ? [{ image: tagumLogoBase64, width: 55, alignment: 'center', margin: [0, 20, 0, 10] }]
-              : [
-                  {
-                    text: 'TAGUM LOGO',
-                    alignment: 'center',
-                    italics: true,
-                    margin: [0, 20, 0, 10],
-                  },
-                ],
-          },
-          {
-            width: 'auto',
-            stack: [
-              {
-                text: 'INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)',
-                style: 'reportTitle',
-                alignment: 'center',
-                margin: [0, 20, 0, 5],
-              },
-              { text: office, style: 'reportTitle', alignment: 'center', margin: [0, 0, 0, 10] },
-            ],
-            margin: [20, 0, 20, 0],
-          },
-          {
-            width: 'auto',
-            stack: rotpLogoBase64
-              ? [{ image: rotpLogoBase64, width: 55, alignment: 'center', margin: [0, 20, 0, 10] }]
-              : [{ text: 'ROTP LOGO', alignment: 'center', italics: true, margin: [0, 20, 0, 10] }],
-          },
-        ],
-        alignment: 'center',
-      },
-      { width: '*', text: '' },
-    ],
+  // ===== HELPER FUNCTIONS =====
+  const cell = (text, opts = {}) => ({
+    text: text || '',
+    fontSize: 8,
+    border: [true, true, true, true],
+    margin: [2, 2, 2, 2],
+    ...opts,
+  })
+
+  const headerCell = (text, opts = {}) => ({
+    text: text || '',
+    fontSize: 9,
+    bold: true,
+    border: [true, true, true, true],
+    margin: [2, 2, 2, 2],
+    ...opts,
   })
 
   content.push({
+    text: 'INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW (IPCR)',
+    alignment: 'center',
+    fontSize: 12,
+    bold: true,
+    margin: [0, 0, 0, 0],
+  })
+
+  // ===== COMMITMENT SECTION =====
+  content.push({
     columns: [
       {
-        width: '75%',
+        width: '80%',
         stack: [
           {
             text: [
@@ -3510,20 +3637,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
             table: {
               widths: ['50%', '50%'],
               body: [
-                [
-                  {
-                    text: 'Reviewed by:',
-                    fontSize: 9,
-                    border: [true, true, true, true],
-                    bold: true,
-                  },
-                  {
-                    text: 'Approved by:',
-                    fontSize: 9,
-                    border: [true, true, true, true],
-                    bold: true,
-                  },
-                ],
+                [headerCell('Reviewed by:'), headerCell('Approved by:')],
                 [
                   {
                     stack: [
@@ -3550,6 +3664,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
                       { text: `Date: ${formatDate(new Date())}`, fontSize: 9, alignment: 'center' },
                     ],
                     border: [true, true, true, true],
+                    margin: [2, 2, 2, 2],
                   },
                   {
                     stack: [
@@ -3570,6 +3685,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
                       { text: `Date: ${formatDate(new Date())}`, fontSize: 9, alignment: 'center' },
                     ],
                     border: [true, true, true, true],
+                    margin: [2, 2, 2, 2],
                   },
                 ],
               ],
@@ -3585,55 +3701,487 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         ],
       },
       {
-        width: '25%',
+        width: '20%',
         stack: [
-          stamp1
-            ? { image: stamp1, width: 180, alignment: 'center', margin: [0, 0, 0, 10] }
-            : { text: 'STAMP', alignment: 'center', italics: true },
-          stamp2
-            ? { image: stamp2, width: 180, alignment: 'center' }
-            : { text: 'STAMP', alignment: 'center', italics: true },
+          // ===== STAMP 1 (IPCR Target Received) =====
+          {
+            table: {
+              widths: ['*'],
+              body: [
+                [
+                  {
+                    // Outer border container
+                    table: {
+                      widths: ['*'],
+                      body: [
+                        [
+                          {
+                            // Inner content with border
+                            stack: [
+                              {
+                                text: 'LOCAL GOVERNMENT OF TAGUM CITY',
+                                alignment: 'center',
+                                fontSize: 7,
+                                bold: true,
+                                color: 'navy',
+                                margin: [0, 0, 0, 0],
+                              },
+                              {
+                                text: 'City Human Resource Management Office',
+                                alignment: 'center',
+                                fontSize: 7,
+                                bold: true,
+                                color: 'navy',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                text: 'IPCR Target',
+                                alignment: 'center',
+                                fontSize: 10,
+
+                                color: 'navy',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                text: 'RECEIVED',
+                                alignment: 'center',
+                                fontSize: 10,
+                                bold: true,
+                                color: 'navy',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'By:',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_____________________________',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 2, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'Date & Time:',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_____________________',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                              },
+                            ],
+                            border: [true, true, true, true],
+                            margin: [6, 6, 6, 6],
+                            padding: [8, 8, 8, 8],
+                            alignment: 'center',
+                          },
+                        ],
+                      ],
+                    },
+                    layout: {
+                      hLineWidth: function () {
+                        return 1
+                      },
+                      vLineWidth: function () {
+                        return 1
+                      },
+                      hLineColor: function () {
+                        return 'navy'
+                      },
+                      vLineColor: function () {
+                        return 'navy'
+                      },
+                    },
+                    margin: [0, 0, 0, 0],
+                  },
+                ],
+              ],
+            },
+            layout: {
+              hLineWidth: function () {
+                return 2
+              },
+              vLineWidth: function () {
+                return 2
+              },
+              hLineColor: function () {
+                return 'navy'
+              },
+              vLineColor: function () {
+                return 'navy'
+              },
+            },
+            margin: [0, 0, 0, 10],
+          },
+          // ===== STAMP 2 (IPCR Accomplishment Received) =====
+          {
+            table: {
+              widths: ['*'],
+              body: [
+                [
+                  {
+                    // Outer border container
+                    table: {
+                      widths: ['*'],
+                      body: [
+                        [
+                          {
+                            // Inner content with border
+                            stack: [
+                              {
+                                text: 'LOCAL GOVERNMENT OF TAGUM CITY',
+                                alignment: 'center',
+                                fontSize: 7,
+                                bold: true,
+                                color: 'navy',
+                                margin: [0, 0, 0, 0],
+                              },
+                              {
+                                text: 'City Human Resource Management Office',
+                                alignment: 'center',
+                                fontSize: 7,
+                                bold: true,
+                                color: 'navy',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                text: 'IPCR Accomplishment',
+                                alignment: 'center',
+                                fontSize: 10,
+
+                                color: 'navy',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                text: 'RECEIVED',
+                                alignment: 'center',
+                                fontSize: 10,
+                                bold: true,
+                                color: 'navy',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'By:',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_____________________________',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 2, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                                margin: [0, 0, 0, 2],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'Date & Time:',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_____________________',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                              },
+                            ],
+                            border: [true, true, true, true],
+                            margin: [6, 6, 6, 6],
+                            padding: [8, 8, 8, 8],
+                            alignment: 'center',
+                          },
+                        ],
+                      ],
+                    },
+                    layout: {
+                      hLineWidth: function () {
+                        return 1
+                      },
+                      vLineWidth: function () {
+                        return 1
+                      },
+                      hLineColor: function () {
+                        return 'navy'
+                      },
+                      vLineColor: function () {
+                        return 'navy'
+                      },
+                    },
+                    margin: [0, 0, 0, 0],
+                  },
+                ],
+              ],
+            },
+            layout: {
+              hLineWidth: function () {
+                return 2
+              },
+              vLineWidth: function () {
+                return 2
+              },
+              hLineColor: function () {
+                return 'navy'
+              },
+              vLineColor: function () {
+                return 'navy'
+              },
+            },
+            margin: [0, 0, 0, 10],
+          },
         ],
-        margin: [10, 0, 0, 0],
+        margin: [10, -30, 0, 0],
       },
     ],
-    margin: [0, 10, 0, 10],
+    margin: [0, 10, 0, 0],
   })
 
+  // ===== PMT STAMP AND RATING SCALE =====
   content.push({
     columns: [
+      // ===== PMT STAMP (Styled Box) - Complete Working Double Border =====
       {
-        width: '35%',
+        width: '25%',
         stack: [
-          pmt1
-            ? { image: pmt1, width: 280, alignment: 'center' }
-            : { text: 'PMT STAMP', alignment: 'center', italics: true },
+          {
+            table: {
+              widths: ['*'],
+              body: [
+                [
+                  {
+                    // Outer border container
+                    table: {
+                      widths: ['*'],
+                      body: [
+                        [
+                          {
+                            // Inner content with border
+                            stack: [
+                              {
+                                text: 'Performance Management Team',
+                                alignment: 'center',
+                                fontSize: 10,
+                                bold: true,
+                                color: 'navy',
+                                margin: [0, 0, 0, 3],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'Target Calibrated by:',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_______________________________',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 2, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                                margin: [0, 0, 0, 3],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'Date:',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_________________________________________',
+                                        fontSize: 7,
+                                        color: 'navy',
+                                        alignment: 'left',
+                                        margin: [0, 2, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                              },
+                            ],
+                            // Inner border (thin) - color set in layout below
+                            border: [true, true, true, true],
+                            margin: [2, 2, 2, 2], // Creates space between borders
+                            padding: [2, 2, 2, 2],
+                            alignment: 'center',
+                          },
+                        ],
+                      ],
+                    },
+                    // ===== INNER TABLE LAYOUT - Set border color here =====
+                    layout: {
+                      hLineWidth: function () {
+                        return 1
+                      },
+                      vLineWidth: function () {
+                        return 1
+                      },
+                      hLineColor: function () {
+                        return 'navy'
+                      },
+                      vLineColor: function () {
+                        return 'navy'
+                      },
+                    },
+                    margin: [0, 0, 0, 0],
+                  },
+                ],
+              ],
+            },
+            // ===== OUTER TABLE LAYOUT - Set border color here =====
+            layout: {
+              hLineWidth: function () {
+                return 2
+              },
+              vLineWidth: function () {
+                return 2
+              },
+              hLineColor: function () {
+                return 'navy'
+              },
+              vLineColor: function () {
+                return 'navy'
+              },
+            },
+            margin: [0, 0, 0, 0],
+          },
         ],
       },
       {
-        width: '40%',
+        width: '15%',
         table: {
           widths: ['15%', '85%'],
           body: [
             [
-              { text: '5', alignment: 'center', fontSize: 8, border: [true, true, true, true] },
-              { text: 'Outstanding', fontSize: 8, border: [true, true, true, true] },
+              {
+                text: '5',
+                alignment: 'center',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
+              {
+                text: 'Outstanding',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
             ],
             [
-              { text: '4', alignment: 'center', fontSize: 8, border: [true, true, true, true] },
-              { text: 'Very Satisfactory', fontSize: 8, border: [true, true, true, true] },
+              {
+                text: '4',
+                alignment: 'center',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
+              {
+                text: 'Very Satisfactory',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
             ],
             [
-              { text: '3', alignment: 'center', fontSize: 8, border: [true, true, true, true] },
-              { text: 'Satisfactory', fontSize: 8, border: [true, true, true, true] },
+              {
+                text: '3',
+                alignment: 'center',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
+              {
+                text: 'Satisfactory',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
             ],
             [
-              { text: '2', alignment: 'center', fontSize: 8, border: [true, true, true, true] },
-              { text: 'Unsatisfactory', fontSize: 8, border: [true, true, true, true] },
+              {
+                text: '2',
+                alignment: 'center',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
+              {
+                text: 'Unsatisfactory',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
             ],
             [
-              { text: '1', alignment: 'center', fontSize: 8, border: [true, true, true, true] },
-              { text: 'Poor', fontSize: 8, border: [true, true, true, true] },
+              {
+                text: '1',
+                alignment: 'center',
+                fontSize: 7,
+                border: [true, true, true, true],
+              },
+              { text: 'Poor', fontSize: 7, border: [true, true, true, true] },
             ],
           ],
         },
@@ -3649,77 +4197,29 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     margin: [0, 0, 0, 10],
   })
 
+  // ===== MAIN TABLE =====
   const mainTableBody = [
     [
-      {
-        text: 'MAJOR FINAL OUTPUT',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'REQUIRED COMPETENCY & PROFICIENCY LEVEL',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'SUCCESS INDICATOR',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'ACTUAL ACCOMPLISHMENT',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'RATING',
-        colSpan: 4,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        border: [true, true, true, true],
-      },
+      headerCell('MAJOR FINAL OUTPUT', { rowSpan: 2, alignment: 'center' }),
+      headerCell('REQUIRED COMPETENCY & PROFICIENCY LEVEL', { rowSpan: 2, alignment: 'center' }),
+      headerCell('SUCCESS INDICATOR', { rowSpan: 2, alignment: 'center' }),
+      headerCell('ACTUAL ACCOMPLISHMENT', { rowSpan: 2, alignment: 'center' }),
+      headerCell('RATING', { colSpan: 4, alignment: 'center' }),
       {},
       {},
       {},
-      {
-        text: 'PROFICIENCY RESULT',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        border: [true, true, true, true],
-      },
-      {
-        text: 'REMARKS',
-        rowSpan: 2,
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        border: [true, true, true, true],
-      },
+      headerCell('PROFICIENCY RESULT', { rowSpan: 2, alignment: 'center' }),
+      headerCell('REMARKS', { rowSpan: 2, alignment: 'center' }),
     ],
     [
       {},
       {},
       {},
       {},
-      { text: 'Q', alignment: 'center', fontSize: 9, bold: true, border: [true, true, true, true] },
-      { text: 'E', alignment: 'center', fontSize: 9, bold: true, border: [true, true, true, true] },
-      { text: 'T', alignment: 'center', fontSize: 9, bold: true, border: [true, true, true, true] },
-      { text: 'A', alignment: 'center', fontSize: 9, bold: true, border: [true, true, true, true] },
+      headerCell('Q', { alignment: 'center' }),
+      headerCell('E', { alignment: 'center' }),
+      headerCell('T', { alignment: 'center' }),
+      headerCell('A', { alignment: 'center' }),
       {},
       {},
     ],
@@ -3734,8 +4234,9 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           alignment: 'left',
           fontSize: 9,
           bold: true,
-          fillColor: '#e8f5e9',
+          fillColor: '#92d050',
           border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
         },
         ...Array(9).fill({}),
       ])
@@ -3749,6 +4250,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
             bold: true,
             fillColor: '#f7f7f7',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           ...Array(9).fill({}),
         ])
@@ -3766,53 +4268,27 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
               : 'Not Applicable'
           const ratings = s.ratings || {}
           mainTableBody.push([
+            cell(`Output ${si + 1} - ${s.output || s.mfo}`),
             {
-              text: `Output ${si + 1} - ${s.output || s.mfo}`,
+              text: competenciesText,
               fontSize: 8,
               border: [true, true, true, true],
+              margin: [2, 2, 2, 2],
             },
-            { text: competenciesText, fontSize: 8, border: [true, true, true, true] },
-            { text: s.success_indicator || '-', fontSize: 8, border: [true, true, true, true] },
-            {
-              text: s.monthly_ratings?.actual_accomplishment || s.actual_accomplishment || '',
-              fontSize: 8,
-              border: [true, true, true, true],
-            },
-            {
-              text: ratings.quantity_rating || '-',
-              alignment: 'center',
-              fontSize: 8,
-              border: [true, true, true, true],
-            },
-            {
-              text: ratings.effectiveness_rating || '-',
-              alignment: 'center',
-              fontSize: 8,
-              border: [true, true, true, true],
-            },
-            {
-              text: ratings.timeliness_rating || '-',
-              alignment: 'center',
-              fontSize: 8,
-              border: [true, true, true, true],
-            },
-            {
-              text: ratings.average_rating || '-',
-              alignment: 'center',
-              fontSize: 8,
-              border: [true, true, true, true],
-            },
+            cell(s.success_indicator || '-'),
+            cell(s.monthly_ratings?.actual_accomplishment || s.actual_accomplishment || ''),
+            cell(ratings.quantity_rating || '-', { alignment: 'center' }),
+            cell(ratings.effectiveness_rating || '-', { alignment: 'center' }),
+            cell(ratings.timeliness_rating || '-', { alignment: 'center' }),
+            cell(ratings.average_rating || '-', { alignment: 'center' }),
             {
               text: proficiencyText,
-              alignment: 'center',
+              alignment: 'left',
               fontSize: 8,
               border: [true, true, true, true],
+              margin: [2, 2, 2, 2],
             },
-            {
-              text: s.monthly_ratings?.remarks || '-',
-              fontSize: 8,
-              border: [true, true, true, true],
-            },
+            cell(s.monthly_ratings?.remarks || '-'),
           ])
         })
       })
@@ -3824,6 +4300,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           bold: true,
           fontSize: 8,
           border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
         },
         ...Array(6).fill({}),
         {
@@ -3832,6 +4309,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           bold: true,
           fontSize: 8,
           border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
         },
         { text: '', colSpan: 2, border: [true, true, true, true] },
         {},
@@ -3845,6 +4323,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         bold: true,
         fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(6).fill({}),
       {
@@ -3853,21 +4332,22 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         bold: true,
         fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       { text: '', colSpan: 2, border: [true, true, true, true] },
       {},
     ])
     mainTableBody.push([
-      { text: '', fontSize: 8, border: [true, true, true, true] },
+      { text: '', fontSize: 8, border: [true, true, true, true], margin: [2, 2, 2, 2] },
       {
         text: 'Performance Results',
-        colSpan: 2,
         alignment: 'center',
         bold: true,
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
-      {},
+
       {
         text: 'Competency Assessment(Subjective)',
         colSpan: 4,
@@ -3875,28 +4355,158 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         bold: true,
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {},
       {},
       {},
       {
-        colSpan: 3,
+        colSpan: 4,
         rowSpan: categoryCalculations.value.length + 3,
         border: [true, true, true, true],
         stack: [
           pmt2
-            ? { image: pmt2, width: 250, alignment: 'center' }
+            ? {
+                width: '25%',
+                stack: [
+                  {
+                    table: {
+                      widths: ['*'],
+                      body: [
+                        [
+                          {
+                            // Outer border container
+                            table: {
+                              widths: ['*'],
+                              body: [
+                                [
+                                  {
+                                    // Inner content with border
+                                    stack: [
+                                      {
+                                        text: 'Performance Management Team',
+                                        alignment: 'center',
+                                        fontSize: 10,
+                                        bold: true,
+                                        color: 'navy',
+                                        margin: [0, 0, 0, 3],
+                                      },
+                                      {
+                                        table: {
+                                          widths: ['auto', '*'],
+                                          body: [
+                                            [
+                                              {
+                                                text: 'Target Accomplishment by:',
+                                                fontSize: 7,
+                                                color: 'navy',
+                                                alignment: 'left',
+                                                margin: [0, 0, 0, 0],
+                                              },
+                                              {
+                                                text: '_____________________________',
+                                                fontSize: 7,
+                                                color: 'navy',
+                                                alignment: 'left',
+                                                margin: [0, 2, 0, 0],
+                                              },
+                                            ],
+                                          ],
+                                        },
+                                        layout: 'noBorders',
+                                        margin: [0, 0, 0, 3],
+                                      },
+                                      {
+                                        table: {
+                                          widths: ['auto', '*'],
+                                          body: [
+                                            [
+                                              {
+                                                text: 'Date:',
+                                                fontSize: 7,
+                                                color: 'navy',
+                                                alignment: 'left',
+                                                margin: [0, 0, 0, 0],
+                                              },
+                                              {
+                                                text: '_______________________________________________',
+                                                fontSize: 7,
+                                                color: 'navy',
+                                                alignment: 'left',
+                                                margin: [0, 2, 0, 0],
+                                              },
+                                            ],
+                                          ],
+                                        },
+                                        layout: 'noBorders',
+                                      },
+                                    ],
+                                    // Inner border (thin) - color set in layout below
+                                    border: [true, true, true, true],
+                                    margin: [2, 2, 2, 2], // Creates space between borders
+                                    padding: [2, 2, 2, 2],
+                                    alignment: 'center',
+                                  },
+                                ],
+                              ],
+                            },
+                            // ===== INNER TABLE LAYOUT - Set border color here =====
+                            layout: {
+                              hLineWidth: function () {
+                                return 1
+                              },
+                              vLineWidth: function () {
+                                return 1
+                              },
+                              hLineColor: function () {
+                                return 'navy'
+                              },
+                              vLineColor: function () {
+                                return 'navy'
+                              },
+                            },
+                            margin: [0, 0, 0, 0],
+                          },
+                        ],
+                      ],
+                    },
+                    // ===== OUTER TABLE LAYOUT - Set border color here =====
+                    layout: {
+                      hLineWidth: function () {
+                        return 2
+                      },
+                      vLineWidth: function () {
+                        return 2
+                      },
+                      hLineColor: function () {
+                        return 'navy'
+                      },
+                      vLineColor: function () {
+                        return 'navy'
+                      },
+                    },
+                    margin: [0, 0, 0, 0],
+                  },
+                ],
+              }
             : { text: 'PMT STAMP', alignment: 'center', italics: true },
         ],
+        margin: [2, 2, 2, 2],
       },
+      {},
       {},
       {},
     ])
     categoryCalculations.value.forEach((calc, i) => {
       const row = [
-        { text: calc.category, fontSize: 8, alignment: 'left', border: [true, true, true, true] },
-        { text: calc.weightedAverage, colSpan: 2, fontSize: 8, border: [true, true, true, true] },
-        {},
+        cell(calc.category, { alignment: 'left' }),
+        {
+          text: calc.weightedAverage,
+
+          fontSize: 8,
+          border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
+        },
       ]
       if (i === 0) {
         row.push(
@@ -3911,25 +4521,20 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           {},
         )
       } else {
-        row.push({}, {}, {}, {})
+        row.push({}, {}, {}, {}, {})
       }
       row.push({}, {}, {})
       mainTableBody.push(row)
     })
     mainTableBody.push([
-      {
-        text: 'Total',
-        alignment: 'left',
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-      },
+      cell('Total', { alignment: 'left', bold: true }),
       {
         text: finalAverageRating.value,
-        colSpan: 2,
+
         fontSize: 8,
         bold: true,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {},
       {},
@@ -3941,19 +4546,14 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
       {},
     ])
     mainTableBody.push([
-      {
-        text: 'ADJECTIVAL RATING',
-        fontSize: 8,
-        alignment: 'left',
-        bold: true,
-        border: [true, true, true, true],
-      },
+      cell('ADJECTIVAL RATING', { alignment: 'left', bold: true }),
       {
         text: adjectivalRating.value,
-        colSpan: 2,
+
         fontSize: 8,
         bold: true,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {},
       {},
@@ -3972,11 +4572,12 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         bold: true,
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(9).fill({}),
     ])
     mainTableBody.push([
-      { text: '\n\n\n\n\n', colSpan: 10, border: [true, true, true, true] },
+      { text: '\n\n\n\n\n', colSpan: 10, border: [true, true, true, true], margin: [2, 2, 2, 2] },
       ...Array(9).fill({}),
     ])
   } else {
@@ -3988,6 +4589,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         italics: true,
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(9).fill({}),
     ])
@@ -3996,7 +4598,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
   content.push({
     table: {
       headerRows: 2,
-      widths: ['14%', '18%', '12%', '12%', '5%', '5%', '5%', '5%', '12%', '12%'],
+      widths: ['16%', '22%', '12%', '14%', '4%', '4%', '4%', '4%', '8%', '12%'],
       body: mainTableBody,
     },
     layout: {
@@ -4008,50 +4610,15 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     margin: [0, 0, 0, 0],
   })
 
+  // ===== SIGNATURE SECTION =====
   const sigBody = [
     [
-      {
-        text: 'Discussed with:',
-        bold: true,
-        fontSize: 9,
-        border: [true, true, true, true],
-        alignment: 'center',
-      },
-      {
-        text: 'Date:',
-        bold: true,
-        fontSize: 9,
-        border: [true, true, true, true],
-        alignment: 'center',
-      },
-      {
-        text: 'Assessed by:',
-        bold: true,
-        fontSize: 9,
-        border: [true, true, true, true],
-        alignment: 'center',
-      },
-      {
-        text: 'Date:',
-        bold: true,
-        fontSize: 9,
-        border: [true, true, true, true],
-        alignment: 'center',
-      },
-      {
-        text: 'Final Rating by:',
-        bold: true,
-        fontSize: 9,
-        border: [true, true, true, true],
-        alignment: 'center',
-      },
-      {
-        text: 'Date:',
-        bold: true,
-        fontSize: 9,
-        border: [true, true, true, true],
-        alignment: 'center',
-      },
+      headerCell('Discussed with:', { alignment: 'center' }),
+      headerCell('Date:', { alignment: 'center' }),
+      headerCell('Assessed by:', { alignment: 'center' }),
+      headerCell('Date:', { alignment: 'center' }),
+      headerCell('Final Rating by:', { alignment: 'center' }),
+      headerCell('Date:', { alignment: 'center' }),
     ],
     [
       {
@@ -4067,6 +4634,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           { text: position, fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
         alignment: 'center',
       },
       {
@@ -4081,6 +4649,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           { text: 'Date', fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
         alignment: 'center',
       },
       {
@@ -4110,6 +4679,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           },
         ],
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
         alignment: 'center',
       },
       {
@@ -4124,6 +4694,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           { text: 'Date', fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
         alignment: 'center',
       },
       {
@@ -4143,6 +4714,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           },
         ],
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
         alignment: 'center',
       },
       {
@@ -4157,6 +4729,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
           { text: 'Date', fontSize: 8, alignment: 'center' },
         ],
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
         alignment: 'center',
       },
     ],
@@ -4177,6 +4750,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
     unbreakable: true,
   })
 
+  // ===== PROFICIENCY TABLE =====
   const profBody = [
     [
       {
@@ -4186,6 +4760,7 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {},
     ],
@@ -4196,11 +4771,13 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Understands basic principles; Can perform task with assistance or direction',
         fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
     [
@@ -4210,11 +4787,13 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Performs routine task with reliable results; Works with minimal supervision',
         fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
     [
@@ -4224,11 +4803,13 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Performs complex and multiple tasks; Can coach and teach others',
         fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
     [
@@ -4238,141 +4819,340 @@ const generateIpcrPdfContent = (tagumLogoBase64, rotpLogoBase64, stamp1, stamp2,
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Considered as an expert in this task; Can describe, teach and lead others',
         fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
   ]
   content.push({
-    alignment: 'center',
-    table: { widths: ['10%', '35%'], body: profBody },
+    table: {
+      widths: ['10%', '40%'],
+      body: profBody,
+    },
     layout: {
       hLineWidth: () => 1,
       vLineWidth: () => 1,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
-    margin: [20, 20, 20, 20],
+    margin: [20, 20, 20, 0],
+    unbreakable: true,
   })
 
+  // ===== RETURN WITH HEADER FUNCTION =====
   return {
     pageSize: 'LEGAL',
     pageOrientation: 'landscape',
-    pageMargins: [32, 20, 32, 20],
+    pageMargins: [72, 100, 72, 20],
+    header: function () {
+      return {
+        stack: [
+          {
+            canvas: [
+              {
+                type: 'rect',
+                x: (1008 - 936) / 2,
+                y: 60,
+                w: 936,
+                h: 25,
+                color: '#008000',
+              },
+            ],
+          },
+          {
+            margin: [72, -65, 72, 0],
+            columns: [
+              {
+                width: 65,
+                stack: [
+                  {
+                    canvas: [
+                      {
+                        type: 'rect',
+                        x: 0,
+                        y: 0,
+                        w: 75,
+                        h: 80,
+                        color: '#ffffff',
+                      },
+                    ],
+                  },
+                  ...(tagumLogoBase64
+                    ? [
+                        {
+                          image: tagumLogoBase64,
+                          width: 65,
+                          height: 65,
+                          absolutePosition: { x: 77, y: 22 },
+                        },
+                      ]
+                    : []),
+                ],
+              },
+              {
+                width: '*',
+                margin: [15, -15, 0, 0],
+                stack: [
+                  {
+                    text: 'REPUBLIC OF THE PHILIPPINES',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 20, 0, 2],
+                  },
+                  {
+                    text: 'PROVINCE OF DAVAO DEL NORTE',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 0, 0, 2],
+                  },
+                  {
+                    text: 'CITY OF TAGUM',
+                    fontSize: 10,
+                    bold: true,
+                    color: '#00703c',
+                    alignment: 'left',
+                  },
+                  {
+                    text: office,
+                    fontSize: 10,
+                    bold: true,
+                    color: 'white',
+                    margin: [0, 13, 0, 0],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }
+    },
     content,
-    styles: { reportTitle: { fontSize: 12, bold: true } },
-    defaultStyle: { fontSize: 8 },
+    styles: {
+      reportTitle: {
+        fontSize: 12,
+        bold: true,
+        font: 'Candara',
+      },
+    },
+    defaultStyle: {
+      font: 'Candara',
+      fontSize: 9,
+    },
   }
 }
 
-const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, pmt3) => {
+const generatePerformanceStandardPdfContent = (tagumLogoBase64) => {
   const employeeName = props.employee?.label || props.employee?.name || 'N/A'
   const position = props.employee?.position || 'N/A'
   const office = props.levels?.office || 'N/A'
   const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
   const content = []
 
+  // ===== HELPER FUNCTIONS =====
+  const cell = (text, opts = {}) => ({
+    text: text || '',
+    fontSize: 8,
+    border: [true, true, true, true],
+    margin: [2, 2, 2, 2],
+    ...opts,
+  })
+
+  const headerCell = (text, opts = {}) => ({
+    text: text || '',
+    fontSize: 9,
+    bold: true,
+    border: [true, true, true, true],
+    margin: [2, 2, 2, 2],
+    ...opts,
+  })
+
+  // ===== TITLE =====
+  content.push({
+    text: 'PERFORMANCE STANDARDS FOR RATING PERIOD',
+    alignment: 'center',
+    fontSize: 12,
+    bold: true,
+    margin: [0, 0, 0, 5],
+  })
+
+  content.push({
+    text: period,
+    alignment: 'center',
+    fontSize: 11,
+    bold: true,
+    decoration: 'underline',
+    margin: [0, 0, 0, 15],
+  })
+
+  // ===== EMPLOYEE INFO =====
   content.push({
     columns: [
       {
-        width: '10%',
-        stack: rotpLogoBase64
-          ? [{ image: rotpLogoBase64, width: 50, alignment: 'center', margin: [0, 0, 0, 10] }]
-          : [{ text: 'ROTP LOGO', alignment: 'center', italics: true }],
+        width: '20%',
+        stack: [{ text: `Name: ${employeeName}`, fontSize: 10, margin: [0, 0, 0, 2] }],
+        margin: [0, 0, 0, 10],
       },
       {
-        width: '10%',
-        stack: tagumLogoBase64
-          ? [{ image: tagumLogoBase64, width: 55, alignment: 'center', margin: [0, 0, 0, 10] }]
-          : [{ text: 'TAGUM LOGO', alignment: 'center', italics: true }],
+        width: '54%',
+        stack: [{ text: `Position: ${position}`, fontSize: 10, margin: [0, 0, 0, 2] }],
+        margin: [0, 0, 0, 10],
       },
       {
-        width: '60%',
+        width: '26%',
         stack: [
-          { text: office, style: 'reportTitle', alignment: 'center', margin: [0, 20, 0, 5] },
           {
-            text: [
-              { text: 'PERFORMANCE STANDARDS FOR RATING PERIOD ', style: 'reportTitle' },
-              { text: period, style: 'reportTitle', decoration: 'underline' },
-            ],
-            alignment: 'center',
-            margin: [0, 0, 0, 10],
+            table: {
+              widths: ['*'],
+              body: [
+                [
+                  {
+                    // Outer border container
+                    table: {
+                      widths: ['*'],
+                      body: [
+                        [
+                          {
+                            // Inner content with border
+                            stack: [
+                              {
+                                text: 'Performance Management Team',
+                                alignment: 'center',
+                                fontSize: 10,
+                                bold: true,
+                                color: '#bf9000',
+                                margin: [0, 0, 0, 3],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'Target Calibrated by:',
+                                        fontSize: 7,
+                                        color: '#bf9000',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_______________________________',
+                                        fontSize: 7,
+                                        color: '#bf9000',
+                                        alignment: 'left',
+                                        margin: [0, 2, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                                margin: [0, 0, 0, 3],
+                              },
+                              {
+                                table: {
+                                  widths: ['auto', '*'],
+                                  body: [
+                                    [
+                                      {
+                                        text: 'Date:',
+                                        fontSize: 7,
+                                        color: '#bf9000',
+                                        alignment: 'left',
+                                        margin: [0, 0, 5, 0],
+                                      },
+                                      {
+                                        text: '_________________________________________',
+                                        fontSize: 7,
+                                        color: '#bf9000',
+                                        alignment: 'left',
+                                        margin: [0, 2, 0, 0],
+                                      },
+                                    ],
+                                  ],
+                                },
+                                layout: 'noBorders',
+                              },
+                            ],
+                            // Inner border (thin) - color set in layout below
+                            border: [true, true, true, true],
+                            margin: [2, 2, 2, 2], // Creates space between borders
+                            padding: [2, 2, 2, 2],
+                            alignment: 'center',
+                          },
+                        ],
+                      ],
+                    },
+                    // ===== INNER TABLE LAYOUT - Set border color here =====
+                    layout: {
+                      hLineWidth: function () {
+                        return 1
+                      },
+                      vLineWidth: function () {
+                        return 1
+                      },
+                      hLineColor: function () {
+                        return '#bf9000'
+                      },
+                      vLineColor: function () {
+                        return '#bf9000'
+                      },
+                    },
+                    margin: [0, 0, 0, 0],
+                  },
+                ],
+              ],
+            },
+            // ===== OUTER TABLE LAYOUT - Set border color here =====
+            layout: {
+              hLineWidth: function () {
+                return 2
+              },
+              vLineWidth: function () {
+                return 2
+              },
+              hLineColor: function () {
+                return '#bf9000'
+              },
+              vLineColor: function () {
+                return '#bf9000'
+              },
+            },
+            margin: [0, -40, 0, 10],
           },
         ],
-      },
-      {
-        width: '20%',
-        stack: pmt3
-          ? [{ image: pmt3, width: 180, alignment: 'center', margin: [0, 0, 0, 10] }]
-          : [{ text: 'STAMP LOGO', alignment: 'center', italics: true }],
       },
     ],
   })
 
-  content.push({
-    table: {
-      widths: ['50%', '50%'],
-      body: [
-        [
-          { text: `Employee: ${employeeName}`, fontSize: 10 },
-          { text: `Position: ${position}`, fontSize: 10 },
-        ],
-      ],
-    },
-    layout: 'noBorders',
-    margin: [0, 10, 0, 0],
-  })
-
+  // ===== MAIN TABLE =====
   const tableBody = [
     [
-      {
-        text: 'MAJOR FINAL OUTPUT (MFO)',
-        fontSize: 9,
-        bold: true,
-        fillColor: '#f2f2f2',
-        alignment: 'center',
-      },
-      {
-        text: 'REQUIRED COMPETENCY',
-        fontSize: 9,
-        bold: true,
-        fillColor: '#f2f2f2',
-        alignment: 'center',
-      },
-      {
-        text: 'SUCCESS INDICATOR',
-        fontSize: 9,
-        bold: true,
-        fillColor: '#f2f2f2',
-        alignment: 'center',
-      },
-      { text: 'RATING', fontSize: 9, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
-      { text: 'Q\n(Quantity)', fontSize: 8, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
-      {
-        text: 'E\n(Effectiveness)',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        alignment: 'center',
-      },
-      {
-        text: 'T\n(Timeliness)',
-        fontSize: 8,
-        bold: true,
-        fillColor: '#f2f2f2',
-        alignment: 'center',
-      },
-      {
-        text: 'Mode of Verification',
-        fontSize: 9,
-        bold: true,
-        fillColor: '#f2f2f2',
-        alignment: 'center',
-      },
-      { text: 'Remarks', fontSize: 9, bold: true, fillColor: '#f2f2f2', alignment: 'center' },
+      headerCell('MAJOR FINAL OUTPUT (MFO)', { rowSpan: 2, alignment: 'center' }),
+      headerCell('REQUIRED COMPETENCY & PROFICIENCY LEVEL', { rowSpan: 2, alignment: 'center' }),
+      headerCell('SUCCESS INDICATOR', { rowSpan: 2, alignment: 'center' }),
+      headerCell('RATING', { colSpan: 4, alignment: 'center' }),
+      {},
+      {},
+      {},
+      headerCell('Mode of Verification', { rowSpan: 2, alignment: 'center' }),
+      headerCell('Remarks', { rowSpan: 2, alignment: 'center' }),
+    ],
+    [
+      {},
+      {},
+      {},
+      {},
+      headerCell('Q', { alignment: 'center' }),
+      headerCell('E', { alignment: 'center' }),
+      headerCell('T', { alignment: 'center' }),
+      {},
+      {},
     ],
   ]
 
@@ -4382,10 +5162,11 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
         text: catGroup.category,
         colSpan: 9,
         alignment: 'left',
-        fontSize: 10,
+        fontSize: 9,
         bold: true,
-        fillColor: '#dbdbdb',
+        fillColor: '#92d050',
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(8).fill({}),
     ])
@@ -4395,10 +5176,11 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
           text: `MFO ${mi + 1} - ${mfoGroup.mfo}`,
           colSpan: 9,
           alignment: 'left',
-          fontSize: 10,
+          fontSize: 9,
           bold: true,
-          fillColor: '#dbdbdb',
+          fillColor: '#f7f7f7',
           border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
         },
         ...Array(8).fill({}),
       ])
@@ -4420,21 +5202,24 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
               row.push(
                 {
                   text: `Output ${si + 1} - ${s.mfo}`,
-                  fontSize: 9,
+                  fontSize: 8,
                   rowSpan: s.standard_outcomes.length,
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 },
                 {
                   text: compText,
                   fontSize: 8,
                   rowSpan: s.standard_outcomes.length,
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 },
                 {
                   text: s.success_indicator,
-                  fontSize: 9,
+                  fontSize: 8,
                   rowSpan: s.standard_outcomes.length,
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 },
               )
             } else {
@@ -4446,64 +5231,79 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
                 fontSize: 8,
                 alignment: 'center',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
               {
                 text: outcome.quantity || '-',
                 fontSize: 8,
                 alignment: 'center',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
               {
                 text: outcome.effectiveness || '-',
                 fontSize: 8,
                 alignment: 'center',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
               {
                 text: outcome.timeliness || '-',
                 fontSize: 8,
                 alignment: 'center',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
             )
             if (oi === 0) {
               row.push(
                 {
                   text: s.required_output || '-',
-                  fontSize: 9,
+                  fontSize: 8,
                   rowSpan: s.standard_outcomes.length,
                   alignment: 'center',
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 },
                 {
                   text: s.remarks || '-',
-                  fontSize: 9,
+                  fontSize: 8,
                   rowSpan: s.standard_outcomes.length,
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 },
               )
             } else {
               row.push({}, {})
             }
+
+            // ===== OPTION 3: SIMPLE FIX - ADD UNBREAKABLE TO EACH ROW =====
+            row.unbreakable = true
+
             tableBody.push(row)
           })
         } else {
-          tableBody.push([
-            { text: `Output ${si + 1} - ${s.mfo}`, fontSize: 9, border: [true, true, true, true] },
-            { text: compText, fontSize: 8, border: [true, true, true, true] },
-            { text: s.success_indicator, fontSize: 9, border: [true, true, true, true] },
-            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-            { text: '-', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
+          const row = [
+            cell(`Output ${si + 1} - ${s.mfo}`),
             {
-              text: s.required_output || '-',
-              fontSize: 9,
-              alignment: 'center',
+              text: compText,
+              fontSize: 8,
               border: [true, true, true, true],
+              margin: [2, 2, 2, 2],
             },
-            { text: s.remarks || '-', fontSize: 9, border: [true, true, true, true] },
-          ])
+            cell(s.success_indicator || '-'),
+            cell('-', { alignment: 'center' }),
+            cell('-', { alignment: 'center' }),
+            cell('-', { alignment: 'center' }),
+            cell('-', { alignment: 'center' }),
+            cell(s.required_output || '-', { alignment: 'center' }),
+            cell(s.remarks || '-'),
+          ]
+
+          // ===== OPTION 3: SIMPLE FIX - ADD UNBREAKABLE TO ROWS WITHOUT OUTCOMES =====
+          row.unbreakable = true
+
+          tableBody.push(row)
         }
       })
     })
@@ -4511,19 +5311,23 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
 
   content.push({
     table: {
-      headerRows: 1,
-      widths: ['15%', '19%', '15%', '6%', '7%', '7%', '7%', '12%', '12%'],
+      headerRows: 2,
+      widths: ['15%', '20%', '15%', '6%', '7%', '7%', '7%', '11%', '12%'],
       body: tableBody,
+      // ===== REMOVE unbreakable FROM THE TABLE OR SET TO false =====
+      // This allows individual rows to control their own breaking
+      unbreakable: false,
     },
     layout: {
-      hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
-    margin: [0, 0, 0, 20],
+    margin: [0, 0, 0, 10],
   })
 
+  // ===== PROFICIENCY TABLE =====
   const profBody = [
     [
       {
@@ -4533,6 +5337,7 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {},
     ],
@@ -4543,11 +5348,13 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Understands basic principles; Can perform task with assistance or direction',
-        fontSize: 9,
+        fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
     [
@@ -4557,11 +5364,13 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Performs routine task with reliable results; Works with minimal supervision',
-        fontSize: 9,
+        fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
     [
@@ -4571,11 +5380,13 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Performs complex and multiple tasks; Can coach and teach others',
-        fontSize: 9,
+        fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
     [
@@ -4585,60 +5396,76 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
         alignment: 'center',
         fontSize: 9,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'Considered as an expert in this task; Can describe, teach and lead others',
-        fontSize: 9,
+        fontSize: 8,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
     ],
   ]
   content.push({
-    table: { widths: ['25%', '75%'], body: profBody },
+    table: {
+      widths: ['25%', '75%'],
+      body: profBody,
+    },
     layout: {
       hLineWidth: () => 1,
       vLineWidth: () => 1,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
-    margin: [150, 20, 150, 20],
+    margin: [20, 10, 20, 20],
+    unbreakable: true,
   })
 
+  // ===== SIGNATURE SECTION =====
   content.push({
-    table: {
-      widths: ['33%', '34%', '33%'],
-      body: [
-        [
+    columns: [
+      {
+        width: '33%',
+        stack: [
           {
             text: 'Conformed:',
             fontSize: 9,
             bold: true,
             alignment: 'left',
-            border: [false, false, false, false],
+            margin: [0, 0, 0, 40],
           },
-          {
-            text: 'Discussed With:',
-            fontSize: 9,
-            bold: true,
-            alignment: 'left',
-            border: [false, false, false, false],
-          },
-          {
-            text: 'Approved by:',
-            fontSize: 9,
-            bold: true,
-            alignment: 'left',
-            border: [false, false, false, false],
-          },
-        ],
-        [
           {
             text: employeeName,
             fontSize: 9,
             bold: true,
             decoration: 'underline',
             alignment: 'center',
-            margin: [0, 40, 0, 0],
+            margin: [0, 0, 0, 2],
+          },
+          {
+            text: position,
+            fontSize: 8,
+            alignment: 'center',
+            margin: [0, 0, 0, 2],
+          },
+          {
+            text: 'Employee/Ratee',
+            fontSize: 8,
+            italics: true,
+            alignment: 'center',
+          },
+        ],
+        alignment: 'center',
+      },
+      {
+        width: '34%',
+        stack: [
+          {
+            text: 'Discussed With:',
+            fontSize: 9,
+            bold: true,
+            alignment: 'left',
+            margin: [0, 0, 0, 40],
           },
           {
             text:
@@ -4649,8 +5476,35 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
             bold: true,
             decoration: 'underline',
             alignment: 'center',
-            margin: [0, 40, 0, 0],
-            border: [false, false, false, true],
+            margin: [0, 0, 0, 2],
+          },
+          {
+            text:
+              props.supervisorySignatory?.position ||
+              props.managerialSignatory?.position ||
+              'Office Head/Rater',
+            fontSize: 8,
+            alignment: 'center',
+            margin: [0, 0, 0, 2],
+          },
+          {
+            text: 'Office Head/Rater',
+            fontSize: 8,
+            italics: true,
+            alignment: 'center',
+          },
+        ],
+        alignment: 'center',
+      },
+      {
+        width: '33%',
+        stack: [
+          {
+            text: 'Approved by:',
+            fontSize: 9,
+            bold: true,
+            alignment: 'left',
+            margin: [0, 0, 0, 40],
           },
           {
             text: props.managerialSignatory?.name || '___________________',
@@ -4658,72 +5512,132 @@ const generatePerformanceStandardPdfContent = (tagumLogoBase64, rotpLogoBase64, 
             bold: true,
             decoration: 'underline',
             alignment: 'center',
-            margin: [0, 40, 0, 0],
-            border: [false, false, false, true],
+            margin: [0, 0, 0, 2],
           },
-        ],
-        [
           {
-            text: position,
-            fontSize: 9,
+            text: props.managerialSignatory?.position || 'Department Head',
+            fontSize: 8,
             alignment: 'center',
-            border: [false, false, false, false],
+            margin: [0, 0, 0, 2],
           },
           {
-            text:
-              props.supervisorySignatory?.position ||
-              props.managerialSignatory?.position ||
-              'Office Head/Rater',
-            fontSize: 9,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-          {
-            text: props.managerialSignatory?.position || 'Office Head/Rater',
-            fontSize: 9,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-        ],
-        [
-          {
-            text: 'Employee/Ratee',
-            fontSize: 9,
+            text: 'Department Head',
+            fontSize: 8,
             italics: true,
             alignment: 'center',
-            border: [false, false, false, false],
-          },
-          {
-            text: 'Office Head/Rater',
-            fontSize: 9,
-            italics: true,
-            alignment: 'center',
-            border: [false, false, false, false],
-          },
-          {
-            text: 'Office Head/Rater',
-            fontSize: 9,
-            italics: true,
-            alignment: 'center',
-            border: [false, false, false, false],
           },
         ],
-      ],
-    },
-    layout: 'noBorders',
+        alignment: 'center',
+      },
+    ],
+    margin: [0, 10, 0, 0],
   })
 
+  // ===== RETURN WITH HEADER FUNCTION =====
   return {
     pageSize: 'LEGAL',
     pageOrientation: 'landscape',
-    pageMargins: [20, 30, 20, 30],
+    pageMargins: [72, 100, 72, 30],
+    header: function () {
+      return {
+        stack: [
+          {
+            canvas: [
+              {
+                type: 'rect',
+                x: (1008 - 936) / 2,
+                y: 60,
+                w: 936,
+                h: 25,
+                color: '#008000',
+              },
+            ],
+          },
+          {
+            margin: [72, -65, 72, 0],
+            columns: [
+              {
+                width: 65,
+                stack: [
+                  {
+                    canvas: [
+                      {
+                        type: 'rect',
+                        x: 0,
+                        y: 0,
+                        w: 75,
+                        h: 80,
+                        color: '#ffffff',
+                      },
+                    ],
+                  },
+                  ...(tagumLogoBase64
+                    ? [
+                        {
+                          image: tagumLogoBase64,
+                          width: 65,
+                          height: 65,
+                          absolutePosition: { x: 77, y: 22 },
+                        },
+                      ]
+                    : []),
+                ],
+              },
+              {
+                width: '*',
+                margin: [15, -15, 0, 0],
+                stack: [
+                  {
+                    text: 'REPUBLIC OF THE PHILIPPINES',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 20, 0, 2],
+                  },
+                  {
+                    text: 'PROVINCE OF DAVAO DEL NORTE',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 0, 0, 2],
+                  },
+                  {
+                    text: 'CITY OF TAGUM',
+                    fontSize: 10,
+                    bold: true,
+                    color: '#00703c',
+                    alignment: 'left',
+                  },
+                  {
+                    text: office,
+                    fontSize: 10,
+                    bold: true,
+                    color: 'white',
+                    margin: [0, 13, 0, 0],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }
+    },
     content,
-    styles: { reportTitle: { fontSize: 11, bold: true } },
-    defaultStyle: { fontSize: 10 },
+    styles: {
+      reportTitle: {
+        fontSize: 12,
+        bold: true,
+        font: 'Candara',
+      },
+    },
+    defaultStyle: {
+      font: 'Candara',
+      fontSize: 9,
+    },
   }
 }
 
-const generateMonthlyPerformancePdfContent = () => {
+const generateMonthlyPerformancePdfContent = (tagumLogoBase64) => {
   const employeeName = props.employee?.label || props.employee?.name || 'N/A'
   const position = props.employee?.position || 'N/A'
   const office = props.levels?.office || 'N/A'
@@ -4741,71 +5655,114 @@ const generateMonthlyPerformancePdfContent = () => {
     groupedMonthlyData.value.forEach((monthData, monthIndex) => {
       if (monthIndex > 0) content.push({ text: '', pageBreak: 'before' })
 
+      // ===== TITLE =====
       content.push({
-        stack: [
-          {
-            text: 'Republic of the Philippines',
-            alignment: 'center',
-            fontSize: 10,
-            margin: [0, 5, 0, 2],
-          },
-          {
-            text: 'Province of Davao del Norte',
-            alignment: 'center',
-            fontSize: 10,
-            margin: [0, 0, 0, 2],
-          },
-          {
-            text: 'CITY OF TAGUM',
-            alignment: 'center',
-            fontSize: 10,
-            bold: true,
-            margin: [0, 0, 0, 5],
-          },
-          {
-            columns: [
-              { width: '*', text: '' },
+        table: {
+          widths: ['*'],
+          body: [
+            [
               {
-                width: 300,
+                // Outer border container
                 table: {
                   widths: ['*'],
                   body: [
                     [
                       {
-                        text: 'MONTHLY PERFORMANCE OUTPUT REPORT',
+                        // Inner content with border
+                        stack: [
+                          {
+                            text: 'MONTHLY PERFORMANCE OUTPUT REPORT',
+                            alignment: 'center',
+                            fontSize: 12,
+                            bold: true,
+                            margin: [10, 5, 10, 5],
+                          },
+                        ],
+                        // Inner border (thin)
+                        border: [true, true, true, true],
+                        margin: [2, 2, 2, 2],
+                        padding: [5, 5, 5, 5],
                         alignment: 'center',
-                        fontSize: 10,
-                        bold: true,
-                        margin: [10, 5, 10, 5],
                       },
                     ],
                   ],
                 },
-                layout: { hLineWidth: () => 1, vLineWidth: () => 1 },
+                // ===== INNER TABLE LAYOUT - Set border color here =====
+                layout: {
+                  hLineWidth: function () {
+                    return 1
+                  },
+                  vLineWidth: function () {
+                    return 1
+                  },
+                  hLineColor: function () {
+                    return '#000000'
+                  },
+                  vLineColor: function () {
+                    return '#000000'
+                  },
+                },
+                margin: [0, 0, 0, 0],
               },
-              { width: '*', text: '' },
             ],
+          ],
+        },
+        // ===== OUTER TABLE LAYOUT - Set border color here =====
+        layout: {
+          hLineWidth: function () {
+            return 2
           },
-        ],
+          vLineWidth: function () {
+            return 2
+          },
+          hLineColor: function () {
+            return '#000000'
+          },
+          vLineColor: function () {
+            return '#000000'
+          },
+        },
         margin: [0, 0, 0, 10],
       })
 
+      // ===== EMPLOYEE INFO =====
       content.push({
         table: {
           widths: ['25%', '25%', '25%', '25%'],
           body: [
             [
-              { text: `EMPLOYEE: ${employeeName}`, fontSize: 9, bold: true },
-              { text: `OFFICE: ${office}`, fontSize: 9, bold: true },
-              { text: `DIVISION: ${division}`, fontSize: 9, bold: true },
-              { text: `MONTH: ${monthData.month}`, fontSize: 9, bold: true },
+              {
+                text: `EMPLOYEE: ${employeeName}`,
+                fontSize: 9,
+                bold: true,
+                border: [false, false, false, false],
+              },
+              {
+                text: `OFFICE: ${office}`,
+                fontSize: 9,
+                bold: true,
+                border: [false, false, false, false],
+              },
+              {
+                text: `DIVISION: ${division}`,
+                fontSize: 9,
+                bold: true,
+                border: [false, false, false, false],
+              },
+              {
+                text: `MONTH: ${monthData.month}`,
+                fontSize: 9,
+                bold: true,
+                border: [false, false, false, false],
+              },
             ],
           ],
         },
         layout: 'noBorders',
-        margin: [0, 0, 0, 5],
+        margin: [0, 0, 0, 0],
       })
 
+      // ===== MAIN TABLE =====
       const colWidths = [
         '15%',
         '*',
@@ -4827,6 +5784,7 @@ const generateMonthlyPerformancePdfContent = () => {
         '*',
         '*',
       ]
+
       const tableBody = [
         [
           {
@@ -4925,6 +5883,7 @@ const generateMonthlyPerformancePdfContent = () => {
               bold: true,
               fillColor: '#92d050',
               border: [true, true, true, true],
+              margin: [2, 2, 2, 2],
             },
             ...Array(18).fill({}),
           ])
@@ -4936,8 +5895,9 @@ const generateMonthlyPerformancePdfContent = () => {
                 alignment: 'left',
                 fontSize: 9,
                 bold: true,
-                fillColor: '#aeaaaa',
+                fillColor: '#f7f7f7',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
               ...Array(18).fill({}),
             ])
@@ -4947,6 +5907,7 @@ const generateMonthlyPerformancePdfContent = () => {
                   text: `Output ${oi + 1} - ${output.outputName}`,
                   fontSize: 8,
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 },
               ]
               ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((w) =>
@@ -4955,6 +5916,7 @@ const generateMonthlyPerformancePdfContent = () => {
                   fontSize: 8,
                   alignment: 'center',
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 }),
               )
               row.push({
@@ -4964,6 +5926,7 @@ const generateMonthlyPerformancePdfContent = () => {
                 bold: true,
                 fillColor: '#d9d9d9',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               })
               ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((w) =>
                 row.push({
@@ -4971,6 +5934,7 @@ const generateMonthlyPerformancePdfContent = () => {
                   fontSize: 8,
                   alignment: 'center',
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 }),
               )
               row.push({
@@ -4980,6 +5944,7 @@ const generateMonthlyPerformancePdfContent = () => {
                 bold: true,
                 fillColor: '#d9d9d9',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               })
               ;['week1', 'week2', 'week3', 'week4', 'week5'].forEach((w) =>
                 row.push({
@@ -4987,6 +5952,7 @@ const generateMonthlyPerformancePdfContent = () => {
                   fontSize: 8,
                   alignment: 'center',
                   border: [true, true, true, true],
+                  margin: [2, 2, 2, 2],
                 }),
               )
               row.push({
@@ -4996,6 +5962,7 @@ const generateMonthlyPerformancePdfContent = () => {
                 bold: true,
                 fillColor: '#d9d9d9',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               })
               tableBody.push(row)
             })
@@ -5011,6 +5978,7 @@ const generateMonthlyPerformancePdfContent = () => {
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           })),
         ])
         tableBody.push([
@@ -5020,6 +5988,7 @@ const generateMonthlyPerformancePdfContent = () => {
             fontSize: 8,
             bold: true,
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           ...Array(12).fill({}),
           {
@@ -5027,36 +5996,42 @@ const generateMonthlyPerformancePdfContent = () => {
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.absents.week2 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.absents.week3 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.absents.week4 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.absents.week5 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.absents.total_absent || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
         ])
         tableBody.push([
@@ -5066,6 +6041,7 @@ const generateMonthlyPerformancePdfContent = () => {
             fontSize: 8,
             bold: true,
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           ...Array(12).fill({}),
           {
@@ -5073,36 +6049,42 @@ const generateMonthlyPerformancePdfContent = () => {
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.lates.week2 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.lates.week3 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.lates.week4 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.lates.week5 || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           {
             text: String(monthAtt.lates.total_late || ''),
             fontSize: 8,
             alignment: 'center',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
         ])
         tableBody.push([
@@ -5112,7 +6094,7 @@ const generateMonthlyPerformancePdfContent = () => {
             fontSize: 8,
             bold: true,
             border: [true, true, true, true],
-            margin: [0, 0, 0, 30],
+            margin: [2, 2, 2, 30],
           },
           ...Array(18).fill({}),
         ])
@@ -5124,6 +6106,7 @@ const generateMonthlyPerformancePdfContent = () => {
             alignment: 'center',
             italics: true,
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
           ...Array(18).fill({}),
         ])
@@ -5132,14 +6115,15 @@ const generateMonthlyPerformancePdfContent = () => {
       content.push({
         table: { headerRows: 3, widths: colWidths, body: tableBody },
         layout: {
-          hLineWidth: (i) => (i === 0 || i === 3 ? 1 : 0.5),
-          vLineWidth: () => 0.5,
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
           hLineColor: () => '#000000',
           vLineColor: () => '#000000',
         },
         margin: [0, 10, 0, 0],
       })
 
+      // ===== SIGNATURE SECTION =====
       content.push({
         table: {
           widths: ['35%', '15%', '35%', '15%'],
@@ -5149,40 +6133,56 @@ const generateMonthlyPerformancePdfContent = () => {
                 text: 'Above entries are true & correct:',
                 fontSize: 8,
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
-              { text: 'Date:', fontSize: 8, border: [true, true, true, true] },
-              { text: 'Confirmed:', fontSize: 8, border: [true, true, true, true] },
-              { text: 'Date:', fontSize: 8, border: [true, true, true, true] },
+              {
+                text: 'Date:',
+                fontSize: 8,
+                border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
+              },
+              {
+                text: 'Confirmed:',
+                fontSize: 8,
+                border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
+              },
+              {
+                text: 'Date:',
+                fontSize: 8,
+                border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
+              },
             ],
             [
               {
                 text: employeeName,
-                fontSize: 8,
+                fontSize: 9,
                 bold: true,
                 alignment: 'center',
-                margin: [0, 30, 0, 0],
+                margin: [2, 30, 2, 2],
                 border: [true, true, true, true],
               },
               {
                 text: formatDate(new Date()),
-                fontSize: 8,
+                fontSize: 9,
                 alignment: 'center',
-                margin: [0, 30, 0, 0],
+                margin: [2, 30, 2, 2],
                 border: [true, true, true, true],
               },
               {
                 text: props.managerialSignatory?.name || '___________________',
-                fontSize: 8,
+                fontSize: 9,
                 bold: true,
                 alignment: 'center',
-                margin: [0, 30, 0, 0],
+                margin: [2, 30, 2, 2],
                 border: [true, true, true, true],
               },
               {
                 text: formatDate(new Date()),
-                fontSize: 8,
+                fontSize: 9,
                 alignment: 'center',
-                margin: [0, 30, 0, 0],
+                margin: [2, 30, 2, 2],
                 border: [true, true, true, true],
               },
             ],
@@ -5192,6 +6192,7 @@ const generateMonthlyPerformancePdfContent = () => {
                 fontSize: 8,
                 alignment: 'center',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
               { text: '', border: [true, true, true, true] },
               {
@@ -5199,18 +6200,19 @@ const generateMonthlyPerformancePdfContent = () => {
                 fontSize: 8,
                 alignment: 'center',
                 border: [true, true, true, true],
+                margin: [2, 2, 2, 2],
               },
               { text: '', border: [true, true, true, true] },
             ],
           ],
         },
         layout: {
-          hLineWidth: () => 0.5,
-          vLineWidth: () => 0.5,
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
           hLineColor: () => '#000000',
           vLineColor: () => '#000000',
         },
-        margin: [0, 20, 0, 0],
+        margin: [0, 5, 0, 0],
       })
     })
   }
@@ -5218,17 +6220,111 @@ const generateMonthlyPerformancePdfContent = () => {
   return {
     pageSize: 'LEGAL',
     pageOrientation: 'landscape',
-    pageMargins: [36, 36, 36, 36],
+    pageMargins: [72, 100, 72, 20],
+    header: function () {
+      return {
+        stack: [
+          {
+            canvas: [
+              {
+                type: 'rect',
+                x: (1008 - 936) / 2,
+                y: 60,
+                w: 936,
+                h: 25,
+                color: '#008000',
+              },
+            ],
+          },
+          {
+            margin: [72, -65, 72, 0],
+            columns: [
+              {
+                width: 65,
+                stack: [
+                  {
+                    canvas: [
+                      {
+                        type: 'rect',
+                        x: 0,
+                        y: 0,
+                        w: 75,
+                        h: 80,
+                        color: '#ffffff',
+                      },
+                    ],
+                  },
+                  ...(tagumLogoBase64
+                    ? [
+                        {
+                          image: tagumLogoBase64,
+                          width: 65,
+                          height: 65,
+                          absolutePosition: { x: 77, y: 22 },
+                        },
+                      ]
+                    : []),
+                ],
+              },
+              {
+                width: '*',
+                margin: [15, -15, 0, 0],
+                stack: [
+                  {
+                    text: 'REPUBLIC OF THE PHILIPPINES',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 20, 0, 2],
+                  },
+                  {
+                    text: 'PROVINCE OF DAVAO DEL NORTE',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 0, 0, 2],
+                  },
+                  {
+                    text: 'CITY OF TAGUM',
+                    fontSize: 10,
+                    bold: true,
+                    color: '#00703c',
+                    alignment: 'left',
+                  },
+                  {
+                    text: office,
+                    fontSize: 10,
+                    bold: true,
+                    color: 'white',
+                    margin: [0, 13, 0, 0],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }
+    },
     content,
-    defaultStyle: { fontSize: 10 },
+    styles: {
+      reportTitle: {
+        fontSize: 12,
+        bold: true,
+        font: 'Candara',
+      },
+    },
+    defaultStyle: {
+      font: 'Candara',
+      fontSize: 9,
+    },
   }
 }
 
-const generateSummaryMonthlyPdfContent = () => {
+const generateSummaryMonthlyPdfContent = (tagumLogoBase64) => {
   const employeeName = props.employee?.label || props.employee?.name || 'N/A'
   const position = props.employee?.position || 'N/A'
   const office = props.levels?.office || 'N/A'
-  const division = props.levels?.division || 'N/A'
+  // const division = props.levels?.division || 'N/A'
   const period = `${props.targetPeriod?.semester || 'N/A'} ${props.targetPeriod?.year || ''}`
   const isFirstSem = isFirstSemester.value
 
@@ -5255,69 +6351,120 @@ const generateSummaryMonthlyPdfContent = () => {
 
   const content = []
 
-  content.push({
-    stack: [
-      {
-        text: 'Republic of the Philippines',
-        alignment: 'center',
-        fontSize: 9,
-        margin: [0, 5, 0, 2],
-      },
-      {
-        text: 'Province of Davao del Norte',
-        alignment: 'center',
-        fontSize: 9,
-        margin: [0, 0, 0, 2],
-      },
-      { text: 'CITY OF TAGUM', alignment: 'center', fontSize: 9, bold: true, margin: [0, 0, 0, 5] },
-      {
-        text: 'SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT',
-        alignment: 'center',
-        fontSize: 9,
-        bold: true,
-        margin: [0, 0, 0, 5],
-      },
-      { text: period, alignment: 'center', fontSize: 9, bold: true, margin: [0, 0, 0, 15] },
-    ],
-    margin: [0, 0, 0, 10],
-  })
-
+  // ===== TITLE WITH DOUBLE BORDER =====
   content.push({
     table: {
-      widths: ['25%', '25%', '25%', '25%'],
+      widths: ['*'],
       body: [
         [
-          { text: `EMPLOYEE: ${employeeName}`, fontSize: 9 },
-          { text: `POSITION: ${position}`, fontSize: 9 },
-          { text: `OFFICE: ${office}`, fontSize: 9 },
-          { text: `DIVISION: ${division}`, fontSize: 9 },
+          {
+            // Outer border container
+            table: {
+              widths: ['*'],
+              body: [
+                [
+                  {
+                    // Inner content with border
+                    stack: [
+                      {
+                        text: 'SUMMARY MONTHLY PERFORMANCE OUTPUT REPORT',
+                        alignment: 'center',
+                        fontSize: 12,
+                        bold: true,
+                      },
+                    ],
+                    // Inner border (thin)
+                    border: [true, true, true, true],
+                    margin: [2, 2, 2, 2],
+                    padding: [5, 5, 5, 5],
+                    alignment: 'center',
+                  },
+                ],
+              ],
+            },
+            layout: {
+              hLineWidth: function () {
+                return 1
+              },
+              vLineWidth: function () {
+                return 1
+              },
+              hLineColor: function () {
+                return '#000000'
+              },
+              vLineColor: function () {
+                return '#000000'
+              },
+            },
+            margin: [0, 0, 0, 0],
+          },
+        ],
+      ],
+    },
+    layout: {
+      hLineWidth: function () {
+        return 2
+      },
+      vLineWidth: function () {
+        return 2
+      },
+      hLineColor: function () {
+        return '#000000'
+      },
+      vLineColor: function () {
+        return '#000000'
+      },
+    },
+    margin: [0, 0, 0, 5],
+  })
+
+  // ===== EMPLOYEE INFO =====
+  content.push({
+    table: {
+      widths: ['25%', '55%', '20%'],
+      body: [
+        [
+          { text: `EMPLOYEE: ${employeeName}`, fontSize: 9, border: [false, false, false, false] },
+
+          { text: `OFFICE: ${office}`, fontSize: 9, border: [false, false, false, false] },
+          { text: `TARGET: ${period}`, fontSize: 9, border: [false, false, false, false] },
         ],
       ],
     },
     layout: { hLineWidth: () => 0, vLineWidth: () => 0 },
-    margin: [0, 0, 0, 10],
+    margin: [0, 0, 0, 5],
   })
 
-  const colWidths = ['15%', ...Array(24).fill('*')]
+  // ===== MAIN TABLE - FULL WIDTH =====
+  // Distribute 85% among 24 columns, leaving 15% for MFO column
+  const monthWidth = 85 / 24 // ~3.54% per month column
+
+  const colWidths = [
+    '15%', // MFO column
+    ...Array(24).fill(`${monthWidth}%`),
+  ]
+
   const tableBody = [
     [
       {
         text: 'MAJOR FINAL OUTPUT',
         rowSpan: 3,
         alignment: 'center',
-        fontSize: 8,
+        fontSize: 9,
         bold: true,
         fillColor: '#f2f2f2',
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       {
         text: 'ACCOMPLISHMENT',
         colSpan: 24,
         alignment: 'center',
-        fontSize: 8,
+        fontSize: 9,
         bold: true,
         fillColor: '#f2f2f2',
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(23).fill({}),
     ],
@@ -5331,6 +6478,7 @@ const generateSummaryMonthlyPdfContent = () => {
         bold: true,
         fillColor: '#f2f2f2',
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(7).fill({}),
       {
@@ -5341,6 +6489,7 @@ const generateSummaryMonthlyPdfContent = () => {
         bold: true,
         fillColor: '#f2f2f2',
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(7).fill({}),
       {
@@ -5351,6 +6500,7 @@ const generateSummaryMonthlyPdfContent = () => {
         bold: true,
         fillColor: '#f2f2f2',
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(7).fill({}),
     ],
@@ -5358,197 +6508,251 @@ const generateSummaryMonthlyPdfContent = () => {
       {},
       ...monthColumns.map((m) => ({
         text: m.label,
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       })),
       {
         text: 'TOTAL',
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       },
       {
         text: 'RATING',
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       },
       ...monthColumns.map((m) => ({
         text: m.label,
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       })),
       {
         text: 'TOTAL',
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       },
       {
         text: 'RATING',
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       },
       ...monthColumns.map((m) => ({
         text: m.label,
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       })),
       {
         text: 'TOTAL',
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       },
       {
         text: 'RATING',
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         bold: true,
         border: [true, true, true, true],
+        margin: [1, 1, 1, 1],
+        padding: [1, 1, 1, 1],
       },
     ],
   ]
 
-  processedSummaryData.value.forEach((catData) => {
-    tableBody.push([
-      {
-        text: catData.category,
-        colSpan: 25,
-        fontSize: 8,
-        bold: true,
-        fillColor: '#92d050',
-        alignment: 'left',
-        border: [true, true, true, true],
-      },
-      ...Array(24).fill({}),
-    ])
-    catData.mfos.forEach((mfoData, mi) => {
+  if (processedSummaryData.value.length) {
+    processedSummaryData.value.forEach((catData) => {
       tableBody.push([
         {
-          text: `MFO ${mi + 1} - ${mfoData.mfo}`,
+          text: catData.category,
           colSpan: 25,
-          fontSize: 8,
+          fontSize: 9,
           bold: true,
-          fillColor: '#aeaaaa',
+          fillColor: '#92d050',
           alignment: 'left',
           border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
         },
         ...Array(24).fill({}),
       ])
-      mfoData.outputs.forEach((output, oi) => {
-        const row = [
+      catData.mfos.forEach((mfoData, mi) => {
+        tableBody.push([
           {
-            text: `Output ${oi + 1}: ${output.outputName}`,
-            fontSize: 8,
+            text: `MFO ${mi + 1} - ${mfoData.mfo}`,
+            colSpan: 25,
+            fontSize: 9,
+            bold: true,
+            fillColor: '#f7f7f7',
+            alignment: 'left',
             border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
-        ]
-        ;['quantity', 'effectiveness', 'timeliness'].forEach((type) => {
-          monthColumns.forEach((m) =>
+          ...Array(24).fill({}),
+        ])
+        mfoData.outputs.forEach((output, oi) => {
+          const row = [
+            {
+              text: `Output ${oi + 1}`,
+              fontSize: 7,
+              border: [true, true, true, true],
+              margin: [1, 1, 1, 1],
+              padding: [1, 1, 1, 1],
+            },
+          ]
+          ;['quantity', 'effectiveness', 'timeliness'].forEach((type) => {
+            monthColumns.forEach((m) =>
+              row.push({
+                text: String(output.monthly[type][m.key] ?? '-'),
+                fontSize: 6,
+                alignment: 'center',
+                border: [true, true, true, true],
+                margin: [1, 1, 1, 1],
+                padding: [1, 1, 1, 1],
+              }),
+            )
             row.push({
-              text: String(output.monthly[type][m.key] ?? '-'),
+              text: String(output.totals[type].total || '0'),
               fontSize: 7,
               alignment: 'center',
+              bold: true,
+              fillColor: '#d9d9d9',
               border: [true, true, true, true],
-            }),
-          )
-          row.push({
-            text: String(output.totals[type].total || '0'),
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
+              margin: [1, 1, 1, 1],
+              padding: [1, 1, 1, 1],
+            })
+            row.push({
+              text: String(output.totals[type].rating || '0'),
+              fontSize: 7,
+              alignment: 'center',
+              bold: true,
+              fillColor: '#d9d9d9',
+              border: [true, true, true, true],
+              margin: [1, 1, 1, 1],
+              padding: [1, 1, 1, 1],
+            })
           })
-          row.push({
-            text: String(output.totals[type].rating || '0'),
-            fontSize: 8,
-            alignment: 'center',
-            bold: true,
-            fillColor: '#d9d9d9',
-            border: [true, true, true, true],
-          })
+          tableBody.push(row)
         })
-        tableBody.push(row)
       })
-    })
-    tableBody.push([
-      { text: '', colSpan: 18, border: [true, true, true, true] },
-      ...Array(17).fill({}),
-      ...monthColumns.map((m) => ({
-        text: m.label,
-        fontSize: 8,
-        alignment: 'center',
-        border: [true, true, true, true],
-      })),
-      { text: 'TOTAL', fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-    ])
-    tableBody.push([
-      {
-        text: 'MAN DAY(S) LOST THRU ABSENCE',
-        colSpan: 18,
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-      },
-      ...Array(17).fill({}),
-      ...monthColumns.map((m) => ({
-        text: getSemesterAttendance('absents', m.key),
-        fontSize: 8,
-        alignment: 'center',
-        border: [true, true, true, true],
-      })),
-      {
-        text: getTotalAbsences(),
-        fontSize: 8,
-        alignment: 'center',
-        border: [true, true, true, true],
-      },
-    ])
-    tableBody.push([
-      {
-        text: 'MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME',
-        colSpan: 18,
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-      },
-      ...Array(17).fill({}),
-      ...monthColumns.map((m) => ({
-        text: getSemesterAttendance('lates', m.key),
-        fontSize: 8,
-        alignment: 'center',
-        border: [true, true, true, true],
-      })),
-      { text: getTotalLates(), fontSize: 8, alignment: 'center', border: [true, true, true, true] },
-    ])
-    tableBody.push([
-      {
-        text: 'OBSERVATIONS/REMARKS',
-        colSpan: 25,
-        fontSize: 8,
-        bold: true,
-        border: [true, true, true, true],
-        margin: [0, 0, 0, 15],
-      },
-      ...Array(24).fill({}),
-    ])
-  })
 
-  if (!processedSummaryData.value.length) {
+      // Attendance section for each category
+      tableBody.push([
+        { text: '', colSpan: 18, border: [true, true, true, true] },
+        ...Array(17).fill({}),
+        ...monthColumns.map((m) => ({
+          text: m.label,
+          fontSize: 7,
+          alignment: 'center',
+          border: [true, true, true, true],
+          margin: [1, 1, 1, 1],
+          padding: [1, 1, 1, 1],
+        })),
+        {
+          text: 'TOTAL',
+          fontSize: 7,
+          alignment: 'center',
+          border: [true, true, true, true],
+          margin: [1, 1, 1, 1],
+          padding: [1, 1, 1, 1],
+        },
+      ])
+      tableBody.push([
+        {
+          text: 'MAN DAY(S) LOST THRU ABSENCE',
+          colSpan: 18,
+          fontSize: 7,
+          bold: true,
+          border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
+        },
+        ...Array(17).fill({}),
+        ...monthColumns.map((m) => ({
+          text: getSemesterAttendance('absents', m.key),
+          fontSize: 7,
+          alignment: 'center',
+          border: [true, true, true, true],
+          margin: [1, 1, 1, 1],
+          padding: [1, 1, 1, 1],
+        })),
+        {
+          text: getTotalAbsences(),
+          fontSize: 7,
+          alignment: 'center',
+          border: [true, true, true, true],
+          margin: [1, 1, 1, 1],
+          padding: [1, 1, 1, 1],
+        },
+      ])
+      tableBody.push([
+        {
+          text: 'MAN HRS./MINUTES LOST THRU TARDINESS/UNDERTIME',
+          colSpan: 18,
+          fontSize: 7,
+          bold: true,
+          border: [true, true, true, true],
+          margin: [2, 2, 2, 2],
+        },
+        ...Array(17).fill({}),
+        ...monthColumns.map((m) => ({
+          text: getSemesterAttendance('lates', m.key),
+          fontSize: 7,
+          alignment: 'center',
+          border: [true, true, true, true],
+          margin: [1, 1, 1, 1],
+          padding: [1, 1, 1, 1],
+        })),
+        {
+          text: getTotalLates(),
+          fontSize: 7,
+          alignment: 'center',
+          border: [true, true, true, true],
+          margin: [1, 1, 1, 1],
+          padding: [1, 1, 1, 1],
+        },
+      ])
+      tableBody.push([
+        {
+          text: 'OBSERVATIONS/REMARKS',
+          colSpan: 25,
+          fontSize: 8,
+          bold: true,
+          border: [true, true, true, true],
+          margin: [2, 2, 2, 30],
+        },
+        ...Array(24).fill({}),
+      ])
+    })
+  } else {
     tableBody.push([
       {
         text: 'No summary performance data available',
@@ -5556,6 +6760,7 @@ const generateSummaryMonthlyPdfContent = () => {
         alignment: 'center',
         italics: true,
         border: [true, true, true, true],
+        margin: [2, 2, 2, 2],
       },
       ...Array(24).fill({}),
     ])
@@ -5564,18 +6769,15 @@ const generateSummaryMonthlyPdfContent = () => {
   content.push({
     table: { headerRows: 3, widths: colWidths, body: tableBody },
     layout: {
-      hLineWidth: (i) => (i < 3 ? 1 : 0.5),
-      vLineWidth: () => 0.5,
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
-      paddingLeft: () => 2,
-      paddingRight: () => 2,
-      paddingTop: () => 2,
-      paddingBottom: () => 2,
     },
     margin: [0, 0, 0, 0],
   })
 
+  // ===== SIGNATURE SECTION =====
   content.push({
     table: {
       widths: ['25%', '8.33%', '25%', '8.33%', '25%', '8.33%'],
@@ -5584,60 +6786,110 @@ const generateSummaryMonthlyPdfContent = () => {
           {
             text: 'Above entries are true & correct:',
             fontSize: 8,
-            margin: [0, 0, 0, 5],
+            margin: [2, 2, 2, 2],
             alignment: 'center',
+            border: [true, true, true, true],
           },
-          { text: 'Date:', fontSize: 8, margin: [0, 0, 0, 5], alignment: 'center' },
-          { text: 'Confirmed:', fontSize: 9, margin: [0, 0, 0, 5], alignment: 'center' },
-          { text: 'Date:', fontSize: 8, margin: [0, 0, 0, 5], alignment: 'center' },
+          {
+            text: 'Date:',
+            fontSize: 8,
+            margin: [2, 2, 2, 2],
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: 'Confirmed:',
+            fontSize: 9,
+            margin: [2, 2, 2, 2],
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
+          {
+            text: 'Date:',
+            fontSize: 8,
+            margin: [2, 2, 2, 2],
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
           {
             text: 'Approved for Final Rating:',
             fontSize: 9,
-            margin: [0, 0, 0, 5],
+            margin: [2, 2, 2, 2],
             alignment: 'center',
+            border: [true, true, true, true],
           },
-          { text: 'Date:', fontSize: 8, margin: [0, 0, 0, 5], alignment: 'center' },
+          {
+            text: 'Date:',
+            fontSize: 8,
+            margin: [2, 2, 2, 2],
+            alignment: 'center',
+            border: [true, true, true, true],
+          },
         ],
         [
           {
             text: employeeName,
-            fontSize: 8,
+            fontSize: 9,
             bold: true,
             alignment: 'center',
-            margin: [0, 20, 0, 2],
+            margin: [2, 30, 2, 2],
+            border: [true, true, true, true],
           },
-          { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
           {
-            // Use confirmedBy computed property
+            text: formatDate(new Date()),
+            fontSize: 9,
+            alignment: 'center',
+            margin: [2, 30, 2, 2],
+            border: [true, true, true, true],
+          },
+          {
             text:
               confirmedBy?.name ||
               props.supervisorySignatory?.name ||
               props.managerialSignatory?.name ||
               '___________________',
-            fontSize: 8,
+            fontSize: 9,
             bold: true,
             alignment: 'center',
-            margin: [0, 20, 0, 2],
+            margin: [2, 30, 2, 2],
+            border: [true, true, true, true],
           },
-          { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
           {
-            // Use approvedFinalRatingBy computed property
+            text: formatDate(new Date()),
+            fontSize: 9,
+            alignment: 'center',
+            margin: [2, 30, 2, 2],
+            border: [true, true, true, true],
+          },
+          {
             text:
               approvedFinalRatingBy?.name ||
               props.managerialSignatory?.name ||
               '___________________',
-            fontSize: 8,
+            fontSize: 9,
             bold: true,
             alignment: 'center',
-            margin: [0, 20, 0, 2],
+            margin: [2, 30, 2, 2],
+            border: [true, true, true, true],
           },
-          { text: formatDate(new Date()), fontSize: 8, alignment: 'center', margin: [0, 20, 0, 2] },
+          {
+            text: formatDate(new Date()),
+            fontSize: 9,
+            alignment: 'center',
+            margin: [2, 30, 2, 2],
+            border: [true, true, true, true],
+          },
         ],
         [
-          { text: position, fontSize: 8, alignment: 'center' },
-          { text: '', fontSize: 8 },
           {
-            // Use confirmedBy position
+            text: position,
+            fontSize: 8,
+            alignment: 'center',
+            border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
+          },
+          { text: '', border: [true, true, true, true] },
+          {
             text:
               confirmedBy?.position ||
               props.supervisorySignatory?.position ||
@@ -5645,36 +6897,133 @@ const generateSummaryMonthlyPdfContent = () => {
               'Supervisor',
             fontSize: 8,
             alignment: 'center',
+            border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
-          { text: '', fontSize: 8 },
+          { text: '', border: [true, true, true, true] },
           {
-            // Use approvedFinalRatingBy position
             text:
               approvedFinalRatingBy?.position ||
               props.managerialSignatory?.position ||
               'Department Head',
             fontSize: 8,
             alignment: 'center',
+            border: [true, true, true, true],
+            margin: [2, 2, 2, 2],
           },
-          { text: '', fontSize: 8 },
+          { text: '', border: [true, true, true, true] },
         ],
       ],
     },
     layout: {
-      hLineWidth: () => 0.5,
-      vLineWidth: () => 0.5,
+      hLineWidth: () => 1,
+      vLineWidth: () => 1,
       hLineColor: () => '#000000',
       vLineColor: () => '#000000',
     },
-    margin: [0, 10, 0, 0],
+    margin: [0, 5, 0, 0],
   })
 
   return {
     pageSize: 'LEGAL',
     pageOrientation: 'landscape',
-    pageMargins: [36, 36, 36, 36],
+    pageMargins: [72, 100, 72, 20],
+    header: function () {
+      return {
+        stack: [
+          {
+            canvas: [
+              {
+                type: 'rect',
+                x: (1008 - 936) / 2,
+                y: 60,
+                w: 936,
+                h: 25,
+                color: '#008000',
+              },
+            ],
+          },
+          {
+            margin: [72, -65, 72, 0],
+            columns: [
+              {
+                width: 65,
+                stack: [
+                  {
+                    canvas: [
+                      {
+                        type: 'rect',
+                        x: 0,
+                        y: 0,
+                        w: 75,
+                        h: 80,
+                        color: '#ffffff',
+                      },
+                    ],
+                  },
+                  ...(tagumLogoBase64
+                    ? [
+                        {
+                          image: tagumLogoBase64,
+                          width: 65,
+                          height: 65,
+                          absolutePosition: { x: 77, y: 22 },
+                        },
+                      ]
+                    : []),
+                ],
+              },
+              {
+                width: '*',
+                margin: [15, -15, 0, 0],
+                stack: [
+                  {
+                    text: 'REPUBLIC OF THE PHILIPPINES',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 20, 0, 2],
+                  },
+                  {
+                    text: 'PROVINCE OF DAVAO DEL NORTE',
+                    fontSize: 8,
+                    color: '#00703c',
+                    alignment: 'left',
+                    margin: [0, 0, 0, 2],
+                  },
+                  {
+                    text: 'CITY OF TAGUM',
+                    fontSize: 10,
+                    bold: true,
+                    color: '#00703c',
+                    alignment: 'left',
+                  },
+                  {
+                    text: office,
+                    fontSize: 10,
+                    bold: true,
+                    color: 'white',
+                    margin: [0, 13, 0, 0],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }
+    },
     content,
-    defaultStyle: { fontSize: 10 },
+    styles: {
+      reportTitle: {
+        fontSize: 12,
+        bold: true,
+        font: 'Candara',
+      },
+    },
+    defaultStyle: {
+      font: 'Candara',
+      fontSize: 9,
+    },
     compress: true,
   }
 }
@@ -5683,22 +7032,14 @@ const generateSummaryMonthlyPdfContent = () => {
 onMounted(async () => {
   await loadIpcrData()
 })
-
-watch(
-  () => [props.employee, props.targetPeriod],
-  () => {
-    ipcrStore.clearCache()
-    loadIpcrData()
-  },
-  { deep: true },
-)
 </script>
 
 <style scoped>
+/* ===== APP CONTAINER ===== */
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   width: 100%;
   overflow: hidden;
 }
@@ -5716,6 +7057,115 @@ watch(
   flex-grow: 1;
 }
 
+/* ===== HEADER DESIGN (UNIFIED FOR ALL REPORTS) ===== */
+.header-container {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 100px;
+  margin-bottom: 8px;
+}
+
+/* Left: Green Banner at Bottom */
+.left-banner {
+  flex: 0 0 60px;
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+}
+
+.green-banner-left {
+  width: 60px;
+  height: 30px;
+  background-color: #036431;
+  flex-shrink: 0;
+  margin-bottom: 5px;
+}
+
+/* Middle: Logo - spans full height */
+.logo-wrapper {
+  flex: 0 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background-color: white;
+  position: relative;
+  z-index: 1;
+}
+
+.logo {
+  height: 100%;
+  width: auto;
+  max-height: 90px;
+  object-fit: contain;
+}
+
+/* Right: Content area with flex column */
+.header-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 5px 0 0 0;
+}
+
+/* Top: Three lines of text */
+.header-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 10px;
+}
+
+.text-green-9 {
+  color: #036431;
+}
+
+.text-caption {
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.text-h5 {
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.text-weight-bold {
+  font-weight: bold;
+}
+
+/* Bottom: Green Banner with Office Name */
+.green-banner-right {
+  background-color: #036431;
+  color: white;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  flex-shrink: 0;
+  margin-bottom: 5px;
+}
+
+.office-name {
+  font-weight: bold;
+  font-size: 16px;
+  color: white;
+}
+
+/* ===== OPCR / REPORT TITLE ===== */
+.opcr-title {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 10px;
+  letter-spacing: 0.5px;
+}
+
+/* ===== HEADER (Legacy - keep for compatibility) ===== */
 .header {
   display: flex;
   justify-content: space-between;
@@ -5723,24 +7173,7 @@ watch(
   width: 100%;
 }
 
-.logo {
-  width: 100px;
-  height: auto;
-  padding: 10px;
-}
-
-.center-text {
-  text-align: center;
-  flex-grow: 1;
-  font-weight: bold;
-  line-height: 1.5;
-}
-
-.title {
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
+/* ===== MAIN CONTENT ===== */
 .main-content {
   display: flex;
   flex: 1;
@@ -5796,14 +7229,15 @@ watch(
   margin-bottom: 20px;
 }
 
-.header-container {
+/* ===== MONTHLY HEADER (Legacy) ===== */
+.header-container-legacy {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.header-text {
+.header-text-legacy {
   text-align: center;
   margin-bottom: 20px;
 }
@@ -5812,6 +7246,7 @@ watch(
   padding: 2px 0;
 }
 
+/* ===== TABLES ===== */
 .info-table {
   margin-bottom: 20px;
   border-collapse: collapse;
@@ -5827,6 +7262,11 @@ watch(
   overflow-x: auto;
 }
 
+.full-width {
+  width: 100%;
+}
+
+/* ===== MAIN OPCR / PERFORMANCE TABLE ===== */
 .main-table {
   border-collapse: collapse;
   width: 100%;
@@ -5848,6 +7288,7 @@ watch(
 .total-cell {
   background-color: #d9d9d9 !important;
 }
+
 .avg-cell {
   background-color: #d0cece !important;
 }
@@ -5857,6 +7298,7 @@ watch(
   background-color: #d9d9d9 !important;
 }
 
+/* ===== COLUMN WIDTHS ===== */
 .col-mfo {
   width: 12%;
 }
@@ -5878,10 +7320,18 @@ watch(
 .col-remarks {
   width: 12%;
 }
+.col-budget {
+  width: 7%;
+}
+.col-accountable {
+  width: 8%;
+}
 
+/* ===== COMPETENCY LISTS ===== */
 .competency-list {
   font-size: 10px;
   line-height: 1.4;
+  white-space: pre-line;
 }
 
 .competency-item {
@@ -5889,6 +7339,7 @@ watch(
   margin-top: 2px;
 }
 
+/* ===== SECTION HEADERS ===== */
 .section-header {
   background-color: #e8f5e9;
   font-weight: bold;
@@ -5918,14 +7369,342 @@ watch(
   font-size: 11px;
 }
 
-.main-table td {
-  vertical-align: middle;
-}
-.main-table tbody tr {
-  height: 40px;
+/* ===== COMMITMENT STATEMENT ===== */
+.commitment-container {
+  font-size: 12px;
 }
 
-.page-break {
-  page-break-before: always;
+.commitment-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #000;
+  font-size: 12px;
+}
+
+.commitment-cell {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #000;
+  vertical-align: top;
+  font-size: 12px;
+}
+
+.commitment-signatory {
+  margin-top: 20px;
+  text-align: right;
+  padding-right: 200px;
+}
+
+.commitment-signatory-block {
+  display: inline-block;
+  text-align: left;
+  font-size: 12px;
+}
+
+/* ===== APPROVAL TABLE ===== */
+.approval-outer-cell {
+  width: 100%;
+  padding: 0;
+  border: 1px solid #000;
+}
+
+.approval-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 12px;
+}
+
+.approval-head-left {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #000;
+  border-right: 1px solid #000;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.approval-head-right {
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid #000;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.approval-signatory {
+  padding: 8px;
+  border-right: 1px solid #000;
+  text-align: center;
+  height: 80px;
+  vertical-align: bottom;
+  font-size: 12px;
+}
+
+.approval-table td.text-center {
+  padding: 8px;
+  vertical-align: bottom;
+}
+
+.signatory-name {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.signatory-line {
+  margin: 5px 0;
+  border-top: 1px solid #000;
+}
+
+/* ===== RATING SCALE ===== */
+.rating-scale-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.rating-scale-table {
+  border: 1px solid #000;
+  border-collapse: collapse;
+  width: auto;
+  font-size: 12px;
+}
+
+.rating-scale-label {
+  border: 1px solid #000;
+  padding: 5px 14px;
+  min-width: 160px;
+  font-size: 12px;
+}
+
+.rating-scale-value {
+  border: 1px solid #000;
+  padding: 5px 14px;
+  text-align: center;
+  min-width: 40px;
+  font-size: 12px;
+}
+
+/* ===== SIGNATORY BLOCK ===== */
+.signatory-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid #000;
+  font-size: 12px;
+}
+
+.signatory-head {
+  padding: 6px;
+  width: 50%;
+  font-size: 12px;
+}
+
+.signatory-block {
+  text-align: center;
+  vertical-align: bottom;
+  padding-top: 50px;
+  width: 50%;
+  font-size: 12px;
+}
+
+/* ===== PDF PRINT STYLES ===== */
+@media print {
+  .app-header,
+  .division-nav,
+  .report-header,
+  .q-tabs,
+  .q-tab-panels {
+    display: none !important;
+  }
+
+  .report-content-scroll {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .report-content {
+    box-shadow: none !important;
+    padding: 10px !important;
+  }
+
+  .header-container {
+    height: 80px !important;
+  }
+
+  .green-banner-left,
+  .green-banner-right {
+    height: 25px !important;
+  }
+
+  .logo {
+    max-height: 70px !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .approval-head-left,
+  .approval-head-right,
+  .approval-signatory,
+  .approval-table td.text-center {
+    width: 50% !important;
+  }
+
+  .header-container {
+    height: 70px !important;
+    flex-wrap: wrap;
+  }
+
+  .left-banner {
+    flex: 0 0 40px;
+  }
+
+  .green-banner-left {
+    width: 40px;
+    height: 20px;
+  }
+
+  .logo-wrapper {
+    padding: 0 5px;
+  }
+
+  .logo {
+    max-height: 60px !important;
+  }
+
+  .green-banner-right {
+    height: 25px;
+    padding: 0 10px;
+  }
+
+  .office-name {
+    font-size: 12px;
+  }
+
+  .text-caption {
+    font-size: 9px;
+  }
+
+  .text-h5 {
+    font-size: 12px;
+  }
+
+  .opcr-title {
+    font-size: 13px;
+  }
+
+  .main-table th,
+  .main-table td {
+    font-size: 9px;
+    padding: 4px;
+  }
+
+  .division-nav {
+    width: 200px;
+  }
+}
+
+/* ===== Q-TABS OVERRIDES ===== */
+.q-tabs {
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.q-tab {
+  font-weight: 500;
+  text-transform: none;
+}
+
+.q-tab-panels {
+  background-color: transparent;
+}
+
+/* ===== MISC UTILITY ===== */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-weight-bold {
+  font-weight: bold;
+}
+
+.text-grey-7 {
+  color: #9e9e9e;
+}
+
+.q-mt-md {
+  margin-top: 16px;
+}
+
+.q-mb-md {
+  margin-bottom: 16px;
+}
+
+.q-pa-xl {
+  padding: 48px;
+}
+
+.q-py-sm {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.q-px-md {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.q-gutter-sm > * {
+  margin: 4px;
+}
+
+.bg-grey-3 {
+  background-color: #eeeeee;
+}
+
+/* ===== FLEX UTILITIES ===== */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.no-wrap {
+  flex-wrap: nowrap;
+}
+
+.flex {
+  display: flex;
+}
+
+.col {
+  flex: 1;
+}
+
+.col-auto {
+  flex: 0 0 auto;
 }
 </style>
