@@ -405,21 +405,14 @@ export function useCascadeDomino({
   const getHeadTarget = (mfoId, outputId = null) => {
     if (!headEmployee.value) return null
 
-    log('Getting head target for MFO:', mfoId)
-    log('Head employee standards:', headEmployee.value.performanceStandards?.length)
-
-    const head = headEmployee.value
-    log('Head raw data in getHeadTarget:', {
-      name: head?.name,
-      rank: head?.rank,
-      position: head?.position,
-      employeeId: head?.employeeId,
-      id: head?.id,
-    })
+    log('Getting head target for MFO:', mfoId, 'Output:', outputId)
 
     for (const standard of headEmployee.value.performanceStandards) {
+      // Match by MFO first
       if (standard.rows.mfo === mfoId) {
+        // If outputId is provided, it must match exactly
         if (outputId && standard.rows.output !== outputId) continue
+        // If no outputId, match any (for backward compatibility)
 
         let targetValue = standard.targetOutputValue
 
@@ -436,8 +429,6 @@ export function useCascadeDomino({
           targetValue = row5?.quantity
         }
 
-        log('Extracted target value:', targetValue)
-
         const target = {
           quantityType: standard.quantityIndicatorType,
           targetOutputValue: targetValue,
@@ -446,14 +437,15 @@ export function useCascadeDomino({
           standardOutcomeRows: standard.standardOutcomeRows || [],
           mfoId: standard.rows.mfo,
           outputId: standard.rows.output,
+          outputName: standard.outputName || '',
           category: standard.rows.category,
           successIndicator: standard.successIndicator,
-          headName: head?.name || '',
-          headId: head?.employeeId || head?.id || '',
-          headRank: head?.rank || '',
-          headPosition: head?.position || head?.job_title || '',
-          headSG: head?.sg || '',
-          headLevel: head?.level || '',
+          headName: headEmployee.value?.name || '',
+          headId: headEmployee.value?.employeeId || headEmployee.value?.id || '',
+          headRank: headEmployee.value?.rank || '',
+          headPosition: headEmployee.value?.position || headEmployee.value?.job_title || '',
+          headSG: headEmployee.value?.sg || '',
+          headLevel: headEmployee.value?.level || '',
         }
 
         log('Found head target:', target)
@@ -461,7 +453,7 @@ export function useCascadeDomino({
       }
     }
 
-    log('No head target found for MFO:', mfoId)
+    log('No head target found for MFO:', mfoId, 'Output:', outputId)
     return null
   }
 

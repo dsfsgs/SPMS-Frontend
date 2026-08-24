@@ -1463,6 +1463,12 @@ export default {
     const mfoHeadStore = ref(null)
     const quantityRestriction = ref(null)
 
+    const cascadeFetchInProgress = ref(false)
+    const cascadeFetchQueue = ref([])
+    const cascadeCache = ref(new Map())
+    const lastFetchTimestamp = ref(0)
+    const DEBOUNCE_DELAY = 500 // milliseconds
+
     // ===========================================================================
     // 3. COMPOSABLE (initialized in onMounted)
     // ===========================================================================
@@ -2107,14 +2113,70 @@ export default {
     }
 
     const checkAndShowCascadeModal = async (standardIndex) => {
-      if (isCurrentEmployeeOfficeHead.value || !cascadeStore.value) return
+      // ============================================================
+      // 1. DEBOUNCE: Prevent rapid successive calls
+      // ============================================================
+      const now = Date.now()
+      if (now - lastFetchTimestamp.value < DEBOUNCE_DELAY) {
+        console.log('[UWP] Debouncing cascade fetch - skipping duplicate call')
+        if (!cascadeFetchQueue.value.includes(standardIndex)) {
+          cascadeFetchQueue.value.push(standardIndex)
+          setTimeout(async () => {
+            if (cascadeFetchQueue.value.length > 0) {
+              const next = cascadeFetchQueue.value.shift()
+              await checkAndShowCascadeModal(next)
+            }
+          }, DEBOUNCE_DELAY)
+        }
+        return null
+      }
+      lastFetchTimestamp.value = now
+
+      // ============================================================
+      // 2. PREVENT MULTIPLE SIMULTANEOUS FETCHES
+      // ============================================================
+      if (cascadeFetchInProgress.value) {
+        console.log('[UWP] Cascade fetch already in progress, queueing request')
+        if (!cascadeFetchQueue.value.includes(standardIndex)) {
+          cascadeFetchQueue.value.push(standardIndex)
+        }
+        return null
+      }
+
+      // ============================================================
+      // 3. EARLY RETURNS
+      // ============================================================
+      if (isCurrentEmployeeOfficeHead.value || !cascadeStore.value) return null
 
       const standard = currentEmployee.value.performanceStandards[standardIndex]
-      if (!standard?.rows.mfo || !standard.indicatorName) return
+      if (!standard?.rows?.mfo || !standard.indicatorName) return null
 
       const mfoId = standard.rows.mfo
       const outputId = standard.rows.output
+      const indicatorId = standard.indicatorName
 
+      // ============================================================
+      // 4. CHECK CACHE FIRST
+      // ============================================================
+      const cacheKey = `${mfoId}_${outputId}_${indicatorId}`
+      if (cascadeCache.value.has(cacheKey)) {
+        console.log('[UWP] Returning cached cascade data for key:', cacheKey)
+        const cached = cascadeCache.value.get(cacheKey)
+        standard.quantityRestriction = cached.restriction
+        standard.rows.supervisory_control_no = cached.controlNo
+
+        if (cached.resolvedSignatory) {
+          const tabIndex = employeeTabs.value.findIndex((e) => e.id === currentEmployee.value.id)
+          if (tabIndex !== -1) {
+            employeeTabs.value[tabIndex].supervisorySignatory = cached.resolvedSignatory
+          }
+        }
+        return cached.restriction
+      }
+
+      // ============================================================
+      // 5. GET MFO AND OUTPUT DETAILS
+      // ============================================================
       const selectedMfo = officeLibraryStore.value?.mfos?.find((m) => m.id === mfoId)
       const mfoValue = selectedMfo?.name || String(mfoId)
 
@@ -2126,8 +2188,11 @@ export default {
 
       const semester = uwpData.value.targetPeriod?.semester
       const year = uwpData.value.targetPeriod?.year
-      if (!semester || !year) return
+      if (!semester || !year) return null
 
+      // ============================================================
+      // 6. SHOW LOADING NOTIFICATION
+      // ============================================================
       const loadingNotif = $q.notify({
         message: 'Loading cascade data…',
         color: 'info',
@@ -2138,11 +2203,26 @@ export default {
       })
 
       try {
+        cascadeFetchInProgress.value = true
+
         const isHeadEmp = dominoIsHead(currentEmployee.value.id)
         const hasHeadInTabs = !!dominoHeadEmployee.value
 
         let fetchedData = null
         let resolvedSignatory = null
+
+        // Helper function to match by MFO and Output
+        const findMfoByMfoAndOutput = (mfos, mfoValue, selectedMfo, outputName) => {
+          return (mfos || []).find((m) => {
+            const mfoMatches = m.mfo === mfoValue || m.mfo === selectedMfo?.name
+            const outputMatches = outputName
+              ? m.output === outputName ||
+                m.output_name === outputName ||
+                m.output === m.output_name
+              : true
+            return mfoMatches && outputMatches
+          })
+        }
 
         const fetchFromCascadeStore = async () => {
           await cascadeStore.value.fetchCascade(semester, year, mfoValue)
@@ -2161,21 +2241,15 @@ export default {
           let sourceMfo = null
 
           if (isRootSupervisor) {
-            sourceMfo = (raw.mfos || []).find(
-              (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
-            )
+            sourceMfo = findMfoByMfoAndOutput(raw.mfos, mfoValue, selectedMfo, outputName)
           } else {
             const matchedSup = (raw.supervisories || []).find(
               (sup) => sup.controlNo === signatoryResult?.controlNo,
             )
-            sourceMfo = (matchedSup?.mfos || []).find(
-              (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
-            )
+            sourceMfo = findMfoByMfoAndOutput(matchedSup?.mfos, mfoValue, selectedMfo, outputName)
 
             if (!sourceMfo) {
-              sourceMfo = (raw.mfos || []).find(
-                (m) => m.mfo === mfoValue || m.mfo === selectedMfo?.name,
-              )
+              sourceMfo = findMfoByMfoAndOutput(raw.mfos, mfoValue, selectedMfo, outputName)
               resolvedSignatory = {
                 controlNo: raw.controlNo,
                 name: raw.name,
@@ -2335,6 +2409,15 @@ export default {
 
         standard.quantityRestriction = restriction
 
+        // ============================================================
+        // 7. CACHE THE RESULT
+        // ============================================================
+        cascadeCache.value.set(cacheKey, {
+          restriction: restriction,
+          controlNo: standard.rows.supervisory_control_no,
+          resolvedSignatory: resolvedSignatory,
+        })
+
         loadingNotif()
         $q.notify({
           message: 'Cascade data loaded',
@@ -2369,6 +2452,20 @@ export default {
           position: 'top',
         })
         return null
+      } finally {
+        // ============================================================
+        // 8. ALWAYS CLEAR LOADING FLAG & PROCESS QUEUE
+        // ============================================================
+        cascadeFetchInProgress.value = false
+
+        if (cascadeFetchQueue.value.length > 0) {
+          setTimeout(async () => {
+            while (cascadeFetchQueue.value.length > 0) {
+              const next = cascadeFetchQueue.value.shift()
+              await checkAndShowCascadeModal(next)
+            }
+          }, 300)
+        }
       }
     }
 
@@ -3560,14 +3657,19 @@ export default {
     watch(activeEmployeeTab, (newTabId) => {
       if (!newTabId || dominoIsHead(newTabId)) return
       if (isCurrentEmployeeOfficeHead.value) return
-      nextTick(async () => {
+
+      nextTick(() => {
         const emp = employeeTabs.value.find((e) => e.id === newTabId)
         if (!emp) return
-        for (let i = 0; i < emp.performanceStandards.length; i++) {
-          const s = emp.performanceStandards[i]
-          if (s.rows?.mfo && s.indicatorName && s.quantityRestriction === null) {
-            await checkAndShowCascadeModal(i)
-          }
+
+        // Only apply existing restrictions, don't trigger new fetches
+        const needsRestriction = emp.performanceStandards.some(
+          (s) => s.rows?.mfo && s.indicatorName && s.quantityRestriction === null,
+        )
+
+        if (needsRestriction) {
+          // Just apply domino restrictions, don't fetch again if not needed
+          dominoApplyToEmployee(newTabId)
         }
       })
     })
@@ -3623,19 +3725,19 @@ export default {
       { deep: true, immediate: true },
     )
 
-    watch(
-      () => uwpData.value,
-      (newVal) => {
-        if (newVal.employeesWithoutTargetPeriod?.length && !autoSelectionPerformed.value) {
-          nextTick(async () => {
-            autoSelectHeadEmployees()
-            await nextTick()
-            fetchHeadMfos()
-          })
-        }
-      },
-      { deep: true, immediate: true },
-    )
+    // watch(
+    //   () => uwpData.value,
+    //   (newVal) => {
+    //     if (newVal.employeesWithoutTargetPeriod?.length && !autoSelectionPerformed.value) {
+    //       nextTick(async () => {
+    //         autoSelectHeadEmployees()
+    //         await nextTick()
+    //         fetchHeadMfos()
+    //       })
+    //     }
+    //   },
+    //   { deep: true, immediate: true },
+    // )
 
     watch(
       () =>
