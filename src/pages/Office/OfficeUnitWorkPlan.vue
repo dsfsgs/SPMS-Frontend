@@ -1173,31 +1173,56 @@
                             <div
                               v-if="
                                 standard.quantityRestriction &&
-                                standard.quantityIndicatorType !== 'C'
+                                standard.quantityIndicatorType !== 'C' &&
+                                standard.quantityIndicatorType !== 'B'
                               "
                               class="q-mt-sm"
                             >
-                              <q-banner
-                                :class="
-                                  standard.quantityRestriction.restrictionType === 'error'
-                                    ? 'bg-negative'
-                                    : standard.quantityRestriction.restrictionType === 'warning'
-                                      ? 'bg-warning'
-                                      : 'bg-info'
-                                "
-                                class="text-white q-pa-sm"
-                                dense
-                              >
-                                <template v-slot:avatar>
-                                  <q-icon
-                                    :name="
-                                      standard.quantityRestriction.restrictionType === 'error'
-                                        ? 'error'
-                                        : 'info'
-                                    "
-                                  />
-                                </template>
+                              <!-- Regular restriction banner -->
+                              <q-banner class="bg-grey-2 text-grey-9 q-pa-sm" dense>
                                 {{ standard.quantityRestriction.message }}
+                              </q-banner>
+                            </div>
+
+                            <!-- Type C restriction banner -->
+                            <div
+                              v-if="
+                                standard.quantityRestriction &&
+                                standard.quantityIndicatorType === 'C'
+                              "
+                              class="q-mt-sm"
+                            >
+                              <q-banner class="bg-blue-1 text-blue-9 q-pa-sm" dense>
+                                <template v-slot:avatar>
+                                  <q-icon name="info" color="blue" />
+                                </template>
+                                <strong>Supervisor's total target:</strong>
+                                {{ standard.quantityRestriction.maxQuantity || 'Not set' }}
+                                <span class="text-caption q-ml-sm">
+                                  (Your target cannot exceed this. Your rating will be based on
+                                  percentage ranges.)
+                                </span>
+                              </q-banner>
+                            </div>
+
+                            <!-- NEW: Display-only banner for Type C -->
+                            <div
+                              v-if="
+                                standard.quantityRestriction &&
+                                standard.quantityRestriction.isDisplayOnly &&
+                                standard.quantityIndicatorType === 'C'
+                              "
+                              class="q-mt-sm"
+                            >
+                              <q-banner class="bg-blue-1 text-blue-9 q-pa-sm" dense>
+                                <template v-slot:avatar>
+                                  <q-icon name="info" color="blue" />
+                                </template>
+                                <strong>Reference:</strong>
+                                {{ standard.quantityRestriction.message }}
+                                <span class="text-caption q-ml-sm"
+                                  >(This does not reduce your supervisor's available pool)</span
+                                >
                               </q-banner>
                             </div>
                           </div>
@@ -1227,11 +1252,36 @@
     <q-dialog v-model="showQuantityModal" persistent>
       <q-card style="min-width: 400px; border-radius: 8px">
         <q-card-section class="modal-header">
-          <div class="text-h6">Enter Target Output</div>
-          <div v-if="currentQuantityRestriction" class="text-caption text-red-9 q-mt-xs">
+          <div class="text-h6">
+            {{
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'B'
+                ? 'Enter Target Output (Can exceed 100%)'
+                : currentEmployee?.performanceStandards?.[currentStandardIndex]
+                      ?.quantityIndicatorType === 'C'
+                  ? "Enter Target Output (Cannot exceed supervisor's total)"
+                  : 'Enter Target Output'
+            }}
+          </div>
+          <!-- Show supervisor's total for Type C -->
+          <div
+            v-if="
+              currentQuantityRestriction &&
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'C'
+            "
+            class="text-caption text-blue-9 q-mt-xs"
+          >
+            <strong>Supervisor's total target:</strong>
+            {{ currentQuantityRestriction.maxQuantity || 'Unlimited' }}
+            <span class="text-grey-7 q-ml-sm">(Your target cannot exceed this)</span>
+          </div>
+          <!-- Show restriction for other types -->
+          <div v-else-if="currentQuantityRestriction" class="text-caption text-red-9 q-mt-xs">
             Max allowed: {{ currentQuantityRestriction.maxQuantity || 'Unlimited' }}
           </div>
         </q-card-section>
+
         <q-card-section class="modal-body">
           <q-input
             v-model.number="quantityValue"
@@ -1254,15 +1304,34 @@
                 : ''
             "
           />
+          <div
+            v-if="
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'C'
+            "
+            class="text-caption text-grey-7 q-mt-sm"
+          >
+            Target value will be saved as: <strong>{{ quantityValue || 'Not set' }}</strong>
+            <br />
+            <span class="text-blue-7"
+              >The rating table will display percentage ranges (100% and above, etc.)</span
+            >
+          </div>
         </q-card-section>
+
         <q-card-actions align="right" class="modal-actions">
           <q-btn flat label="Cancel" color="grey-7" v-close-popup @click="cancelQuantityInput" />
           <q-btn
-            label="Calculate"
+            :label="
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'B'
+                ? 'Calculate'
+                : 'Save Target'
+            "
             color="green"
             unelevated
-            @click="() => computeQuantities('B')"
-            :disable="quantityExceedsMax"
+            @click="() => computeQuantities()"
+            :disable="quantityExceedsMax || !quantityValue"
           />
         </q-card-actions>
       </q-card>
@@ -2266,11 +2335,20 @@ export default {
             const signatoryControlNo = resolvedSignatory?.controlNo || 'root'
 
             const getStandardClaim = (s) => {
+              // Type C should NOT deduct from the available pool
+              // It's percentage-based and doesn't consume the superior's quantity
+              if (s.quantityIndicatorType === 'C') {
+                return 0
+              }
+
               const qty = s.standardOutcomeRows?.find((r) => r.rating === '5')?.quantity
               return parseFloat(s.targetOutputValue) || parseFloat(qty) || 0
             }
 
             const matchesPool = (s) => {
+              // Type C should not be counted in the pool consumption
+              if (s.quantityIndicatorType === 'C') return false
+
               if (!s._signatoryControlNo || s._signatoryControlNo !== signatoryControlNo)
                 return false
               if (!s._mfoValue || s._mfoValue !== mfoValue) return false
@@ -2481,10 +2559,20 @@ export default {
         if (!std) return
 
         const getQuantityComponent = () => {
-          if (std.quantityIndicatorType === 'numeric')
+          if (std.quantityIndicatorType === 'numeric') {
+            // Numeric: Show the actual number from Rating 5
             return std.standardOutcomeRows.find((r) => r.rating === '5')?.quantity || ''
-          if (std.quantityIndicatorType === 'B') return std.targetOutputValue?.toString() || ''
-          if (std.quantityIndicatorType === 'C') return '100%'
+          } else if (std.quantityIndicatorType === 'B') {
+            // Type B: Show the stored target value or the calculated display
+            return (
+              std.targetOutputValue ||
+              std.standardOutcomeRows.find((r) => r.rating === '5')?.quantity ||
+              ''
+            )
+          } else if (std.quantityIndicatorType === 'C') {
+            // Type C: Always show "100%" in the success indicator
+            return '100%'
+          }
           return ''
         }
 
@@ -2524,6 +2612,7 @@ export default {
         const effectivenessPart = getEffectivenessComponent()
         const timelinessPart = getTimelinessComponent()
 
+        // Build success indicator with "100%" for Type C
         std.successIndicator = [
           qtyPart,
           outputPart,
@@ -3103,17 +3192,29 @@ export default {
     const onQuantityOptionSelect = (value, index) => {
       const std = currentEmployee.value?.performanceStandards?.[index]
       if (!std) return
+
+      // Set the quantity indicator type
       std.quantityIndicatorType = value
       currentStandardIndex.value = index
 
-      if (value === 'B') {
+      if (value === 'B' || value === 'C') {
+        // Show modal for both B and C
         quantityValue.value = null
         currentQuantityRestriction.value = std.quantityRestriction
+
+        // Pre-fill modal with existing target value if any
+        if (std.targetOutputValue) {
+          quantityValue.value = parseFloat(std.targetOutputValue)
+        }
+
         showQuantityModal.value = true
-        std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
-      } else if (value === 'C') {
-        computeQuantities('C', index)
+
+        // For C: clear quantities but keep static display
+        if (value === 'C') {
+          std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
+        }
       } else {
+        // For numeric type, clear target value
         std.targetOutputValue = null
         generateSuccessIndicator(index)
       }
@@ -3123,13 +3224,20 @@ export default {
       const idx = index !== null ? index : currentStandardIndex.value
       const std = currentEmployee.value?.performanceStandards?.[idx]
       if (!std) return
+
       const currentType = type || std.quantityIndicatorType
 
       if (currentType === 'B') {
+        // === TYPE B: Can exceed 100% ===
         if (!quantityValue.value || isNaN(quantityValue.value)) {
-          $q.notify({ message: 'Please enter a valid number', color: 'negative', position: 'top' })
+          $q.notify({
+            message: 'Please enter a valid number',
+            color: 'negative',
+            position: 'top',
+          })
           return
         }
+
         if (
           std.quantityRestriction?.maxQuantity != null &&
           quantityValue.value > std.quantityRestriction.maxQuantity
@@ -3166,14 +3274,42 @@ export default {
         }
 
         generateSuccessIndicator(idx)
-        $q.notify({ message: 'Quantities calculated (Type B)', color: 'positive', position: 'top' })
+        $q.notify({
+          message: 'Quantities calculated (Type B)',
+          color: 'positive',
+          position: 'top',
+        })
         showQuantityModal.value = false
         quantityValue.value = null
         currentQuantityRestriction.value = null
 
         if (dominoIsHead(currentEmployee.value.id)) dominoApplyToAllStaff()
       } else if (currentType === 'C') {
-        std.targetOutputValue = '100%'
+        if (!quantityValue.value || isNaN(quantityValue.value)) {
+          $q.notify({
+            message: 'Please enter a valid target number',
+            color: 'negative',
+            position: 'top',
+          })
+          return
+        }
+
+        // ✅ ADD THIS: Validate against supervisor's total target
+        const supervisorTotal = std.quantityRestriction?.maxQuantity
+        if (supervisorTotal != null && quantityValue.value > supervisorTotal) {
+          $q.notify({
+            message: `Target cannot exceed supervisor's total target of ${supervisorTotal}`,
+            color: 'warning',
+            position: 'top',
+          })
+          return
+        }
+
+        // Store the target value
+        const targetValue = Number(quantityValue.value)
+        std.targetOutputValue = targetValue.toString()
+
+        // Static display for rating table
         std.standardOutcomeRows[0].quantity = '100% and above'
         std.standardOutcomeRows[1].quantity = '88%-99%'
         std.standardOutcomeRows[2].quantity = '77%-87%'
@@ -3181,18 +3317,38 @@ export default {
         std.standardOutcomeRows[4].quantity = '37% and below'
 
         generateSuccessIndicator(idx)
-        $q.notify({ message: 'Quantities set (Type C)', color: 'positive', position: 'top' })
-        if (dominoIsHead(currentEmployee.value.id)) dominoApplyToAllStaff()
+
+        $q.notify({
+          message: `Target value saved: ${targetValue} (Display shows "100%" in Success Indicator)`,
+          color: 'positive',
+          position: 'top',
+        })
+        showQuantityModal.value = false
+        quantityValue.value = null
+        currentQuantityRestriction.value = null
       } else {
+        // === NUMERIC TYPE: Custom target ===
         std.targetOutputValue = null
         generateSuccessIndicator(idx)
       }
     }
-
     const cancelQuantityInput = () => {
       const std = currentEmployee.value.performanceStandards[currentStandardIndex.value]
-      if (std) std.quantityIndicatorType = 'numeric'
+      if (std) {
+        // If switching to Type C without saving, revert to numeric
+        if (std.quantityIndicatorType === 'C') {
+          std.quantityIndicatorType = 'numeric'
+          std.targetOutputValue = null
+          // Clear the quantities that were set
+          std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
+        } else if (std.quantityIndicatorType === 'B') {
+          std.quantityIndicatorType = 'numeric'
+          std.targetOutputValue = null
+          std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
+        }
+      }
       showQuantityModal.value = false
+      quantityValue.value = null
       currentQuantityRestriction.value = null
     }
 

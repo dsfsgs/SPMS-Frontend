@@ -2588,7 +2588,6 @@ import AbsentLateInputModal from './AbsentLateInputModal.vue'
 
 // ── PDF Make ────────────────────────────────────────────────────────────────
 let pdfMake = null
-console.log(Object.keys(pdfMake.vfs))
 const initPdfMake = async () => {
   if (pdfMake) {
     return pdfMake

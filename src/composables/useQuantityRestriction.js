@@ -129,12 +129,14 @@ export const calculateMaxQuantity = ({
     isSameIndicatorAsSupervisor,
   })
 
-  // Type C - percentage based, no numeric restriction
+  // Type C - Show the restriction but don't enforce it
+  // Return the restriction with maxQuantity = supervisorTotalTarget (display only)
   if (quantityType === 'C') {
     return {
-      maxQuantity: null,
-      restrictionType: 'none',
-      message: 'No quantity restriction for Type C',
+      maxQuantity: supervisorTotalTarget, // ← Show the superior's total
+      restrictionType: 'display_only', // ← New type to indicate display only
+      message: `Superior's total target: ${supervisorTotalTarget} (display only - does not consume pool)`,
+      isDisplayOnly: true, // ← Flag for UI to know it's display only
     }
   }
 
@@ -227,12 +229,16 @@ export const determineRestriction = ({
     },
   })
 
-  // Type C short-circuit
   if (quantityType === 'C') {
+    const supervisor = selectedEmployee.supervisorySignatory
+    const mfoData = cascadeData?.mfos?.[0] || null
+    const supervisorTotalTarget = mfoData?.total_target ?? supervisor?.total_target ?? 0
+
     return {
-      maxQuantity: null,
-      restrictionType: 'none',
-      message: 'No quantity restriction for Type C',
+      maxQuantity: supervisorTotalTarget,
+      restrictionType: 'display_only',
+      message: `Superior's total target: ${supervisorTotalTarget} (display only - does not consume pool)`,
+      isDisplayOnly: true,
     }
   }
 
