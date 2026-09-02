@@ -574,7 +574,6 @@
                                     />
 
                                     <!-- Performance Indicator Category Select -->
-
                                     <q-select
                                       outlined
                                       v-model="standard.indicatorCategoryId"
@@ -618,7 +617,7 @@
                                       </template>
                                     </q-select>
 
-                                    <!-- Performance Indicator Select (single selection, filtered by category) -->
+                                    <!-- Performance Indicator Select -->
                                     <q-select
                                       outlined
                                       v-model="standard.indicatorName"
@@ -863,21 +862,22 @@
                                     class="input-cell"
                                     :style="`width: ${props.col.width}`"
                                   >
-                                    <q-input
-                                      v-if="standard.quantityIndicatorType === 'numeric'"
-                                      v-model="props.row.quantity"
-                                      dense
-                                      outlined
-                                      placeholder="Enter target"
-                                      :rules="[validateStrictNumeric]"
-                                      @keydown="blockInvalidChars"
-                                      @update:model-value="
-                                        onQuantityUpdate(props.row, 'quantity', index)
-                                      "
-                                      :hint="getQuantityHint(standard)"
-                                      :error="isQuantityExceeded(standard, props.row)"
-                                      :error-message="getQuantityErrorMessage(standard)"
-                                    />
+                                    <div v-if="standard.quantityIndicatorType === 'numeric'">
+                                      <q-input
+                                        v-model="props.row.quantity"
+                                        dense
+                                        outlined
+                                        placeholder="Enter target"
+                                        :rules="[validateStrictNumeric]"
+                                        @keydown="blockInvalidChars"
+                                        @update:model-value="
+                                          onQuantityUpdate(props.row, 'quantity', index)
+                                        "
+                                        :hint="getQuantityHint(standard)"
+                                        :error="isQuantityExceeded(standard, props.row)"
+                                        :error-message="getQuantityErrorMessage(standard)"
+                                      />
+                                    </div>
                                     <div v-else class="numeric-display">
                                       {{ props.row.quantity || '-' }}
                                     </div>
@@ -1015,11 +1015,65 @@
                                 At least 2 effectiveness values must be filled out.
                               </div>
 
-                              <!-- Quantity Restriction Info -->
+                              <!-- Quantity Restriction Info - NUMERIC Type -->
                               <div
                                 v-if="
                                   standard.quantityRestriction &&
-                                  standard.quantityIndicatorType !== 'C'
+                                  standard.quantityIndicatorType !== 'C' &&
+                                  standard.quantityIndicatorType !== 'B'
+                                "
+                                class="q-mt-sm"
+                              >
+                                <q-banner
+                                  :class="
+                                    standard.quantityRestriction.restrictionType === 'error'
+                                      ? 'bg-negative'
+                                      : standard.quantityRestriction.restrictionType === 'warning'
+                                        ? 'bg-warning'
+                                        : 'bg-info'
+                                  "
+                                  class="text-white q-pa-sm"
+                                  dense
+                                >
+                                  <template v-slot:avatar>
+                                    <q-icon
+                                      :name="
+                                        standard.quantityRestriction.restrictionType === 'error'
+                                          ? 'error'
+                                          : 'info'
+                                      "
+                                    />
+                                  </template>
+                                  {{ standard.quantityRestriction.message }}
+                                </q-banner>
+                              </div>
+
+                              <!-- Type C Restriction Banner -->
+                              <div
+                                v-if="
+                                  standard.quantityRestriction &&
+                                  standard.quantityIndicatorType === 'C'
+                                "
+                                class="q-mt-sm"
+                              >
+                                <q-banner class="bg-blue-1 text-blue-9 q-pa-sm" dense>
+                                  <template v-slot:avatar>
+                                    <q-icon name="info" color="blue" />
+                                  </template>
+                                  <strong>Supervisor's total target:</strong>
+                                  {{ standard.quantityRestriction.maxQuantity || 'Not set' }}
+                                  <span class="text-caption q-ml-sm">
+                                    (Your target cannot exceed this. Your rating will be based on
+                                    percentage ranges.)
+                                  </span>
+                                </q-banner>
+                              </div>
+
+                              <!-- Type B Restriction Banner -->
+                              <div
+                                v-if="
+                                  standard.quantityRestriction &&
+                                  standard.quantityIndicatorType === 'B'
                                 "
                                 class="q-mt-sm"
                               >
@@ -1070,24 +1124,50 @@
       </q-card>
     </div>
 
-    <!-- Quantity Input Modal -->
+    <!-- Quantity Input Modal - UPDATED for Type B and C -->
     <q-dialog v-model="showQuantityModal" persistent>
       <q-card style="min-width: 400px; border-radius: 8px">
         <q-card-section class="modal-header">
-          <div class="text-h6">Enter Target Output</div>
-          <div v-if="currentQuantityRestriction" class="text-caption text-red-9 q-mt-xs">
+          <div class="text-h6">
+            {{
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'B'
+                ? 'Enter Target Output (Can exceed 100%)'
+                : currentEmployee?.performanceStandards?.[currentStandardIndex]
+                      ?.quantityIndicatorType === 'C'
+                  ? "Enter Target Output (Cannot exceed supervisor's total)"
+                  : 'Enter Target Output'
+            }}
+          </div>
+          <!-- Show supervisor's total for Type C -->
+          <div
+            v-if="
+              currentQuantityRestriction &&
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'C'
+            "
+            class="text-caption text-blue-9 q-mt-xs"
+          >
+            <strong>Supervisor's total target:</strong>
+            {{ currentQuantityRestriction.maxQuantity || 'Unlimited' }}
+            <span class="text-grey-7 q-ml-sm">(Your target cannot exceed this)</span>
+          </div>
+          <!-- Show restriction for other types -->
+          <div v-else-if="currentQuantityRestriction" class="text-caption text-red-9 q-mt-xs">
             Max allowed: {{ currentQuantityRestriction.maxQuantity || 'Unlimited' }}
           </div>
           <div
-            v-else-if="
-              currentEmployee?.performanceStandards?.[currentStandardIndex]?.targetOutputValue
+            v-if="
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'C'
             "
-            class="text-caption text-grey q-mt-xs"
+            class="text-caption text-blue-7 q-mt-xs"
           >
-            Current value:
-            {{ currentEmployee.performanceStandards[currentStandardIndex].targetOutputValue }}
+            Note: This value will be saved but the display will show static ranges (100% and above,
+            etc.)
           </div>
         </q-card-section>
+
         <q-card-section class="modal-body">
           <q-input
             v-model.number="quantityValue"
@@ -1110,21 +1190,40 @@
                 : ''
             "
           />
+          <div
+            v-if="
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'C'
+            "
+            class="text-caption text-grey-7 q-mt-sm"
+          >
+            Target value will be saved as: <strong>{{ quantityValue || 'Not set' }}</strong>
+            <br />
+            <span class="text-blue-7"
+              >The rating table will display percentage ranges (100% and above, etc.)</span
+            >
+          </div>
         </q-card-section>
+
         <q-card-actions align="right" class="modal-actions">
           <q-btn flat label="Cancel" color="grey-7" v-close-popup @click="cancelQuantityInput" />
           <q-btn
-            label="Calculate"
+            :label="
+              currentEmployee?.performanceStandards?.[currentStandardIndex]
+                ?.quantityIndicatorType === 'B'
+                ? 'Calculate'
+                : 'Save Target'
+            "
             color="green"
             unelevated
-            @click="computeQuantities('B', currentStandardIndex)"
-            :disable="quantityExceedsMax"
+            @click="() => computeQuantities()"
+            :disable="quantityExceedsMax || !quantityValue"
           />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <!-- Competency Selection Modal - UPDATED with Select All -->
+    <!-- Competency Selection Modal -->
     <q-dialog v-model="showCompetencyModal" persistent>
       <q-card style="min-width: 700px; max-width: 900px; border-radius: 8px">
         <q-card-section class="modal-header">
@@ -1782,7 +1881,7 @@ export default {
     const competencyOptions = computed(() => filteredCompetencyOptionsByType.value)
 
     // ===========================================================================
-    // 9c. COMPETENCY MODAL COMPUTED PROPERTIES (ADDED FOR SELECT ALL)
+    // 9c. COMPETENCY MODAL COMPUTED PROPERTIES
     // ===========================================================================
     const getSelectedCompetencyCount = computed(() => {
       return competencySelections.value.filter((sel) => sel.selectedCompetency).length
@@ -1978,10 +2077,17 @@ export default {
         standard._outputName = outputName || null
 
         const getStandardClaim = (s) => {
+          // Type C should NOT deduct from the available pool
+          if (s.quantityIndicatorType === 'C') {
+            return 0
+          }
           const qty = s.standardOutcomeRows?.find((r) => r.rating === '5')?.quantity
           return parseFloat(s.targetOutputValue) || parseFloat(qty) || 0
         }
+
         const matchesPool = (s) => {
+          // Type C should not be counted in the pool consumption
+          if (s.quantityIndicatorType === 'C') return false
           if (!s._signatoryControlNo || s._signatoryControlNo !== signatoryControlNo) return false
           if (!s._mfoValue || s._mfoValue !== mfoValue) return false
           if (!isRootSupervisor && s._outputName !== outputName) return false
@@ -2025,12 +2131,16 @@ export default {
               job_title: resolvedSignatory?.job_title,
             }
 
+        // ✅ PASS MFO CATEGORY to determineRestriction
+        const mfoCategory = standard.rows?.category?.name || standard.rows?.category
+
         const restriction = quantityRestriction.determineRestriction({
           selectedEmployee: { ...currentEmployee.value, supervisorySignatory: resolvedSignatory },
           selectedIndicators: standard.indicatorName ? [standard.indicatorName] : [],
           quantityType: standard.quantityIndicatorType,
           verbs: officeLibraryIndicatorStore.verbs,
           cascadeData: fetchedData,
+          mfoCategory: mfoCategory, // ✅ PASS MFO CATEGORY
         })
 
         standard.quantityRestriction = restriction
@@ -2081,22 +2191,18 @@ export default {
     }
 
     // ===========================================================================
-    // 12b. COMPETENCY MODAL METHODS (ADDED FOR SELECT ALL)
+    // 12b. COMPETENCY MODAL METHODS
     // ===========================================================================
 
     const selectAllCompetencies = () => {
-      // Get the current standard
       const standard =
         currentEmployee.value?.performanceStandards[currentStandardIndexForCompetency.value]
       if (!standard) return
 
-      // Get available competencies for the current type
       const available = competencyOptions.value.filter((comp) => {
-        // Check if already selected in this standard
         const alreadySelected = standard.competencies[competencyType.value].some(
           (existing) => existing.code === comp.code,
         )
-        // Check if already selected in modal selections
         const alreadyInModal = competencySelections.value.some(
           (sel) => sel.selectedCompetency?.code === comp.code,
         )
@@ -2112,17 +2218,14 @@ export default {
         return
       }
 
-      // Add all available competencies to modal selections
       let addedCount = 0
       available.forEach((comp) => {
-        // Find an empty slot in existing selections
         const emptySlot = competencySelections.value.find((sel) => !sel.selectedCompetency)
         if (emptySlot) {
           emptySlot.selectedCompetency = comp
           emptySlot.selectedLevel = getLevelOptionsForCompetency(comp)[0] || null
           addedCount++
         } else {
-          // Add new row if no empty slots
           competencySelections.value.push({
             selectedCompetency: comp,
             selectedLevel: getLevelOptionsForCompetency(comp)[0] || null,
@@ -2142,13 +2245,11 @@ export default {
     }
 
     const clearAllCompetencies = () => {
-      // Reset all selections to empty
       competencySelections.value = competencySelections.value.map(() => ({
         selectedCompetency: null,
         selectedLevel: null,
       }))
 
-      // Keep at least one row
       if (competencySelections.value.length === 0) {
         competencySelections.value.push({ selectedCompetency: null, selectedLevel: null })
         filteredCompetencyOptionsByRow.value.push([...filteredCompetencyOptionsByType.value])
@@ -2474,7 +2575,6 @@ export default {
               (v.category_name || '').toLowerCase().includes(needle),
           )
 
-          // Store filtered options for this index
           filteredVerbsByIndex.value[standardIndex] = filtered
           filteredVerbs.value = filtered
         })
@@ -2499,18 +2599,15 @@ export default {
         (v) => Number(v.category_id) === Number(categoryId),
       )
 
-      // Store filtered options per standard index
       filteredVerbsByIndex.value[index] = options
-      filteredVerbs.value = options // For backward compatibility
+      filteredVerbs.value = options
     }
 
     const getFilteredVerbOptions = (index) => {
-      // Check if we have filtered options for this specific index
       if (filteredVerbsByIndex.value[index] && filteredVerbsByIndex.value[index].length > 0) {
         return filteredVerbsByIndex.value[index]
       }
 
-      // Fallback to global filtered verbs
       if (filteredVerbs.value && filteredVerbs.value.length > 0) {
         return filteredVerbs.value
       }
@@ -2531,14 +2628,10 @@ export default {
       const standard = currentEmployee.value?.performanceStandards?.[index]
       if (!standard) return
 
-      // Find the selected indicator
       const selectedVerb = performanceIndicatorOptions.value.find((v) => v.id === Number(value))
 
       if (selectedVerb) {
-        // Auto-populate the category
         standard.indicatorCategoryId = selectedVerb.category_id
-
-        // Also update the filtered verbs to show only indicators from this category
         filterPerformanceIndicatorsByCategory(selectedVerb.category_id, index)
       } else {
         standard.indicatorCategoryId = null
@@ -2566,8 +2659,7 @@ export default {
       if (!std) return ''
       if (std.quantityIndicatorType === 'numeric')
         return std.standardOutcomeRows.find((r) => r.rating === '5')?.quantity || ''
-      if (std.quantityIndicatorType === 'B')
-        return std.targetOutputValue || std.apiData?.config?.target_output || ''
+      if (std.quantityIndicatorType === 'B') return std.targetOutputValue || ''
       if (std.quantityIndicatorType === 'C') return '100%'
       return ''
     }
@@ -2682,28 +2774,30 @@ export default {
     }
 
     // ===========================================================================
-    // 16. QUANTITY COMPUTATION
+    // 16. QUANTITY COMPUTATION - UPDATED WITH TYPE C VALIDATION
     // ===========================================================================
 
     const onQuantityOptionSelect = (value, index) => {
       const std = currentEmployee.value?.performanceStandards?.[index]
       if (!std) return
+
       std.quantityIndicatorType = value
       currentStandardIndex.value = index
-      if (value === 'B') {
-        if (std.apiData?.config) {
-          const existing = std.apiData.config.targetOutput || std.apiData.config.target_output
-          if (existing) {
-            quantityValue.value = existing
-            std.targetOutputValue = existing
-          }
-        }
+
+      if (value === 'B' || value === 'C') {
+        quantityValue.value = null
         currentQuantityRestriction.value = std.quantityRestriction
+
+        if (std.targetOutputValue) {
+          quantityValue.value = parseFloat(std.targetOutputValue)
+        }
+
         showQuantityModal.value = true
-      } else if (value === 'C') {
-        computeQuantities('C', index)
+
+        if (value === 'C') {
+          std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
+        }
       } else {
-        std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
         std.targetOutputValue = null
         generateSuccessIndicator(index)
       }
@@ -2713,17 +2807,20 @@ export default {
       const idx = index !== null ? index : currentStandardIndex.value
       const std = currentEmployee.value?.performanceStandards?.[idx]
       if (!std) return
+
       const currentType = type || std.quantityIndicatorType
 
       if (currentType === 'B') {
-        if (!quantityValue.value || isNaN(quantityValue.value) || quantityValue.value <= 0) {
+        // === TYPE B: Can exceed 100% ===
+        if (!quantityValue.value || isNaN(quantityValue.value)) {
           $q.notify({
-            message: 'Please enter a valid number greater than 0',
+            message: 'Please enter a valid number',
             color: 'negative',
             position: 'top',
           })
           return
         }
+
         if (
           std.quantityRestriction?.maxQuantity != null &&
           quantityValue.value > std.quantityRestriction.maxQuantity
@@ -2735,13 +2832,16 @@ export default {
           })
           return
         }
+
         const base = Number(quantityValue.value)
         std.targetOutputValue = base.toString()
+
         const max130 = Math.round(base * 1.3)
         const max115 = Math.round(base * 1.15)
         const max50 = Math.round(base * 0.5)
         const cap =
           std.quantityRestriction?.maxQuantity != null ? std.quantityRestriction.maxQuantity : null
+
         if (cap != null) {
           std.standardOutcomeRows[0].quantity = `${Math.min(max130, cap)} and above`
           std.standardOutcomeRows[1].quantity = `${Math.min(max115, cap)}-${Math.min(max130 - 1, cap)}`
@@ -2755,21 +2855,61 @@ export default {
           std.standardOutcomeRows[3].quantity = `${max50 + 1}-${base - 1}`
           std.standardOutcomeRows[4].quantity = `${max50} and below`
         }
+
+        generateSuccessIndicator(idx)
+        $q.notify({
+          message: 'Quantities calculated (Type B)',
+          color: 'positive',
+          position: 'top',
+        })
+        showQuantityModal.value = false
         quantityValue.value = null
         currentQuantityRestriction.value = null
-        showQuantityModal.value = false
-        generateSuccessIndicator(idx)
-        $q.notify({ message: 'Quantities calculated (Type B)', color: 'positive', position: 'top' })
       } else if (currentType === 'C') {
-        std.targetOutputValue = '100%'
+        // === TYPE C: Cannot exceed 100% with validation ===
+        if (!quantityValue.value || isNaN(quantityValue.value)) {
+          $q.notify({
+            message: 'Please enter a valid target number',
+            color: 'negative',
+            position: 'top',
+          })
+          return
+        }
+
+        // ✅ Validate against supervisor's total target
+        const supervisorTotal = std.quantityRestriction?.maxQuantity
+        if (supervisorTotal != null && quantityValue.value > supervisorTotal) {
+          $q.notify({
+            message: `Target cannot exceed supervisor's total target of ${supervisorTotal}`,
+            color: 'warning',
+            position: 'top',
+          })
+          return
+        }
+
+        // Store the target value
+        const targetValue = Number(quantityValue.value)
+        std.targetOutputValue = targetValue.toString()
+
+        // Static display for rating table
         std.standardOutcomeRows[0].quantity = '100% and above'
         std.standardOutcomeRows[1].quantity = '88%-99%'
         std.standardOutcomeRows[2].quantity = '77%-87%'
         std.standardOutcomeRows[3].quantity = '38%-76%'
         std.standardOutcomeRows[4].quantity = '37% and below'
+
         generateSuccessIndicator(idx)
-        $q.notify({ message: 'Quantities set (Type C)', color: 'positive', position: 'top' })
+
+        $q.notify({
+          message: `Target value saved: ${targetValue} (Display shows "100%" in Success Indicator)`,
+          color: 'positive',
+          position: 'top',
+        })
+        showQuantityModal.value = false
+        quantityValue.value = null
+        currentQuantityRestriction.value = null
       } else {
+        // === NUMERIC TYPE: Custom target ===
         std.targetOutputValue = null
         generateSuccessIndicator(idx)
       }
@@ -2777,8 +2917,19 @@ export default {
 
     const cancelQuantityInput = () => {
       const std = currentEmployee.value?.performanceStandards?.[currentStandardIndex.value]
-      if (std) std.quantityIndicatorType = 'numeric'
+      if (std) {
+        if (std.quantityIndicatorType === 'C') {
+          std.quantityIndicatorType = 'numeric'
+          std.targetOutputValue = null
+          std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
+        } else if (std.quantityIndicatorType === 'B') {
+          std.quantityIndicatorType = 'numeric'
+          std.targetOutputValue = null
+          std.standardOutcomeRows.forEach((r) => (r.quantity = ''))
+        }
+      }
       showQuantityModal.value = false
+      quantityValue.value = null
       currentQuantityRestriction.value = null
     }
 
@@ -2909,7 +3060,6 @@ export default {
       const standard = standards[index]
       const performanceStandardId = standard.performanceStandardId
 
-      // If it's a new standard (no ID), just remove it locally
       if (!performanceStandardId) {
         standards.splice(index, 1)
         showCompetencyError.value.splice(index, 1)
@@ -2921,7 +3071,6 @@ export default {
         return
       }
 
-      // Confirm deletion for existing standards
       $q.dialog({
         title: 'Confirm Deletion',
         message: `Delete Performance Standard ${index + 1}? This action cannot be undone.`,
@@ -2933,7 +3082,6 @@ export default {
         },
       }).onOk(async () => {
         try {
-          // Show loading state
           const loadingNotif = $q.notify({
             message: 'Deleting performance standard...',
             color: 'info',
@@ -2943,12 +3091,10 @@ export default {
             group: false,
           })
 
-          // Call the store action
           await uwpStore.deletePerformanceStandard(performanceStandardId)
 
           loadingNotif()
 
-          // Remove from local array
           standards.splice(index, 1)
           showCompetencyError.value.splice(index, 1)
 
@@ -3026,9 +3172,7 @@ export default {
           const performanceStandards = targetPeriod.performance_standards || []
           if (performanceStandards.length > 0) {
             currentEmployee.value.performanceStandards = performanceStandards.map((ps) => {
-              // ✅ FIX: Preserve the performanceStandardId from the API
               const perfStandardId = ps.performanceStandardId || ps.id || null
-              console.log('[fetchEmployeeData] PS ID:', perfStandardId)
 
               const config = ps.config || targetPeriod.config || {}
               const timelinessType = config.timelinessType || {}
@@ -3163,10 +3307,9 @@ export default {
                 }
               })
 
-              // ✅ FIX: Create the standard object with the performanceStandardId
               const standard = {
                 id: `ps_${ps.id || Date.now()}`,
-                performanceStandardId: perfStandardId, // ✅ PRESERVE THE ID
+                performanceStandardId: perfStandardId,
                 expanded: true,
                 outputName: ps.output_name || '',
                 indicatorName: indicatorId,
@@ -3200,10 +3343,6 @@ export default {
                 if (existing) standard.targetOutputValue = existing
               }
 
-              console.log(
-                '[fetchEmployeeData] Created standard with ID:',
-                standard.performanceStandardId,
-              )
               return standard
             })
           } else {
@@ -3503,14 +3642,12 @@ export default {
       },
     )
 
-    // Add this watch after your other watches
     watch(
       () => currentEmployee.value?.performanceStandards,
       (standards) => {
         if (!standards) return
 
         standards.forEach((standard, index) => {
-          // If there's an indicator but no category, try to find it
           if (standard.indicatorName && !standard.indicatorCategoryId) {
             const foundIndicator = officeLibraryIndicatorStore.verbs?.find(
               (v) =>
@@ -3522,7 +3659,6 @@ export default {
             }
           }
 
-          // Initialize filtered verbs for this index
           if (standard.indicatorCategoryId) {
             filterPerformanceIndicatorsByCategory(standard.indicatorCategoryId, index)
           }
@@ -3530,6 +3666,7 @@ export default {
       },
       { deep: true, immediate: true },
     )
+
     // ===========================================================================
     // 22. LIFECYCLE HOOKS
     // ===========================================================================
