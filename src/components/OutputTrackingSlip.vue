@@ -154,52 +154,43 @@ const otsSlipsData = computed(() => {
   const currentMonth = props.selectedMonth?.month || new Date().getMonth() + 1
   const currentWeek = props.selectedWeek || 1
 
-  console.log(
-    '[OTS] Filtering for Week:',
-    currentWeek,
-    'Month:',
-    currentMonth,
-    'Year:',
-    currentYear,
-  )
-
   props.performanceStandards.forEach((standard) => {
-    console.log('[OTS] Processing standard:', standard)
-
-    // Use output for PARTICULAR column
     const output = standard.output || standard.output_name || ''
 
-    // Use output_name for TASK column
     const outputName = standard.output_name || standard.output || ''
     const performanceIndicator = standard.performance_indicator || []
 
-    // Build the task description using output_name
     let taskDescription = outputName
 
-    // If there are performance indicators, add them
     if (performanceIndicator.length > 0) {
-      const indicators = performanceIndicator.map(
-        (ind) => ind.charAt(0).toUpperCase() + ind.slice(1).toLowerCase(),
-      )
-      // Format: "Develop Information Systems"
-      taskDescription = `${indicators.join(' & ')} ${outputName}`
+      const indicators = performanceIndicator
+        .map((ind) => {
+          if (typeof ind === 'string') {
+            return ind.charAt(0).toUpperCase() + ind.slice(1).toLowerCase()
+          } else if (ind && typeof ind === 'object') {
+            const indicatorText = ind.name || ind.description || ind.indicator || ind.text || ''
+            if (typeof indicatorText === 'string') {
+              return indicatorText.charAt(0).toUpperCase() + indicatorText.slice(1).toLowerCase()
+            }
+            return ''
+          }
+          return ''
+        })
+        .filter(Boolean)
+
+      if (indicators.length > 0) {
+        taskDescription = `${indicators.join(' & ')} ${outputName}`
+      }
     }
 
-    // If taskDescription is still empty, use the output
     if (!taskDescription.trim()) {
       taskDescription = output || 'No Task'
     }
-
-    console.log('[OTS] Task Description:', taskDescription)
-    console.log('[OTS] Output (PARTICULAR):', output)
-    console.log('[OTS] Output Name (TASK):', outputName)
-    console.log('[OTS] Performance Indicator:', performanceIndicator)
 
     const ratings = standard.performance_rating || []
     ratings.forEach((rating) => {
       const ratingDate = rating.date
       if (!isDateInWeek(ratingDate, currentYear, currentMonth, currentWeek)) {
-        console.log('[OTS] Rating date not in week:', ratingDate)
         return
       }
 
@@ -221,16 +212,12 @@ const otsSlipsData = computed(() => {
 
         const slipData = {
           id: `${standard.id}-${rating.id}-${index}`,
-          // Map to OTS fields
-          // PARTICULAR column: use 'output'
           particular1: output,
           particular2: '',
           particular3: '',
-          // TASKS column: use 'output_name' with indicator
           task1: taskDescription,
           task2: '',
           task3: '',
-          // FACILITATED column: use employee name
           facilitated1: props.employeeName || '',
           facilitated2: '',
           facilitated3: '',
@@ -240,14 +227,12 @@ const otsSlipsData = computed(() => {
           released1: '',
           released2: '',
           released3: '',
-          // Rating fields
           qualityRating: quantity,
-          qualityRemarks: ``,
+          qualityRemarks: '',
           effectivenessRating: effectiveness,
           effectivenessRemarks: '',
           timelinessRating: timeliness,
           timelinessRemarks: '',
-          // Additional info
           controlNo: rating.control_no || props.userControlNo || '',
           date: formattedDate,
           rawDate: ratingDate,
@@ -256,13 +241,11 @@ const otsSlipsData = computed(() => {
           performanceIndicator: performanceIndicator,
         }
 
-        console.log('[OTS] Slip data created:', slipData)
         slips.push(slipData)
       })
     })
   })
 
-  console.log('[OTS] Total slips generated:', slips.length)
   return slips
 })
 
@@ -295,30 +278,41 @@ async function getImageBase64(url) {
   }
 }
 
-// ── Load PDFMake ────────────────────────────────────────────────────────────
-async function loadPdfMake() {
-  loadingMessage.value = 'Loading PDF library...'
-  console.log('[OTS] Loading pdfmake...')
-
-  try {
-    if (!pdfMakeInstance) {
-      const pdfMakeModule = await import('pdfmake/build/pdfmake')
-      const pdfFontsModule = await import('pdfmake/build/vfs_fonts')
-
-      pdfMakeInstance = pdfMakeModule.default || pdfMakeModule
-
-      const pdfFonts = pdfFontsModule.default || pdfFontsModule
-      if (pdfMakeInstance && !pdfMakeInstance.vfs) {
-        pdfMakeInstance.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
-      }
-
-      console.log('[OTS] pdfmake loaded successfully')
-    }
+// ── PDF Make ────────────────────────────────────────────────────────────────
+const initPdfMake = async () => {
+  if (pdfMakeInstance) {
     return pdfMakeInstance
-  } catch (error) {
-    console.error('[OTS] Error loading pdfmake:', error)
-    throw new Error('Failed to load PDF library: ' + error.message)
   }
+
+  const pdfMakeModule = await import('pdfmake/build/pdfmake')
+  const pdfFontsModule = await import('/src/pdfmake/vfs_fonts.js')
+
+  pdfMakeInstance = pdfMakeModule.default || pdfMakeModule
+
+  const pdfFonts = pdfFontsModule.default || pdfFontsModule
+
+  pdfMakeInstance.vfs = pdfFonts
+
+  pdfMakeInstance.fonts = {
+    Candara: {
+      normal: 'Candara.ttf',
+      bold: 'Candara_Bold.ttf',
+      italics: 'Candara_Italic.ttf',
+      bolditalics: 'Candara_Bold_Italic.ttf',
+    },
+
+    Poppins: {
+      normal: 'Poppins-Regular.ttf',
+      bold: 'Poppins-Bold.ttf',
+      italics: 'Poppins-Italic.ttf',
+      bolditalics: 'Poppins-BoldItalic.ttf',
+    },
+  }
+
+  console.log('PDFMake initialized')
+  console.log('VFS:', Object.keys(pdfMakeInstance.vfs))
+
+  return pdfMakeInstance
 }
 
 // ── Create Document Definition ─────────────────────────────────────────────
@@ -403,35 +397,34 @@ function createDocumentDefinition(slipsData) {
                     },
                     {
                       width: '*',
-                      margin: [10, 1, 0, 0],
+                      margin: [10, 0, 0, 0],
                       stack: [
                         {
                           text: 'REPUBLIC OF THE PHILIPPINES',
-                          fontSize: 4,
+                          fontSize: 5,
                           color: '#00703c',
                           alignment: 'left',
                         },
                         {
                           text: 'PROVINCE OF DAVAO DEL NORTE',
-                          fontSize: 4,
+                          fontSize: 5,
                           color: '#00703c',
                           alignment: 'left',
                         },
                         {
                           text: 'CITY OF TAGUM',
-                          fontSize: 4,
+                          fontSize: 5,
                           bold: true,
                           color: '#00703c',
                           alignment: 'left',
                         },
-                        // Use the office prop here
                         {
                           text:
                             props.office || 'HUMAN RESOURCE MERIT PROMOTION AND SELECTION BOARD',
-                          fontSize: 4,
+                          fontSize: 5,
                           bold: true,
                           color: 'white',
-                          margin: [0, 3, 0, 0],
+                          margin: [0, 4, 0, 0],
                         },
                       ],
                     },
@@ -679,7 +672,6 @@ function createDocumentDefinition(slipsData) {
                       border: [true, true, true, true],
                     },
                     {
-                      // Use employee name in "By:" field
                       text: 'By:',
                       fontSize: 6,
                       bold: true,
@@ -842,6 +834,7 @@ function createDocumentDefinition(slipsData) {
     footer: undefined,
     content: content,
     defaultStyle: {
+      font: 'Candara',
       fontSize: 6,
       color: '#000000',
       lineHeight: 1,
@@ -851,9 +844,6 @@ function createDocumentDefinition(slipsData) {
 
 // ── Generate PDF ──────────────────────────────────────────────────────────
 async function generatePdf() {
-  console.log('[OTS] Starting PDF generation...')
-  console.log('[OTS] Slips data:', otsSlipsData.value.length, 'slips')
-
   if (otsSlipsData.value.length === 0) {
     loadError.value = 'No data available for this week. Please add ratings first.'
     return
@@ -874,17 +864,15 @@ async function generatePdf() {
     logoBase64.value = logo
 
     loadingMessage.value = 'Loading PDF library...'
-    const pdfMake = await loadPdfMake()
+    const pdfMake = await initPdfMake()
 
     loadingMessage.value = `Creating document with ${otsSlipsData.value.length} slips...`
     const docDefinition = createDocumentDefinition(otsSlipsData.value)
 
     loadingMessage.value = 'Opening PDF...'
-    console.log('[OTS] Creating and opening PDF with open() method...')
     const pdfDoc = pdfMake.createPdf(docDefinition)
     pdfDoc.open()
 
-    console.log('[OTS] PDF opened successfully!')
     pdfGenerated.value = true
     loadingMessage.value = 'Done!'
   } catch (err) {
@@ -897,11 +885,6 @@ async function generatePdf() {
 
 // ── Lifecycle ───────────────────────────────────────────────────────────────
 onMounted(() => {
-  console.log('[OTS] Component mounted')
-  console.log('[OTS] Selected Week:', props.selectedWeek)
-  console.log('[OTS] Selected Month:', props.selectedMonth)
-  console.log('[OTS] Performance Standards:', props.performanceStandards.length)
-
   if (props.performanceStandards.length > 0) {
     generatePdf()
   } else {

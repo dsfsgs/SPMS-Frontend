@@ -563,7 +563,7 @@
             <q-card-section class="q-py-sm q-px-md bg-grey-1">
               <div class="row items-center no-wrap">
                 <div class="col">
-                  <div class="text-weight-medium text-body2">Weekly Summary (Mon–Fri)</div>
+                  <div class="text-weight-medium text-body2">Weekly Summary (Mon–Sun)</div>
                   <div class="text-caption text-grey-7">Days: {{ reviewWeekDayHeaderLabel }}</div>
                 </div>
                 <div class="col-auto">
@@ -596,15 +596,15 @@
                       MFO
                     </th>
 
-                    <th colspan="5" class="text-center" style="border-right: 2px solid #bdbdbd">
+                    <th colspan="7" class="text-center" style="border-right: 2px solid #bdbdbd">
                       Quantity
                     </th>
 
-                    <th colspan="5" class="text-center" style="border-right: 2px solid #bdbdbd">
+                    <th colspan="7" class="text-center" style="border-right: 2px solid #bdbdbd">
                       Effectiveness
                     </th>
 
-                    <th colspan="5" class="text-center">Timeliness</th>
+                    <th colspan="7" class="text-center">Timeliness</th>
                   </tr>
 
                   <tr>
@@ -670,7 +670,7 @@
                   <template v-for="(row, ridx) in reviewRows" :key="'rv-row-' + ridx">
                     <tr v-if="row.type === 'category'">
                       <td
-                        :colspan="16"
+                        :colspan="22"
                         class="text-left bg-grey-2"
                         style="border-left: 2px solid #bdbdbd"
                       >
@@ -679,7 +679,7 @@
                     </tr>
 
                     <tr v-else-if="row.type === 'mfo'">
-                      <td :colspan="16" class="text-left" style="border-left: 2px solid #bdbdbd">
+                      <td :colspan="22" class="text-left" style="border-left: 2px solid #bdbdbd">
                         <strong>MFO:</strong> {{ row.text || '-' }}
                       </td>
                     </tr>
@@ -903,7 +903,7 @@ export default {
       selectedMonth: null,
       selectedWeek: 1,
       selectedWeekday: 'mon',
-      weekdayOrder: ['mon', 'tue', 'wed', 'thu', 'fri'],
+      weekdayOrder: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
 
       reviewMonth: null,
       reviewWeek: 1,
@@ -1447,7 +1447,7 @@ export default {
 
     weekHasAnyWeekdayInMonth(year, month, weekNum) {
       const monthObj = { year, month }
-      const weekdays = ['mon', 'tue', 'wed', 'thu', 'fri']
+      const weekdays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
       return weekdays.some((wd) => {
         const d = this.getDateForWeekdayInWeek(wd, monthObj, weekNum)
@@ -1458,7 +1458,15 @@ export default {
 
     // ---------- table styling helpers ----------
     weekdayShort(d) {
-      const map = { mon: 'M', tue: 'T', wed: 'W', thu: 'Th', fri: 'F' }
+      const map = {
+        mon: 'M',
+        tue: 'T',
+        wed: 'W',
+        thu: 'Th',
+        fri: 'F',
+        sat: 'S',
+        sun: 'Su',
+      }
       return map[d] || d
     },
 
@@ -1486,11 +1494,13 @@ export default {
       const thin = '1px solid #e0e0e0'
       const thick = '2px solid #bdbdbd'
 
-      const isFri = weekday === 'fri'
+      // Only Sunday gets the thick border on the right
+      const isSunday = weekday === 'sun'
       const isQty = group === 'qty'
       const isEff = group === 'eff'
 
-      const rightBorder = isFri && (isQty || isEff) ? thick : thin
+      // Right border: thick only for Sunday's Quantity and Effectiveness columns
+      const rightBorder = isSunday && (isQty || isEff) ? thick : thin
       return `border-right: ${rightBorder};`
     },
 
@@ -1511,7 +1521,15 @@ export default {
     },
 
     weekdayLabel(d) {
-      const map = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri' }
+      const map = {
+        mon: 'Mon',
+        tue: 'Tue',
+        wed: 'Wed',
+        thu: 'Thu',
+        fri: 'Fri',
+        sat: 'Sat',
+        sun: 'Sun',
+      }
       return map[d] || d
     },
 
@@ -1550,7 +1568,15 @@ export default {
 
     // ---------- calendar logic (Mon-start grid) ----------
     weekdayToOffsetMon0(weekday) {
-      const map = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4 }
+      const map = {
+        mon: 0,
+        tue: 1,
+        wed: 2,
+        thu: 3,
+        fri: 4,
+        sat: 5,
+        sun: 6,
+      }
       return map[weekday] ?? 0
     },
 
@@ -1825,8 +1851,8 @@ export default {
 }
 
 .view-rating-card--desktop {
-  width: 1100px;
-  max-width: 95vw;
+  width: 1800px;
+  max-width: 100vw;
   max-height: 90vh;
 }
 

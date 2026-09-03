@@ -682,7 +682,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                 } else if (standard.quantityIndicatorType === 'B') {
                   targetOutput = String(standard.targetOutputValue || '')
                 } else if (standard.quantityIndicatorType === 'C') {
-                  targetOutput = '100%'
+                  targetOutput = String(standard.targetOutputValue || '')
                 }
 
                 // ✅ FIX: Use snake_case for config fields in CREATE
@@ -868,6 +868,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
               if (!row.rating) return
               const timelinessValue = this.buildTimelinessValue(row, activeInputs)
               ratings.push({
+                rating_id: row.ratingId ?? null, // ✅ pass through existing rating record id
                 rating: String(row.rating || '0'),
                 quantity: String(row.quantity || ''),
                 effectiveness: String(row.effectiveness || ''),
@@ -891,7 +892,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
           } else if (standard.quantityIndicatorType === 'B') {
             targetOutput = String(standard.targetOutputValue || '')
           } else if (standard.quantityIndicatorType === 'C') {
-            targetOutput = '100%'
+            targetOutput = String(standard.targetOutputValue || '')
           }
 
           const config = {
@@ -909,7 +910,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
 
           return {
             target_period_id: targetPeriodId,
-            performanceStandardId: standard.performanceStandardId || null, // ADD THIS
+            performanceStandardId: standard.performanceStandardId || null,
             supervisory_control_no: standardSupervisoryControlNo,
             category_id: categoryId,
             mfo_id: mfoId,
@@ -1218,7 +1219,7 @@ export const useUnitWorkPlanStore = defineStore('unitWorkPlan', {
                   targetOutputValue: null,
                 }
 
-                if (quantityIndicatorType === 'B') {
+                if (quantityIndicatorType === 'B' || quantityIndicatorType === 'C') {
                   const existing = config.targetOutput || config.target_output
                   if (existing) standard.targetOutputValue = String(existing)
                 }

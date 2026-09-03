@@ -2,11 +2,11 @@
 <template>
   <q-page class="q-pa-md">
     <!-- Top Header Row -->
-    <div class="row items-center justify-between q-mb-md q-pl-lg q-pr-lg">
+    <div class="row items-center justify-between q-pl-lg q-pr-lg">
       <div class="column items-start">
         <h1 class="text-h6 q-mb-none">UNIT WORK PLAN - {{ selectedNodeLabel }}</h1>
-        <p class="text-grey-7 q-mt-xs">{{ breadcrumbDisplay }}</p>
-        <p class="text-caption text-grey-6 q-mt-xs">
+        <p class="text-grey-7">{{ breadcrumbDisplay }}</p>
+        <p class="text-caption text-grey-6">
           Available Employees:
           <strong>{{ uwpData.employeesWithoutTargetPeriod?.length || 0 }}</strong>
           <span v-if="employeeTabs.length > 0" class="q-ml-md">
@@ -45,22 +45,6 @@
                     <q-icon name="calendar_view_month" size="xs" />
                   </template>
                 </q-input>
-                <q-separator />
-                <q-input v-model="hierarchyLabels.office" label="Office" outlined dense readonly>
-                  <template v-slot:prepend><q-icon name="account_balance" size="xs" /></template>
-                </q-input>
-                <q-input
-                  v-model="hierarchyLabels.office2"
-                  label="Sub-Office"
-                  outlined
-                  dense
-                  readonly
-                >
-                  <template v-slot:prepend><q-icon name="business" size="xs" /></template>
-                </q-input>
-                <q-input v-model="hierarchyLabels.group" label="Group" outlined dense readonly>
-                  <template v-slot:prepend><q-icon name="group_work" size="xs" /></template>
-                </q-input>
               </div>
             </div>
             <!-- Right Side -->
@@ -68,22 +52,6 @@
               <div class="column q-gutter-sm">
                 <q-input v-model="uwpData.targetPeriod.year" readonly label="Year" outlined dense>
                   <template v-slot:prepend><q-icon name="event" size="xs" /></template>
-                </q-input>
-                <q-separator />
-                <q-input
-                  v-model="hierarchyLabels.division"
-                  label="Division"
-                  outlined
-                  dense
-                  readonly
-                >
-                  <template v-slot:prepend><q-icon name="business" size="xs" /></template>
-                </q-input>
-                <q-input v-model="hierarchyLabels.section" label="Section" outlined dense readonly>
-                  <template v-slot:prepend><q-icon name="account_tree" size="xs" /></template>
-                </q-input>
-                <q-input v-model="hierarchyLabels.unit" label="Unit" outlined dense readonly>
-                  <template v-slot:prepend><q-icon name="layers" size="xs" /></template>
                 </q-input>
               </div>
             </div>
@@ -189,7 +157,7 @@
         </div>
 
         <q-card-section class="q-pa-sm">
-          <div class="row items-center justify-between q-mb-md">
+          <div class="row items-center justify-between q-mb-xs">
             <div class="text-subtitle2">Employee Information</div>
             <q-btn
               flat
@@ -209,7 +177,7 @@
           </div>
 
           <div class="row q-col-gutter-sm">
-            <div class="col-12 col-md-6">
+            <div class="col-12 col-md-4">
               <q-select
                 v-model="currentEmployee.employeeId"
                 :options="availableEmployeesForTab"
@@ -266,14 +234,14 @@
               </q-select>
             </div>
 
-            <div class="col-12 col-md-6" v-if="currentEmployee.employeeId">
+            <div class="col-12 col-md-8" v-if="currentEmployee.employeeId">
               <div class="row q-col-gutter-sm">
-                <div class="col-12 col-md-6">
-                  <q-input v-model="selectedEmployee.rank" label="Function" outlined dense readonly>
+                <div class="col-12 col-md-3">
+                  <q-input v-model="selectedEmployee.rank" label="Rank" outlined dense readonly>
                     <template v-slot:prepend><q-icon name="military_tech" size="xs" /></template>
                   </q-input>
                 </div>
-                <div class="col-12 col-md-6">
+                <div class="col-12 col-md-9">
                   <q-input
                     v-model="selectedEmployee.position"
                     label="Position"
@@ -281,16 +249,6 @@
                     dense
                     readonly
                   >
-                    <template v-slot:prepend><q-icon name="work" size="xs" /></template>
-                  </q-input>
-                </div>
-                <div class="col-12 col-md-6">
-                  <q-input v-model="selectedEmployee.sg" label="SG" outlined dense readonly>
-                    <template v-slot:prepend><q-icon name="work" size="xs" /></template>
-                  </q-input>
-                </div>
-                <div class="col-12 col-md-6">
-                  <q-input v-model="selectedEmployee.level" label="Level" outlined dense readonly>
                     <template v-slot:prepend><q-icon name="work" size="xs" /></template>
                   </q-input>
                 </div>
@@ -311,7 +269,12 @@
                 <q-card flat bordered>
                   <q-card-section class="q-pa-sm bg-grey-2">
                     <div class="row items-center justify-between">
-                      <div class="text-subtitle2">Performance Standard {{ index + 1 }}</div>
+                      <div class="text-subtitle2">
+                        Performance Standard {{ getStandardOutputLabel(standard) }} {{ index + 1 }}:
+                        <span v-if="getStandardOutputDisplay(standard)" class="text-grey-7">
+                          — {{ getStandardOutputDisplay(standard) }}
+                        </span>
+                      </div>
                       <div>
                         <q-badge
                           v-if="
@@ -353,7 +316,7 @@
                           <div class="col-md-6">
                             <q-card flat bordered class="full-height">
                               <q-card-section class="q-pa-sm">
-                                <div class="text-subtitle2">MFO Details</div>
+                                <div class="text-subtitle2">Main Function Output (MFO) Details</div>
                               </q-card-section>
                               <q-separator />
                               <q-card-section class="q-pa-sm">
@@ -363,7 +326,7 @@
                                     outlined
                                     dense
                                     v-model="standard.rows.category"
-                                    label="Select Category"
+                                    label="Select Function"
                                     :options="categoryOptions"
                                     option-value="value"
                                     option-label="label"
@@ -445,6 +408,7 @@
                                     input-debounce="300"
                                     @filter="(val, update) => filterOutputs(val, update, index)"
                                     clearable
+                                    @update:model-value="generateSuccessIndicator(index)"
                                   >
                                     <template v-slot:prepend>
                                       <q-icon name="output" size="xs" />
@@ -474,6 +438,18 @@
                                       </q-item>
                                     </template>
                                   </q-select>
+
+                                  <!-- OUTPUT NAME FIELD - COMMENTED OUT -->
+                                  <!-- 
+                                  <q-input
+                                    outlined
+                                    v-model="standard.outputName"
+                                    label="Output Name"
+                                    dense
+                                    class="full-width"
+                                    @update:model-value="generateSuccessIndicator(index)"
+                                  />
+                                  -->
                                 </div>
                               </q-card-section>
                             </q-card>
@@ -484,7 +460,7 @@
                             <q-card flat bordered class="full-height">
                               <q-card-section class="q-pa-sm">
                                 <div class="text-subtitle2">
-                                  Competencies (for IPCR each MFO should have competency)
+                                  Competencies (based on employee profile)
                                 </div>
                                 <div
                                   v-if="showCompetencyError[index]"
@@ -663,14 +639,13 @@
 
                         <!-- Success Indicators Card -->
                         <q-card flat bordered class="q-mt-md">
-                          <q-card-section class="q-pa-sm">
-                            <div class="text-subtitle2">Success Indicators</div>
-                          </q-card-section>
                           <q-separator />
                           <q-card-section class="q-pa-sm">
                             <div class="row q-col-gutter-sm">
                               <div class="col-md-5">
                                 <div class="column q-gutter-mt-sm">
+                                  <!-- OUTPUT NAME FIELD - COMMENTED OUT -->
+                                  <!-- 
                                   <q-input
                                     outlined
                                     v-model="standard.outputName"
@@ -679,12 +654,13 @@
                                     class="full-width"
                                     @update:model-value="generateSuccessIndicator(index)"
                                   />
+                                  -->
 
                                   <!-- Performance Indicator Category Select -->
                                   <q-select
                                     outlined
                                     v-model="standard.indicatorCategoryId"
-                                    label="Performance Indicator Category"
+                                    label="Category"
                                     dense
                                     class="full-width q-pt-sm"
                                     :options="performanceIndicatorCategoryOptions"
@@ -803,7 +779,7 @@
                                   outlined
                                   v-model="standard.requiredOutput"
                                   type="textarea"
-                                  label="Required Output"
+                                  label="Mode of Verification"
                                   class="autogrow-textarea"
                                   autogrow
                                   :input-style="{ minHeight: '80px' }"
@@ -817,9 +793,48 @@
                         <!-- Standard Outcome Section -->
                         <div class="q-mt-sm">
                           <div class="row items-center justify-between q-mt-sm">
-                            <div class="text-subtitle2">Standard Outcome</div>
+                            <div class="text-subtitle2"></div>
                             <div>
-                              <q-btn flat round dense icon="more_vert">
+                              <q-btn
+                                flat
+                                round
+                                dense
+                                icon="more_vert"
+                                :disable="!isQuantityConfigEnabled(standard)"
+                                aria-label="Quantity Options"
+                              >
+                                <q-tooltip v-if="!isQuantityConfigEnabled(standard)">
+                                  <template v-if="isSupportCategory(standard.rows.category)">
+                                    Please select a Performance Indicator first
+                                  </template>
+                                  <template v-else>
+                                    <template
+                                      v-if="!standard.rows?.mfo && !isCurrentEmployeeOfficeHead"
+                                    >
+                                      Please select an MFO first
+                                    </template>
+                                    <template
+                                      v-else-if="
+                                        !standard.rows?.output && !isCurrentEmployeeOfficeHead
+                                      "
+                                    >
+                                      Please select an Output first
+                                    </template>
+                                    <template
+                                      v-else-if="
+                                        !standard.indicatorName && !isCurrentEmployeeOfficeHead
+                                      "
+                                    >
+                                      Please select a Performance Indicator first
+                                    </template>
+                                    <template v-else>
+                                      Please select MFO, Output, and Performance Indicator first
+                                    </template>
+                                  </template>
+                                </q-tooltip>
+                                <q-tooltip v-else>
+                                  Configure Quantity and Timeliness options
+                                </q-tooltip>
                                 <q-menu>
                                   <q-list style="min-width: 250px">
                                     <q-item-label header>Quantity Options</q-item-label>
@@ -985,6 +1000,7 @@
                                       outlined
                                       placeholder="Enter target"
                                       :rules="[validateStrictNumeric]"
+                                      :disable="!isQuantityInputEnabled(standard)"
                                       @keydown="blockInvalidChars"
                                       @update:model-value="
                                         onQuantityUpdate(props.row, 'quantity', index)
@@ -992,7 +1008,19 @@
                                       :hint="getQuantityHint(standard, index)"
                                       :error="isQuantityExceeded(standard, props.row, index)"
                                       :error-message="getQuantityErrorMessage(standard, index)"
-                                    />
+                                    >
+                                      <template
+                                        v-slot:append
+                                        v-if="!isQuantityInputEnabled(standard)"
+                                      >
+                                        <q-icon name="lock" color="grey" size="xs">
+                                          <q-tooltip
+                                            >Please select MFO, Output, and Performance Indicator
+                                            first</q-tooltip
+                                          >
+                                        </q-icon>
+                                      </template>
+                                    </q-input>
                                   </div>
                                   <div v-else class="numeric-display">
                                     {{ props.row.quantity || '-' }}
@@ -1256,10 +1284,10 @@
             {{
               currentEmployee?.performanceStandards?.[currentStandardIndex]
                 ?.quantityIndicatorType === 'B'
-                ? 'Enter Target Output (Can exceed 100%)'
+                ? 'Enter Baseline Target Output (Can exceed 100%)'
                 : currentEmployee?.performanceStandards?.[currentStandardIndex]
                       ?.quantityIndicatorType === 'C'
-                  ? "Enter Target Output (Cannot exceed supervisor's total)"
+                  ? "Enter Baseline Target Output (Cannot exceed supervisor's total)"
                   : 'Enter Target Output'
             }}
           </div>
@@ -1285,7 +1313,7 @@
         <q-card-section class="modal-body">
           <q-input
             v-model.number="quantityValue"
-            label="Target Output"
+            label="Baseline Target Output"
             type="number"
             outlined
             dense
@@ -1742,6 +1770,59 @@ export default {
         cat.label?.trim().toUpperCase().startsWith('C')
       )
     }
+    const getMfoLabel = (mfoId) => {
+      if (!mfoId) return ''
+      const mfo = officeLibraryStore.value?.mfos?.find((m) => m.id === mfoId)
+      return mfo?.name || mfo?.label || ''
+    }
+
+    const getOutputLabel = (outputId, categoryId, mfoId) => {
+      if (!outputId) return ''
+
+      if (isSupportCategory(categoryId)) {
+        const output = officeLibraryStore.value?.category_outputs?.find((o) => o.id === outputId)
+        return output?.name || output?.label || ''
+      }
+
+      const output = officeLibraryStore.value?.outputs?.find(
+        (o) =>
+          o.id === outputId && o.f_category_id === categoryId && (!mfoId || o.mfo_id === mfoId),
+      )
+      return output?.name || output?.label || ''
+    }
+
+    const getStandardOutputLabel = (standard) => {
+      if (!standard) return 'Output'
+      return getResolvedOutputValue(standard) ? 'Output' : 'MFO'
+    }
+
+    const getStandardOutputDisplay = (standard) => {
+      if (!standard) return ''
+      return getResolvedOutputValue(standard) || getResolvedMfoValue(standard)
+    }
+
+    const getResolvedOutputValue = (standard) => {
+      if (standard.rows?.output) {
+        const label = getOutputLabel(
+          standard.rows.output,
+          standard.rows.category,
+          standard.rows.mfo,
+        )
+        if (label) return label
+      }
+      if (standard.outputName) return standard.outputName
+      if (standard.apiData?.output) return standard.apiData.output
+      return ''
+    }
+
+    const getResolvedMfoValue = (standard) => {
+      if (standard.rows?.mfo) {
+        const label = getMfoLabel(standard.rows.mfo)
+        if (label) return label
+      }
+      if (standard.apiData?.mfo) return standard.apiData.mfo
+      return ''
+    }
 
     // ===========================================================================
     // 7. FACTORY FUNCTIONS
@@ -2023,7 +2104,41 @@ export default {
     const hasAvailableCompetencies = computed(() => getTotalAvailableCompetencies.value > 0)
 
     // ===========================================================================
-    // 9. METHODS THAT USE STORES (these will be called after initialization)
+    // 9. QUANTITY CONFIG FUNCTIONS - Updated with Support category exception
+    // ===========================================================================
+    const isQuantityConfigEnabled = (standard) => {
+      // Department Head: always enabled
+      if (isCurrentEmployeeOfficeHead.value) return true
+
+      // Check if the selected category is Support
+      const isSupport = isSupportCategory(standard?.rows?.category)
+
+      // For Support category: always enabled (no MFO/Output/Indicator required)
+      if (isSupport) return true
+
+      // For non-Support category: need MFO, Output, and Indicator
+      return !!(standard?.rows?.mfo && standard?.rows?.output && standard?.indicatorName)
+    }
+
+    const isQuantityInputEnabled = (standard) => {
+      // Department Head: always enabled
+      if (isCurrentEmployeeOfficeHead.value) return true
+
+      // Check if the selected category is Support
+      const isSupport = isSupportCategory(standard?.rows?.category)
+
+      // For Support category: always enabled (no MFO/Output/Indicator required)
+      if (isSupport) return true
+
+      // Non-head: need MFO, Output, Indicator — AND type must be numeric
+      // (Type B / C use the modal instead)
+      if (standard?.quantityIndicatorType !== 'numeric') return false
+
+      return !!(standard?.rows?.mfo && standard?.rows?.output && standard?.indicatorName)
+    }
+
+    // ===========================================================================
+    // 10. METHODS THAT USE STORES (these will be called after initialization)
     // ===========================================================================
     const autoPopulateCoreCompetencies = (standard, sg, level) => {
       if (!sg || !level || !competencyStore.value) return
@@ -2218,7 +2333,7 @@ export default {
       if (isCurrentEmployeeOfficeHead.value || !cascadeStore.value) return null
 
       const standard = currentEmployee.value.performanceStandards[standardIndex]
-      if (!standard?.rows?.mfo || !standard.indicatorName) return null
+      if (!standard?.rows?.mfo || !standard.indicatorName || !standard.rows?.output) return null
 
       const mfoId = standard.rows.mfo
       const outputId = standard.rows.output
@@ -2547,6 +2662,9 @@ export default {
       }
     }
 
+    // ===========================================================================
+    // UPDATED: generateSuccessIndicator - now uses selected output instead of outputName
+    // ===========================================================================
     const generateSuccessIndicator = (index) => {
       if (!currentEmployee.value?.performanceStandards) return
 
@@ -2557,6 +2675,18 @@ export default {
       indices.forEach((i) => {
         const std = currentEmployee.value.performanceStandards[i]
         if (!std) return
+
+        // Helper to get output name from selected output ID
+        const getOutputName = () => {
+          if (!std.rows?.output) return ''
+          // Search in both regular outputs and category outputs
+          const allOutputs = [
+            ...(officeLibraryStore.value?.outputs || []),
+            ...(officeLibraryStore.value?.category_outputs || []),
+          ]
+          const output = allOutputs.find((o) => o.id === std.rows.output)
+          return output?.name || ''
+        }
 
         const getQuantityComponent = () => {
           if (std.quantityIndicatorType === 'numeric') {
@@ -2599,7 +2729,8 @@ export default {
         }
 
         const qtyPart = getQuantityComponent()
-        const outputPart = std.outputName?.trim() || ''
+        // Use selected output name instead of outputName field
+        const outputPart = getOutputName()
 
         let indicatorPart = ''
         if (std.indicatorName) {
@@ -2612,7 +2743,7 @@ export default {
         const effectivenessPart = getEffectivenessComponent()
         const timelinessPart = getTimelinessComponent()
 
-        // Build success indicator with "100%" for Type C
+        // Build success indicator with selected output
         std.successIndicator = [
           qtyPart,
           outputPart,
@@ -3189,9 +3320,15 @@ export default {
       return r != null && r.maxQuantity != null ? `Cannot exceed ${r.maxQuantity}` : ''
     }
 
+    // ===========================================================================
+    // UPDATED: onQuantityOptionSelect - refreshes restriction when quantity type changes
+    // ===========================================================================
     const onQuantityOptionSelect = (value, index) => {
       const std = currentEmployee.value?.performanceStandards?.[index]
       if (!std) return
+
+      // Clear existing restriction before changing type
+      std.quantityRestriction = null
 
       // Set the quantity indicator type
       std.quantityIndicatorType = value
@@ -3217,6 +3354,27 @@ export default {
         // For numeric type, clear target value
         std.targetOutputValue = null
         generateSuccessIndicator(index)
+
+        // Re-apply restriction after switching to numeric
+        if (
+          !isCurrentEmployeeOfficeHead.value &&
+          std?.rows?.mfo &&
+          std.indicatorName &&
+          std.rows?.output
+        ) {
+          setTimeout(() => checkAndShowCascadeModal(index), 100)
+        }
+      }
+
+      // Re-apply restriction if employee is not head and has MFO, Output, and Indicator selected
+      if (
+        !isCurrentEmployeeOfficeHead.value &&
+        std?.rows?.mfo &&
+        std.rows?.output &&
+        std.indicatorName
+      ) {
+        // Small delay to ensure state is updated
+        setTimeout(() => checkAndShowCascadeModal(index), 200)
       }
     }
 
@@ -3284,6 +3442,16 @@ export default {
         currentQuantityRestriction.value = null
 
         if (dominoIsHead(currentEmployee.value.id)) dominoApplyToAllStaff()
+
+        // Refresh restriction after Type B calculation
+        if (
+          !isCurrentEmployeeOfficeHead.value &&
+          std?.rows?.mfo &&
+          std.rows?.output &&
+          std.indicatorName
+        ) {
+          setTimeout(() => checkAndShowCascadeModal(idx), 300)
+        }
       } else if (currentType === 'C') {
         if (!quantityValue.value || isNaN(quantityValue.value)) {
           $q.notify({
@@ -3294,7 +3462,7 @@ export default {
           return
         }
 
-        // ✅ ADD THIS: Validate against supervisor's total target
+        // Validate against supervisor's total target
         const supervisorTotal = std.quantityRestriction?.maxQuantity
         if (supervisorTotal != null && quantityValue.value > supervisorTotal) {
           $q.notify({
@@ -3326,6 +3494,16 @@ export default {
         showQuantityModal.value = false
         quantityValue.value = null
         currentQuantityRestriction.value = null
+
+        // Refresh restriction after Type C save
+        if (
+          !isCurrentEmployeeOfficeHead.value &&
+          std?.rows?.mfo &&
+          std.rows?.output &&
+          std.indicatorName
+        ) {
+          setTimeout(() => checkAndShowCascadeModal(idx), 300)
+        }
       } else {
         // === NUMERIC TYPE: Custom target ===
         std.targetOutputValue = null
@@ -3881,19 +4059,45 @@ export default {
       { deep: true, immediate: true },
     )
 
-    // watch(
-    //   () => uwpData.value,
-    //   (newVal) => {
-    //     if (newVal.employeesWithoutTargetPeriod?.length && !autoSelectionPerformed.value) {
-    //       nextTick(async () => {
-    //         autoSelectHeadEmployees()
-    //         await nextTick()
-    //         fetchHeadMfos()
-    //       })
-    //     }
-    //   },
-    //   { deep: true, immediate: true },
-    // )
+    // Watch for changes to output selection to regenerate success indicator
+    watch(
+      () => currentEmployee.value?.performanceStandards?.map((s) => s.rows?.output),
+      () => {
+        if (currentEmployee.value?.performanceStandards) {
+          currentEmployee.value.performanceStandards.forEach((_, i) => generateSuccessIndicator(i))
+        }
+      },
+      { deep: true },
+    )
+
+    // ===========================================================================
+    // NEW: Watch for quantity indicator type changes to refresh restriction
+    // ===========================================================================
+    watch(
+      () =>
+        currentEmployee.value?.performanceStandards?.map((s, i) => ({
+          index: i,
+          quantityType: s.quantityIndicatorType,
+          mfo: s.rows?.mfo,
+          output: s.rows?.output,
+          indicator: s.indicatorName,
+          employeeId: currentEmployee.value?.employeeId,
+        })),
+      async (changes) => {
+        // Skip if no changes or no employee
+        if (!changes || !currentEmployee.value?.employeeId) return
+        if (isCurrentEmployeeOfficeHead.value) return
+
+        for (const change of changes) {
+          if (change.mfo && change.output && change.indicator) {
+            // Small delay to ensure state is fully updated
+            await new Promise((resolve) => setTimeout(resolve, 300))
+            await checkAndShowCascadeModal(change.index)
+          }
+        }
+      },
+      { deep: true },
+    )
 
     watch(
       () =>
@@ -3914,7 +4118,7 @@ export default {
           const std = currentEmployee.value.performanceStandards[i]
           if (!std) continue
           std.quantityRestriction = null
-          if (std.rows?.mfo && std.indicatorName) {
+          if (std.rows?.mfo && std.indicatorName && std.rows?.output) {
             await checkAndShowCascadeModal(i)
           }
         }
@@ -4060,6 +4264,9 @@ export default {
       getSelectedCompetencyCount,
       getTotalAvailableCompetencies,
       hasAvailableCompetencies,
+      // NEW: Quantity config enabled check
+      isQuantityConfigEnabled,
+      isQuantityInputEnabled,
       isHeadPosition,
       getEmployeeBadgeColor,
       getEmployeeName,
@@ -4068,6 +4275,10 @@ export default {
       getEmployeeIndex,
       getSelectedEmployeeIds,
       isSupportCategory,
+      getStandardOutputLabel,
+      getStandardOutputDisplay,
+      getResolvedOutputValue,
+      getResolvedMfoValue,
       getAvailableOutputOptions,
       getOutputNoOptionMessage,
       getMfoNoOptionMessage,
